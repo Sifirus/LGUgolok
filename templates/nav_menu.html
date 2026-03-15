@@ -1,0 +1,43 @@
+<nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom">
+    <div class="container-fluid">
+        <!-- Бургер для мобильных -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Левое меню -->
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'index' %}">Главная</a>
+                </li>
+                <!-- TODO убрать -->
+                <li class="nav-item">
+                    <a class="nav-link text-warning" href="/admin/">Админка</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-warning" href="{% url 'admin_panel_users' %}">Пользователи</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Правая часть с аватаркой (ссылка на профиль) -->
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'profile' %}" class="text-decoration-none">
+                {% if avatar %}
+                    <img src="{{ avatar.url }}" width="35" height="35" class="rounded-circle" alt="Avatar">
+                {% else %}
+                    <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
+                         style="width: 35px; height: 35px; font-size: 14px;">
+                        {{ avatar_alt|default:"U" }}
+                    </div>
+                {% endif %}
+            </a>
+
+            <form method="post" action="{% url 'logout' %}" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Выйти</button>
+            </form>
+        </div>
+    </div>
+</nav>
