@@ -1,3 +1,62 @@
-{% for user in users %}
-    {{ user.email }}
-{% endfor %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Пользователи</h4>
+        <a class="btn btn-primary" href="{% url 'admin_panel_users_add' %}">Добавить пользователя</a>
+    </div>
+
+    <!-- TODO: Фильтры пока не делаем -->
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Аватар</th>
+                    <th>Имя</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Последний вход</th>
+                    <th>Активен</th>
+                    <th>Забанен</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" width="30" height="30" class="rounded-circle" alt="Avatar">
+                        {% else %}
+                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                 style="width: 30px; height: 30px; font-size: 14px;">
+                                {{ user.profile.first_name|first|default:"?" }}{{ user.profile.last_name|first|default:"?" }}
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ user.profile.last_name|default:"" }} {{ user.profile.first_name|first|default:"" }}.
+                        {% if user.profile.second_name %}{{ user.profile.second_name|first }}.{% endif %}
+                    </td>
+                    <td><a href="{% url 'admin_panel_user_detail' user_id=user.id %}">{{ user.email }}</a></td>
+                    <td>{{ user.role }}</td>
+                    <td>{{ user.last_login|date:"d.m.Y H:i" }}</td>
+                    <td>{% if user.is_active %}Да{% else %}Нет{% endif %}</td>
+                    <td>{% if user.is_blocked %}Да{% else %}Нет{% endif %}</td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-primary" href="{% url 'admin_panel_user_edit' user.id %}">Редактировать</a>
+                        <a class="btn btn-sm btn-outline-danger" href="{% url 'admin_panel_user_ban' user.id %}">Бан</a>
+                        <!-- TODO: Всего заявок -->
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">Пользователей нет</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

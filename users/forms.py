@@ -20,10 +20,6 @@ class ProfileForm(ModelForm):
         model = Profile
         exclude = ('user',)
 
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
-
 
 class EmailForm(ModelForm):
     class Meta:
