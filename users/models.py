@@ -14,6 +14,7 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('role', 'operator')
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
@@ -25,12 +26,11 @@ class User(AbstractUser):
         APPROVER = 'approver', 'согласующий'
         OPERATOR = 'operator', 'оператор'
 
-
     username = None
     first_name = None
     last_name = None
 
-    email = models.EmailField(unique=True)
+    email = models.EmailField(max_length=100, unique=True)
     must_change_password = models.BooleanField(default=True)
     is_blocked = models.BooleanField(default=False)
     role = models.CharField(choices=Roles.choices, max_length=20, default=Roles.INITIATOR)
@@ -45,7 +45,6 @@ class User(AbstractUser):
 
     def block(self):
         self.is_blocked = True
-        self.is_active = False
         self.save()
 
     def unblock(self):

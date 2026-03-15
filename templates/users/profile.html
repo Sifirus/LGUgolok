@@ -43,7 +43,7 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Имя</label>
-                                    {% render_field profile_form.first_name class="form-control" %}
+                                    {% render_field profile_form.first_name class="form-control"%}
                                     {% if profile_form.first_name.errors %}
                                         <div class="text-danger small mt-1">{{ profile_form.first_name.errors|first }}</div>
                                     {% endif %}
@@ -80,6 +80,24 @@
                             {% endif %}
                             <button type="submit" name="save_profile" class="btn btn-primary">
                                 Сохранить изменения
+                            </button>
+                        </form>
+
+                        <!-- Форма смены почты -->
+                        <hr>
+                        <h6 class="mb-3">Изменить почту</h6>
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Текущая почта</label>
+                                {% render_field email_form.email class="form-control" %}
+                                {% if email_form.email.errors %}
+                                    <div class="text-danger small mt-1">{{ email_form.email.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" name="save_email" class="btn btn-primary">
+                                Изменить почту
                             </button>
                         </form>
 
