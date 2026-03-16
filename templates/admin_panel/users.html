@@ -46,7 +46,7 @@
                     <td>{% if user.is_blocked %}Да{% else %}Нет{% endif %}</td>
                     <td>
                         <a class="btn btn-sm btn-outline-primary" href="{% url 'admin_panel_user_edit' user.id %}">Редактировать</a>
-                        <a class="btn btn-sm btn-outline-danger" href="{% url 'admin_panel_user_ban' user.id %}">Бан</a>
+                        <a class="btn btn-sm btn-outline-danger" href="{% url 'admin_panel_user_ban_toggle' user.id %}">Бан/Разбан</a>
                         <!-- TODO: Всего заявок -->
                     </td>
                 </tr>

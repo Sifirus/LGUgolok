@@ -21,10 +21,10 @@ class Equipment(models.Model):
     inventory_number = models.CharField(max_length=10, unique=True)
     name = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
-    type = models.CharField(max_length=100, choices=TypeChoices.choices)
-    status = models.CharField(max_length=100, choices=StatusChoices.choices, default=StatusChoices.AVAILABLE)
+    type = models.CharField(max_length=20, choices=TypeChoices.choices)
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.AVAILABLE)
     is_stationary = models.BooleanField(default=False)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, null=True, blank=True, related_name='equipment')
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='equipment')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

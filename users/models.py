@@ -64,6 +64,7 @@ class User(AbstractUser):
 
 
 class Profile(models.Model):
+    id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     first_name = models.CharField(max_length=30)
     second_name = models.CharField(max_length=30, blank=True, null=True)

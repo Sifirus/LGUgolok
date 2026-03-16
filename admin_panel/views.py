@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 
@@ -13,7 +13,7 @@ user_model = get_user_model()
 @require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
 def admin_users(request):
-    users = user_model.objects.all()
+    users = user_model.objects.all().order_by('-is_active','is_blocked','-created_at')
     return render(request, 'admin_panel/users.html', {'users': users})
 
 
@@ -38,7 +38,7 @@ def admin_users_add(request):
             profile.department = form.cleaned_data['department']
             profile.save()
 
-            send_new_user_email(email=form.cleaned_data['email'], temp_password=temp_password)  # TODO Сделать с письмом
+            send_new_user_email(email=form.cleaned_data['email'], temp_password=temp_password)
 
             return redirect('admin_panel_users')
 
@@ -63,10 +63,18 @@ def admin_user_edit(request, user_id):
 @require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
 def admin_user_delete(request, user_id):
-    pass
+    user = get_object_or_404(get_user_model(), pk=user_id)
+    user.is_active = False
+    user.save()
+    return redirect('admin_panel_users')
 
 
 @require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
-def admin_user_ban(request, user_id):
-    pass
+def admin_user_ban_toggle(request, user_id):
+    user = get_object_or_404(get_user_model(), pk=user_id)
+    if user.is_blocked:
+        user.unblock()
+    else:
+        user.block()
+    return redirect('admin_panel_users')

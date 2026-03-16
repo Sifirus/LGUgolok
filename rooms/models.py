@@ -16,7 +16,7 @@ class Room(models.Model):
 
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, unique=True)
-    building = models.CharField(max_length=100) #TODO many to one
+    building = models.CharField(max_length=100) #TODO Choises
     floor = models.IntegerField()
     capacity = models.IntegerField()
     status = models.CharField(choices=RoomStatus.choices, default=RoomStatus.ACTIVE, max_length=100)
