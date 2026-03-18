@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -28,7 +31,7 @@ class Booking(models.Model):
 
     initiator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='bookings')
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='bookings')
-    equipment = models.ManyToManyField(Equipment, related_name='bookings')
+    equipment = models.ManyToManyField(Equipment, related_name='bookings', blank=True)
 
     event_type = models.CharField(max_length=30, choices=EventType.choices, default=EventType.LECTURE)
     event_date = models.DateField()
@@ -45,7 +48,15 @@ class Booking(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.room.name} - {self.initiator.email}"
+        return f"{self.room.name} {self.initiator.email}"
+
+    def clean(self):
+        super().clean()
+        if self.event_date < datetime.today().date():
+            raise ValidationError('Дата бронирования не может быть в прошлом')
+        if self.event_start_time > self.event_end_time:
+            raise ValidationError('Время конца бронирования должно быть позже начала')
+
 
     class Meta:
         verbose_name = 'Заявка на бронирование'
@@ -69,7 +80,7 @@ class Approval(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Согласование: {self.decision} кем: {self.approver.email} по заявке: {self.booking}"
+        return f"{self.decision} {self.approver.email} {self.booking}"
 
     class Meta:
         verbose_name = 'Согласование заявки'
@@ -89,4 +100,4 @@ class Comments(models.Model):
 
     def __str__(self):
         snippet = (self.text[:50] + '...') if len(self.text) > 50 else self.text
-        return f"Комментарий от {self.author.email} по согласованию {self.approval}: {snippet}"
+        return f"{self.author.email} - {self.approval}: {snippet}"

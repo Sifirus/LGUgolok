@@ -56,7 +56,7 @@ class User(AbstractUser):
         self.save()
 
     def __str__(self):
-        return f'{self.email} - {self.first_name} {self.last_name}'
+        return f'{self.email}'
 
     class Meta:
         verbose_name = 'Пользователь'
