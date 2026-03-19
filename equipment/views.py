@@ -1,38 +1,33 @@
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.core.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from equipment.services.equipment_service import get_available_equipment
+from equipment.models import Equipment
+from equipment.serializers import EquipmentFiltersSerializer
+from equipment.services.equipment_service import AvailableEquipmentService, EquipmentFiltersService
 
 
-@login_required(login_url='login')
-def available_equipment_json(request):
-    event_date = request.GET.get('event_date')
-    event_start_time = request.GET.get('event_start_time')
-    event_end_time = request.GET.get('event_end_time')
+class EquipmentSearchAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    allowed_methods = ['get']
 
-    if not all([event_date, event_start_time, event_end_time]):
-        return JsonResponse({'error': 'Event date, event start and end time are required'}, status=400)
+    def get(self, request):
+        serializer = EquipmentFiltersSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
 
-    try:
-        equipment = get_available_equipment(event_date, event_start_time, event_end_time)
-    except ValidationError as e:
-        return JsonResponse({'error': str(e)}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        cleaned_data = serializer.validated_data
+        queryset = Equipment.objects.all()
 
-    data = [
-        {
-            'id': item.id,
-            'inventory_number': item.inventory_number,
-            'type': item.type,
-            'name': item.name,
-            'model': item.model,
+        if cleaned_data.get('is_available'):
+            queryset = AvailableEquipmentService.get_available_equipment(
+                queryset,
+                cleaned_data.get('event_date'),
+                cleaned_data.get('event_start_time'),
+                cleaned_data.get('event_end_time')
+            )
 
-        }
-        for item in equipment
-    ]
+        queryset = EquipmentFiltersService.apply_filters(queryset, cleaned_data)
 
-    return JsonResponse({'equipment_available': data})
+        data = queryset.values_list('room_id','inventory_number', 'type', 'name', 'model')
 
-#TODO фильтры и поля
+        return Response(data)

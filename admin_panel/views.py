@@ -16,7 +16,7 @@ def admin_users(request):
     users = user_model.objects.all().order_by('-is_active','is_blocked','-created_at')
     return render(request, 'admin_panel/users.html', {'users': users})
 
-
+#TODO messages.success
 @require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
 def admin_users_add(request):

@@ -23,7 +23,7 @@ class Equipment(models.Model):
     type = models.CharField(max_length=20, choices=TypeChoices.choices)
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVE)
     is_stationary = models.BooleanField(default=False)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='equipment')
+    room = models.ForeignKey(Room, on_delete=models.SET_NULL, related_name='equipment', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

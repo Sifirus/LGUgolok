@@ -3,6 +3,6 @@ from equipment import views
 
 
 urlpatterns = [
-    path('api/equipment/available', views.available_equipment_json, name='available_equipment_json'),
+    path('api/equipment', views.EquipmentSearchAPIView.as_view(), name='api_equipment'),
 
 ]
