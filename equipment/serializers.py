@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from rooms.models import Room
 
+from equipment.models import Equipment
+
 
 class EquipmentFiltersSerializer(serializers.Serializer):
     is_available = serializers.BooleanField(required=False, allow_null=True)
@@ -29,3 +31,10 @@ class EquipmentFiltersSerializer(serializers.Serializer):
             raise serializers.ValidationError('Комнаты с таким id не существует')
 
         return data
+
+
+class EquipmentSerializer(serializers.ModelSerializer):
+    type = serializers.CharField(source='get_type_display')
+    class Meta:
+        model = Equipment
+        fields = ['id','room_id','inventory_number', 'type', 'name', 'model']

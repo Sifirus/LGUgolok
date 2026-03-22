@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from equipment.models import Equipment
-from equipment.serializers import EquipmentFiltersSerializer
+from equipment.serializers import EquipmentFiltersSerializer, EquipmentSerializer
 from equipment.services.equipment_service import AvailableEquipmentService, EquipmentFiltersService
 
 
@@ -28,6 +28,6 @@ class EquipmentSearchAPIView(APIView):
 
         queryset = EquipmentFiltersService.apply_filters(queryset, cleaned_data)
 
-        data = queryset.values_list('room_id','inventory_number', 'type', 'name', 'model')
+        serializer = EquipmentSerializer(queryset, many=True)
 
-        return Response(data)
+        return Response(serializer.data)

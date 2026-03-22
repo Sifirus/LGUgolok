@@ -2,6 +2,8 @@ import re
 
 from rest_framework import serializers
 
+from rooms.models import Room
+
 
 class RoomFiltersSerializer(serializers.Serializer):
     is_available = serializers.BooleanField(required=False, allow_null=True)
@@ -32,3 +34,11 @@ class RoomFiltersSerializer(serializers.Serializer):
             raise serializers.ValidationError('Оборудование должно разделяться запятыми, например lab,conference,hall')
 
         return data
+
+
+class RoomSerializer(serializers.ModelSerializer):
+    type = serializers.CharField(source='get_type_display')
+
+    class Meta:
+        model = Room
+        fields = ['id', 'name', 'type', 'capacity', 'building', 'floor']

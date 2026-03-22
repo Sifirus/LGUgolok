@@ -3,6 +3,8 @@ from django.db.models import Q
 
 from booking.models import Booking
 
+from rooms.models import Room
+
 
 class AvailableRoomsService:
     BLOCKING_STATES = (
@@ -37,7 +39,8 @@ class RoomsFiltersService:
 
         if data.get('search_query'):
             search_query = data.get('search_query')
-            queryset = queryset.filter(Q(name__icontains=search_query) | Q(type__icontains=search_query))
+            for word in search_query.split():
+                queryset = queryset.filter(Q(name__icontains=word))
 
         if data.get('type'):
             room_type = data.get('type')

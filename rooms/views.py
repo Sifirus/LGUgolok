@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rooms.models import Room
-from rooms.serializers import RoomFiltersSerializer
+from rooms.serializers import RoomFiltersSerializer, RoomSerializer
 from rooms.services.rooms_service import AvailableRoomsService, RoomsFiltersService
 
 
@@ -28,7 +28,7 @@ class RoomSearchAPIView(APIView):
 
         queryset = RoomsFiltersService.apply_filters(queryset, cleaned_data)
 
-        data = queryset.values_list('id', 'name', 'type', 'capacity') #TODO fields
+        serializer = RoomSerializer(queryset, many=True)
 
-        return Response(data)
+        return Response(serializer.data)
 

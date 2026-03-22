@@ -1,1 +1,326 @@
-<!-- TODO -->
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+    <div class="container py-4">
+        <h2 class="mb-4">Создать заявку</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-warning">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" id="booking-form">
+            {% csrf_token %}
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Параметры мероприятия</h5>
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label">Тип мероприятия</label>
+                            {% render_field form.event_type class="form-select" %}
+                            {% for error in form.event_type.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Количество участников</label>
+                            {% render_field form.participants class="form-control" id="id_participants" %}
+                            {% for error in form.participants.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Дата</label>
+                            {% render_field form.event_date class="form-control" id="id_event_date" type="date" %}
+                            {% for error in form.event_date.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Начало</label>
+                            {% render_field form.event_start_time class="form-control" id="id_event_start_time" type="time" %}
+                            {% for error in form.event_start_time.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Конец</label>
+                            {% render_field form.event_end_time class="form-control" id="id_event_end_time" type="time" %}
+                            {% for error in form.event_end_time.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Комментарий</label>
+                            {% render_field form.comment class="form-control" rows="2" %}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Аудитория</h5>
+
+                    {% render_field form.room id="id_room" %}
+                    {% for error in form.room.errors %}
+                        <div class="text-danger small mb-2">{{ error }}</div>
+                    {% endfor %}
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-5">
+                            <input type="text" id="id_room_search_query"
+                                   class="form-control" placeholder="Поиск по названию...">
+                        </div>
+                        <div class="col-md-4">
+                            <select id="id_type" class="form-select">
+                                <option value="">Тип аудитории</option>
+                                {% for value, label in room_types %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-outline-primary w-100"
+                                    onclick="loadRooms()">
+                                Подобрать
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="rooms-list"></div>
+
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        Оборудование <span class="text-muted fw-normal small">— необязательно</span>
+                    </h5>
+
+                    {% render_field form.equipment id="id_equipment" %}
+                    {% for error in form.equipment.errors %}
+                        <div class="text-danger small mb-2">{{ error }}</div>
+                    {% endfor %}
+
+                    <div class="mb-3">
+                        <input type="text" id="id_equipment_search_query"
+                               class="form-control" placeholder="Поиск по названию..."
+                               oninput="debounceEquipmentSearch()">
+                    </div>
+
+                    <div id="equipment-list"></div>
+
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Создать заявку</button>
+                <a href="{% url 'index' %}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+
+            {{ form.non_field_errors }}
+        </form>
+    </div>
+    <script>
+        async function loadRooms() {
+            const btn = document.querySelector('button[onclick="loadRooms()"]');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Загрузка...';
+
+            try {
+                const params = new URLSearchParams({
+                    is_available: true,
+                    event_date: document.getElementById('id_event_date').value,
+                    event_start_time: document.getElementById('id_event_start_time').value,
+                    event_end_time: document.getElementById('id_event_end_time').value,
+                    capacity: document.getElementById('id_participants').value,
+                    type: document.getElementById('id_type').value,
+                    search_query: document.getElementById('id_room_search_query').value
+                });
+
+                const response = await fetch(`/api/rooms?${params}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    renderRooms(data);
+                } else {
+                    const message = data['non_field_errors']?.[0] ?? 'Произошла ошибка, попробуйте снова';
+                    document.getElementById('rooms-list').innerHTML =
+                        `<div class="alert alert-danger">${message}</div>`;
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Подобрать';
+            }
+        }
+
+        function renderRooms(data) {
+            const roomsList = document.getElementById('rooms-list');
+
+            if (data.length === 0) {
+                roomsList.innerHTML = '<div class="text-muted">Ничего не найдено</div>';
+                return;
+            }
+
+            const selectedId = parseInt(document.getElementById('id_room').value);
+
+            data.sort((a, b) => {
+                if (a.id === selectedId) return -1;
+                if (b.id === selectedId) return 1;
+                return 0;
+            });
+
+            roomsList.innerHTML = data.map(room => {
+                const isSelected = room.id === selectedId;
+                return `
+            <div class="card mb-2 room-card ${isSelected ? 'border-primary' : ''}"
+                 onclick="selectRoom(${room.id})"
+                 style="cursor: pointer;"
+                 data-id="${room.id}">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">${room.name}</h6>
+                        <span class="badge bg-secondary">${room.type}</span>
+                    </div>
+                    <small class="text-muted">
+                        ${room.building}, ${room.floor} этаж · до ${room.capacity} чел.
+                    </small>
+                </div>
+            </div>
+        `;
+            }).join('');
+        }
+
+        function selectRoom(id) {
+            document.querySelectorAll('.room-card').forEach(card => card.classList.remove('border-primary'));
+            document.getElementById('id_room').value = id;
+            document.querySelector(`.room-card[data-id="${id}"]`).classList.add('border-primary');
+        }
+
+        function getSelectedEquipmentIds() {
+            return new Set(
+                [...document.querySelectorAll('input[name="equipment"]')]
+                    .map(i => parseInt(i.value))
+                    .filter(v => !isNaN(v))
+            );
+        }
+
+        async function loadEquipment() {
+            const listEl = document.getElementById('equipment-list');
+            listEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Загрузка...';
+
+            try {
+                const params = new URLSearchParams({
+                    is_available: true,
+                    event_date: document.getElementById('id_event_date').value,
+                    event_start_time: document.getElementById('id_event_start_time').value,
+                    event_end_time: document.getElementById('id_event_end_time').value,
+                    search_query: document.getElementById('id_equipment_search_query').value
+                });
+
+                for (const [key, value] of [...params]) if (!value) params.delete(key);
+
+                const response = await fetch(`/api/equipment?${params}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    renderEquipment(data);
+                } else {
+                    const message = data['non_field_errors']?.[0] ?? 'Произошла ошибка при поиске';
+                    listEl.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+                }
+            } catch {
+                listEl.innerHTML = '<div class="alert alert-danger">Произошла ошибка при поиске</div>';
+            }
+        }
+
+        let equipmentDebounceTimer;
+
+        function debounceEquipmentSearch() {
+            clearTimeout(equipmentDebounceTimer);
+            equipmentDebounceTimer = setTimeout(loadEquipment, 300);
+        }
+
+        function renderEquipment(data) {
+            const listEl = document.getElementById('equipment-list');
+
+            if (data.length === 0) {
+                listEl.innerHTML = '<div class="text-muted">Ничего не найдено</div>';
+                return;
+            }
+
+            const selectedIds = getSelectedEquipmentIds();
+
+            data.sort((a, b) => {
+                const aSelected = selectedIds.has(a.id);
+                const bSelected = selectedIds.has(b.id);
+                if (aSelected && !bSelected) return -1;
+                if (!aSelected && bSelected) return 1;
+                return 0;
+            });
+
+            listEl.innerHTML = data.map(eq => {
+                const isSelected = selectedIds.has(eq.id);
+                return `
+            <div class="card mb-2 equipment-card ${isSelected ? 'border-primary' : ''}"
+                 onclick="selectEquipment(${eq.id})"
+                 style="cursor: pointer;"
+                 data-id="${eq.id}">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">${eq.name} – ${eq.model}</h6>
+                        <span class="badge bg-secondary">${eq.type}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+            }).join('');
+        }
+
+        function selectEquipment(id) {
+            const card = document.querySelector(`.equipment-card[data-id="${id}"]`);
+            const existing = document.querySelector(`input[name="equipment"][value="${id}"]`);
+
+            if (existing) {
+                existing.remove();
+                card.classList.remove('border-primary');
+            } else {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'equipment';
+                input.value = id;
+                document.getElementById('booking-form').appendChild(input);
+                card.classList.add('border-primary');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const roomId = document.getElementById('id_room').value;
+            if (roomId) {
+                loadRooms();
+            }
+
+            const unavailableIds = {{ unavailable_equipment_ids|default:"[]"|safe }};
+            unavailableIds.forEach(id => {
+                document.querySelector(`input[name="equipment"][value="${id}"]`)?.remove();
+            });
+            const selectedEquipmentIds = getSelectedEquipmentIds();
+            if (selectedEquipmentIds.size > 0) {
+                loadEquipment();
+            }
+        });
+    </script>
+
+{% endblock %}

@@ -1,6 +1,8 @@
 from booking.models import Booking
 from django.db.models import Q
 
+from equipment.models import Equipment
+
 
 class AvailableEquipmentService:
     BLOCKING_STATES = (
@@ -25,13 +27,23 @@ class AvailableEquipmentService:
 
         return available_equipment
 
+
 class EquipmentFiltersService:
     @staticmethod
     def apply_filters(queryset, data):
 
         if data.get('search_query'):
             search_query = data.get('search_query')
-            queryset = queryset.filter(Q(name__icontains=search_query) | Q(model__icontains=search_query) | Q(type__icontains=search_query))
+            for word in search_query.split():
+                matching_types = [
+                    value for value, label in Equipment.TypeChoices.choices
+                    if word.lower() in label.lower()
+                ]
+                queryset = queryset.filter(
+                    Q(name__icontains=word) |
+                    Q(model__icontains=word) |
+                    Q(type__in=matching_types)
+                )
 
         if data.get('room_id'):
             room_id = data.get('room_id')
