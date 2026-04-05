@@ -8,7 +8,7 @@ class AvailableEquipmentService:
     BLOCKING_STATES = (
         Booking.Status.APPROVED,
         Booking.Status.PENDING,
-
+        Booking.Status.CREATED,
     )
 
     @staticmethod

@@ -1,0 +1,12 @@
+from django.urls import path
+from approval import views
+
+from booking.models import Comments
+
+urlpatterns = [
+    path('approval', views.approval_page, name='approval'),
+    path('api/approval/pending/', views.ApprovalPendingListAPIView.as_view(), name='api_approval_list'),
+    path('api/approval/<int:pk>', views.ApprovalDetailAPIView.as_view(), name='api_approval_detail'),
+    path('api/approval/<int:pk>/cancel', views.ApprovalDetailCancelAPIView.as_view(), name='api_approval_cancel'),
+    path('api/approval/<int:pk>/decision', views.ApprovalDecisionAPIView.as_view(), name='api_approval_decision'),
+]

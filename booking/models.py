@@ -1,6 +1,4 @@
-from datetime import datetime
 
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -54,3 +52,18 @@ class Booking(models.Model):
         verbose_name = 'Заявка на бронирование'
         verbose_name_plural = 'Заявки на бронирование'
 
+
+class Comments(models.Model):
+    id = models.AutoField(primary_key=True)
+    text = models.TextField()
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='comments')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        snippet = (self.text[:50] + '...') if len(self.text) > 50 else self.text
+        return f"{self.author.email} - {self.booking}: {snippet}"

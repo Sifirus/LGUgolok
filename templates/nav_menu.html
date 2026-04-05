@@ -1,43 +1,53 @@
-<nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom">
-    <div class="container-fluid">
-        <!-- Бургер для мобильных -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
-            <span class="navbar-toggler-icon"></span>
+<nav class="topbar">
+    <div class="topbar-left">
+        <a href="{% url 'index' %}" class="brand">
+            <span class="brand-mark"><i class="bi bi-house-door-fill"></i></span>
+            <span class="brand-text">
+                ЛГУголок
+                <small>Система бронирования</small>
+            </span>
+        </a>
+    </div>
+
+    <div class="topbar-links">
+        <a href="{% url 'index' %}" class="top-link">Главная</a>
+        <a href="{% url 'booking_create' %}" class="top-link">Создать заявку</a>
+        <a href="{% url 'approval' %}" class="top-link">Согласования</a>
+
+        {# TODO: разделение по ролям #}
+        <a href="{% url 'admin_panel_users' %}" class="top-link">Пользователи</a>
+        <a href="/admin/" class="top-link">Админка</a>
+    </div>
+
+    <div class="topbar-right">
+        <a href="{% url 'profile' %}" class="profile-link" title="Профиль">
+            {% if avatar %}
+                <img src="{{ avatar.url }}" class="profile-avatar" alt="Avatar">
+            {% else %}
+                <div class="profile-avatar profile-fallback">
+                    {{ avatar_alt|default:"U" }}
+                </div>
+            {% endif %}
+        </a>
+
+        <form method="post" action="{% url 'logout' %}" class="m-0">
+            {% csrf_token %}
+            <button type="submit" class="btn-logout">Выйти</button>
+        </form>
+
+        <button type="button" class="burger" onclick="toggleTopnav()" aria-label="Меню">
+            <i class="bi bi-list"></i>
         </button>
+    </div>
 
-        <!-- Левое меню -->
-        <div class="collapse navbar-collapse" id="navbarMain">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'index' %}">Главная</a>
-                </li>
-                <!-- TODO убрать -->
-                <li class="nav-item">
-                    <a class="nav-link text-warning" href="/admin/">Админка</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-warning" href="{% url 'admin_panel_users' %}">Пользователи</a>
-                </li>
-            </ul>
-        </div>
+    <div class="topnav-mobile" id="topnavMobile">
+        <a href="{% url 'index' %}" class="topnav-item">Главная</a>
+        <a href="{% url 'booking_create' %}" class="topnav-item">Создать заявку</a>
+        <a href="{% url 'approval' %}" class="topnav-item">Согласования</a>
 
-        <!-- Правая часть с аватаркой (ссылка на профиль) -->
-        <div class="d-flex align-items-center gap-2">
-            <a href="{% url 'profile' %}" class="text-decoration-none">
-                {% if avatar %}
-                    <img src="{{ avatar.url }}" width="35" height="35" class="rounded-circle" alt="Avatar">
-                {% else %}
-                    <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
-                         style="width: 35px; height: 35px; font-size: 14px;">
-                        {{ avatar_alt|default:"U" }}
-                    </div>
-                {% endif %}
-            </a>
-
-            <form method="post" action="{% url 'logout' %}" class="m-0">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-outline-danger">Выйти</button>
-            </form>
-        </div>
+        {# TODO: разделение по ролям #}
+        <a href="{% url 'admin_panel_users' %}" class="topnav-item">Пользователи</a>
+        <a href="/admin/" class="topnav-item">Админка</a>
     </div>
 </nav>
+<div class="topnav-overlay" id="topnavOverlay" onclick="closeTopnav()"></div>

@@ -28,7 +28,7 @@ class Equipment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.type} {self.name} {self.model}'
+        return f'{self.get_type_display()} {self.name} {self.model}'
 
     class Meta:
         verbose_name = 'Оборудование'

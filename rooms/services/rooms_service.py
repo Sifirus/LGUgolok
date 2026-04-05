@@ -10,6 +10,7 @@ class AvailableRoomsService:
     BLOCKING_STATES = (
         Booking.Status.APPROVED,
         Booking.Status.PENDING,
+        Booking.Status.CREATED,
 
     )
 
