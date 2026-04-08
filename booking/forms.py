@@ -50,3 +50,16 @@ class BookingForm(forms.ModelForm):
         return cleaned_data
 
 # TODO
+
+from django import forms
+
+
+class BookingCommentForm(forms.Form):
+    text = forms.CharField(
+        label='Комментарий',
+        widget=forms.Textarea(attrs={
+            'rows': 4,
+            'placeholder': 'Введите комментарий...',
+        }),
+        max_length=5000
+    )

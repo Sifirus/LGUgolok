@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ЛГУголок — Отчёты{% endblock %}
+
+{% block content %}
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+        <div>
+            <h1 style="font-size:20px;font-weight:800;margin-bottom:3px;letter-spacing:-.3px">Отчёты</h1>
+            <p style="font-size:14px;color:var(--muted);margin:0">Аналитика использования ресурсов</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn-sec" id="btn-export-csv" onclick="doExport('csv')">
+                <i class="bi bi-file-earmark-text"></i>CSV
+            </button>
+            <button class="btn-sec" id="btn-export-xlsx" onclick="doExport('xlsx')">
+                <i class="bi bi-file-earmark-spreadsheet"></i>Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Переключатель типа отчёта -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6">
+            <div class="rep-type-card sel" id="card-rooms" onclick="selectType('rooms')">
+                <div class="rt-ico"><i class="bi bi-building"></i></div>
+                <div class="rt-name">Занятость аудиторий</div>
+                <div class="rt-desc">Часы использования и загруженность</div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="rep-type-card" id="card-equipment" onclick="selectType('equipment')">
+                <div class="rt-ico"><i class="bi bi-laptop"></i></div>
+                <div class="rt-name">Использование оборудования</div>
+                <div class="rt-desc">Статистика по инвентарю</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Фильтры периода -->
+    <div class="cbox mb-4" style="padding:16px 20px">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3 col-sm-6">
+                <label class="fl">Период от</label>
+                <input type="date" id="date_from" class="fc" value="{{ date_from }}">
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label class="fl">Период до</label>
+                <input type="date" id="date_to" class="fc" value="{{ date_to }}">
+            </div>
+            <div class="col-md-2 col-sm-6 d-flex align-items-end">
+                <button class="btn-blue w-100" onclick="loadReport()">
+                    <i class="bi bi-bar-chart-line"></i>Сформировать
+                </button>
+            </div>
+            <div class="col-md-4 col-sm-6 d-flex align-items-end gap-2">
+                <button class="btn-sec flex-1" onclick="setPreset('month')">Месяц</button>
+                <button class="btn-sec flex-1" onclick="setPreset('quarter')">Квартал</button>
+                <button class="btn-sec flex-1" onclick="setPreset('year')">Год</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Метрики -->
+    <div class="row g-3 mb-4" id="metrics-row">
+        <div class="col-6 col-md-3">
+            <div class="cbox" style="padding:18px 20px;text-align:center">
+                <div style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;color:var(--blue)"
+                     id="m-hours">—
+                </div>
+                <div style="font-size:12px;color:var(--muted)" id="m-hours-lbl">Часов занятости</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="cbox" style="padding:18px 20px;text-align:center">
+                <div style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;color:var(--success)"
+                     id="m-avg">—
+                </div>
+                <div style="font-size:12px;color:var(--muted)" id="m-avg-lbl">Средняя загруженность</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="cbox" style="padding:18px 20px;text-align:center">
+                <div style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;color:var(--orange)"
+                     id="m-bookings">—
+                </div>
+                <div style="font-size:12px;color:var(--muted)" id="m-bookings-lbl">Мероприятий за период</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="cbox" style="padding:18px 20px;text-align:center">
+                <div style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;color:var(--danger)"
+                     id="m-special">—
+                </div>
+                <div style="font-size:12px;color:var(--muted)" id="m-special-lbl">Высокая загруженность</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Баровый чарт + таблица -->
+    <div class="row g-3" id="content-row">
+
+        <!-- Бары -->
+        <div class="col-lg-5">
+            <div class="cbox" style="padding:22px 24px">
+                <div style="font-size:15px;font-weight:700;margin-bottom:18px" id="bars-title">Загруженность</div>
+                <div id="bars-wrap">
+                    <div style="text-align:center;padding:24px;color:var(--muted)">
+                        <i class="bi bi-bar-chart"
+                           style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>
+                        Выберите период и нажмите «Сформировать»
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Таблица -->
+        <div class="col-lg-7">
+            <div class="cbox" style="overflow:hidden">
+                <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+                    <span style="font-size:15px;font-weight:700" id="table-title">Детальная таблица</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="tbl">
+                        <thead id="tbl-head"></thead>
+                        <tbody id="tbl-body">
+                        <tr>
+                            <td colspan="7" style="text-align:center;padding:28px;color:var(--muted)">
+                                Нет данных
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        /* ════════════════════════════════════════
+           reports.js — inline (небольшой, не выносим)
+           ════════════════════════════════════════ */
+
+        var currentType = 'rooms';
+        var currentData = null;
+
+        // ── Выбор типа отчёта ────────────────────────────────────
+        function selectType(type) {
+            currentType = type;
+            document.getElementById('card-rooms').classList.toggle('sel', type === 'rooms');
+            document.getElementById('card-equipment').classList.toggle('sel', type === 'equipment');
+            if (currentData) loadReport();
+        }
+
+        // ── Пресеты периода ──────────────────────────────────────
+        function setPreset(preset) {
+            var today = new Date();
+            var from = new Date();
+
+            if (preset === 'month') {
+                from.setDate(1);
+            } else if (preset === 'quarter') {
+                from.setMonth(today.getMonth() - 2);
+                from.setDate(1);
+            } else if (preset === 'year') {
+                from = new Date(today.getFullYear(), 0, 1);
+            }
+
+            document.getElementById('date_from').value = toISO(from);
+            document.getElementById('date_to').value = toISO(today);
+            loadReport();
+        }
+
+        function toISO(d) {
+            return d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0');
+        }
+
+        // ── Загрузка данных ──────────────────────────────────────
+        function loadReport() {
+            var df = document.getElementById('date_from').value;
+            var dt = document.getElementById('date_to').value;
+            if (!df || !dt) {
+                alert('Укажите период');
+                return;
+            }
+
+            var url = currentType === 'rooms'
+                ? '/api/reports/rooms/?date_from=' + df + '&date_to=' + dt
+                : '/api/reports/equipment/?date_from=' + df + '&date_to=' + dt;
+
+            // Показываем загрузку
+            document.getElementById('bars-wrap').innerHTML =
+                '<div style="text-align:center;padding:24px;color:var(--muted)"><i class="bi bi-hourglass-split" style="font-size:24px;display:block;margin-bottom:8px"></i>Загрузка...</div>';
+            document.getElementById('tbl-body').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Загрузка...</td></tr>';
+
+            fetch(url, {credentials: 'same-origin'})
+                .then(function (r) {
+                    return r.json();
+                })
+                .then(function (data) {
+                    currentData = data;
+                    renderMetrics(data);
+                    renderBars(data);
+                    renderTable(data);
+                })
+                .catch(function () {
+                    document.getElementById('tbl-body').innerHTML =
+                        '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--danger)">Ошибка загрузки</td></tr>';
+                });
+        }
+
+        // ── Метрики ──────────────────────────────────────────────
+        function renderMetrics(data) {
+            document.getElementById('m-hours').textContent = data.total_hours + ' ч';
+            document.getElementById('m-avg').textContent = data.avg_load + '%';
+            document.getElementById('m-bookings').textContent = data.total_bookings;
+
+            if (currentType === 'rooms') {
+                document.getElementById('m-hours-lbl').textContent = 'Часов занятости';
+                document.getElementById('m-avg-lbl').textContent = 'Средняя загруженность';
+                document.getElementById('m-bookings-lbl').textContent = 'Мероприятий';
+                document.getElementById('m-special').textContent = data.high_load_count;
+                document.getElementById('m-special-lbl').textContent = 'Аудиторий с загр. > 70%';
+            } else {
+                document.getElementById('m-hours-lbl').textContent = 'Часов использования';
+                document.getElementById('m-avg-lbl').textContent = 'Средняя востребованность';
+                document.getElementById('m-bookings-lbl').textContent = 'Всего использований';
+                document.getElementById('m-special').textContent = data.popular_count;
+                document.getElementById('m-special-lbl').textContent = 'Популярных позиций > 50%';
+            }
+        }
+
+        // ── Бары ─────────────────────────────────────────────────
+        function barGradient(pct) {
+            if (pct > 80) return 'linear-gradient(90deg,#B91C1C,#F87171)';
+            if (pct > 60) return 'linear-gradient(90deg,#E8751A,#F5A461)';
+            if (pct > 30) return 'linear-gradient(90deg,#1E4BA3,#5B8CE8)';
+            return 'linear-gradient(90deg,#64748B,#94A3B8)';
+        }
+
+        function renderBars(data) {
+            var title = currentType === 'rooms' ? 'Загруженность аудиторий' : 'Востребованность оборудования';
+            document.getElementById('bars-title').textContent = title;
+
+            var top10 = data.items.slice(0, 10);
+            if (!top10.length) {
+                document.getElementById('bars-wrap').innerHTML =
+                    '<p style="text-align:center;color:var(--muted);padding:24px">Нет данных за период</p>';
+                return;
+            }
+
+            var html = top10.map(function (item) {
+                var label = currentType === 'rooms' ? item.name : (item.name + ' ' + item.model);
+                return '<div style="margin-bottom:12px">' +
+                    '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;font-weight:500">' +
+                    '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%">' + label + '</span>' +
+                    '<span style="font-weight:700">' + item.load_pct + '%</span>' +
+                    '</div>' +
+                    '<div style="height:8px;background:var(--bg);border-radius:4px;overflow:hidden">' +
+                    '<div style="height:100%;border-radius:4px;width:' + item.load_pct + '%;background:' + barGradient(item.load_pct) + ';transition:width .4s"></div>' +
+                    '</div></div>';
+            }).join('');
+
+            document.getElementById('bars-wrap').innerHTML = html;
+        }
+
+        // ── Таблица ───────────────────────────────────────────────
+        function renderTable(data) {
+            var head = document.getElementById('tbl-head');
+            var body = document.getElementById('tbl-body');
+
+            if (currentType === 'rooms') {
+                document.getElementById('table-title').textContent = 'Детальная таблица по аудиториям';
+                head.innerHTML = '<tr>' +
+                    '<th>Аудитория</th><th>Корпус</th><th>Тип</th>' +
+                    '<th>Мероприятий</th><th>Часов</th><th>Загруженность</th><th>Пиковый день</th>' +
+                    '</tr>';
+
+                if (!data.items.length) {
+                    body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Нет данных за период</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = data.items.map(function (item) {
+                    var pillClass = item.load_pct > 80 ? 'pill--rejected' : item.load_pct > 60 ? 'pill--pending' : item.load_pct > 30 ? 'pill--approved' : 'pill--draft';
+                    return '<tr>' +
+                        '<td style="font-weight:600">' + item.name + '</td>' +
+                        '<td style="font-size:13px;color:var(--muted)">' + item.building + '</td>' +
+                        '<td style="font-size:13px;color:var(--muted)">' + item.type + '</td>' +
+                        '<td>' + item.bookings_count + '</td>' +
+                        '<td>' + item.total_hours + ' ч</td>' +
+                        '<td><span class="pill ' + pillClass + '">' + item.load_pct + '%</span></td>' +
+                        '<td style="font-size:13px;color:var(--muted)">' + item.peak_day + '</td>' +
+                        '</tr>';
+                }).join('');
+            } else {
+                document.getElementById('table-title').textContent = 'Детальная таблица по оборудованию';
+                head.innerHTML = '<tr>' +
+                    '<th>Инв. номер</th><th>Наименование</th><th>Тип</th>' +
+                    '<th>Использований</th><th>Часов</th><th>Востребованность</th><th>Аудитория</th>' +
+                    '</tr>';
+
+                if (!data.items.length) {
+                    body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Нет данных за период</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = data.items.map(function (item) {
+                    var pillClass = item.load_pct > 70 ? 'pill--rejected' : item.load_pct > 40 ? 'pill--pending' : item.load_pct > 15 ? 'pill--approved' : 'pill--draft';
+                    var inv = '<code style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--border)">' + item.inventory_number + '</code>';
+                    return '<tr>' +
+                        '<td>' + inv + '</td>' +
+                        '<td><div style="font-weight:600">' + item.name + '</div><div style="font-size:12px;color:var(--muted)">' + item.model + '</div></td>' +
+                        '<td style="font-size:13px;color:var(--muted)">' + item.type + '</td>' +
+                        '<td>' + item.bookings_count + '</td>' +
+                        '<td>' + item.total_hours + ' ч</td>' +
+                        '<td><span class="pill ' + pillClass + '">' + item.load_pct + '%</span></td>' +
+                        '<td style="font-size:13px;color:var(--muted)">' + item.room + '</td>' +
+                        '</tr>';
+                }).join('');
+            }
+        }
+
+        // ── Экспорт ──────────────────────────────────────────────
+        function doExport(format) {
+            var df = document.getElementById('date_from').value;
+            var dt = document.getElementById('date_to').value;
+            if (!df || !dt || !currentData) {
+                alert('Сначала сформируйте отчёт');
+                return;
+            }
+            var url = '/api/reports/export/' + format + '/?type=' + currentType + '&date_from=' + df + '&date_to=' + dt;
+            window.location.href = url;
+        }
+
+        // ── Инициализация ─────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function () {
+            // Автоматически загружаем отчёт по аудиториям за текущий месяц
+            loadReport();
+        });
+    </script>
+{% endblock %}

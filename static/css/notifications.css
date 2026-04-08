@@ -1,0 +1,92 @@
+/* ── Страница уведомлений ── */
+.notif-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: background .12s;
+  position: relative;
+}
+
+.notif-item:last-child { border-bottom: 0; }
+
+.notif-item:hover { background: var(--bg); }
+
+.notif-item--unread { background: var(--orange-lt); }
+.notif-item:hover { background: var(--blue-lt); }
+
+/* Иконка типа */
+.notif-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.notif-icon--status  { background: var(--blue-lt);    color: var(--blue); }
+.notif-icon--comment { background: var(--orange-lt); color: var(--orange-dk); }
+
+.notif-body { flex: 1; min-width: 0; }
+
+.notif-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-item--unread .notif-title { color: var(--blue); }
+
+.notif-preview {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-time {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Пустое состояние */
+.notif-empty {
+  text-align: center;
+  padding: 52px 20px;
+  color: var(--muted);
+}
+.notif-empty i {
+  font-size: 44px;
+  display: block;
+  margin-bottom: 12px;
+  opacity: .4;
+}
+.notif-empty p { font-size: 14px; margin: 0; }

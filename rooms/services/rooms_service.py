@@ -54,6 +54,14 @@ class RoomsFiltersService:
             for item in equipment_types:
                 queryset = queryset.filter(equipment__type__iexact=item.strip())
 
+        if data.get('status'):
+            room_status = data.get('status')
+            queryset = queryset.filter(status__iexact=room_status)
+
+        if data.get('building'):
+            building = data.get('building')
+            queryset = queryset.filter(building__icontains=building)
+
         return queryset
 
 

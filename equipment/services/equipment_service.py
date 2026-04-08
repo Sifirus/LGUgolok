@@ -49,4 +49,16 @@ class EquipmentFiltersService:
             room_id = data.get('room_id')
             queryset = queryset.filter(room_id=room_id)
 
+        if data.get('type'):
+            queryset = queryset.filter(type=data['type'])
+
+        if data.get('status'):
+            queryset = queryset.filter(status=data['status'])
+
+        if data.get('location') == 'warehouse':
+            queryset = queryset.filter(room__isnull=True)
+
+        if data.get('location') == 'room':
+            queryset = queryset.filter(room__isnull=False) #TODO добавить в api view
+
         return queryset

@@ -13,7 +13,7 @@ class Booking(models.Model):
         PENDING = 'pending', 'на согласовании'
         APPROVED = 'approved', 'одобрена'
         REJECTED = 'rejected', 'отклонена'
-        COMPLETED = 'completed', 'завершена'
+        COMPLETED = 'completed', 'завершена' #TODO
         CANCELED = 'canceled', 'отменена'
 
     class EventType(models.TextChoices):

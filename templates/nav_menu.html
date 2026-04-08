@@ -13,13 +13,29 @@
         <a href="{% url 'index' %}" class="top-link">Главная</a>
         <a href="{% url 'booking_create' %}" class="top-link">Создать заявку</a>
         <a href="{% url 'approval' %}" class="top-link">Согласования</a>
+        <a href="{% url 'booking_list' %}">Заявки</a>
 
         {# TODO: разделение по ролям #}
         <a href="{% url 'admin_panel_users' %}" class="top-link">Пользователи</a>
         <a href="/admin/" class="top-link">Админка</a>
+        <a href="{% url 'rooms_list' %}">Аудитории</a>
+        <a href="{% url 'equipment_list' %}">Оборудование</a>
+        <a href="{% url 'reports' %}">Отчёты</a>
     </div>
 
     <div class="topbar-right">
+        <div class="notif-bell-wrap">
+          <a href="{% url 'notification_list' %}" class="nav-icon-btn" title="Уведомления">
+            <i class="bi bi-bell"></i>
+            <span id="notif-dot" class="nav-dot"
+                  style="{% if not unread_notifications_count %}display:none{% endif %}"></span>
+          </a>
+          <span id="notif-bell-count"
+                style="{% if not unread_notifications_count %}display:none{% endif %}">
+            {% if unread_notifications_count %}{{ unread_notifications_count }}{% endif %}
+          </span>
+        </div>
+
         <a href="{% url 'profile' %}" class="profile-link" title="Профиль">
             {% if avatar %}
                 <img src="{{ avatar.url }}" class="profile-avatar" alt="Avatar">

@@ -2,72 +2,6 @@
     min-height: 100vh;
 }
 
-.step-bar {
-    display: flex;
-    align-items: center;
-    margin-bottom: 28px;
-}
-
-.step {
-    display: flex;
-    align-items: center;
-    flex: 1;
-}
-
-.step-circle {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    flex-shrink: 0;
-    border: 2px solid var(--border);
-    background: var(--surface);
-    color: var(--muted);
-}
-
-.step-circle.done {
-    background: var(--success);
-    border-color: var(--success);
-    color: #fff;
-}
-
-.step-circle.active {
-    background: var(--blue);
-    border-color: var(--blue);
-    color: #fff;
-}
-
-.step-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    margin-left: 8px;
-    white-space: nowrap;
-}
-
-.step-label.active {
-    color: var(--blue);
-}
-
-.step-label.done {
-    color: var(--success);
-}
-
-.step-line {
-    flex: 1;
-    height: 2px;
-    background: var(--border);
-    margin: 0 10px;
-}
-
-.step-line.done {
-    background: var(--success);
-}
-
 .form-card {
     background: var(--surface);
     border-radius: var(--r);
@@ -160,27 +94,6 @@
     display: flex;
     align-items: center;
     gap: 3px;
-}
-
-.avail-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 9px;
-    border-radius: 10px;
-    white-space: nowrap;
-}
-
-.avail-badge.free {
-    background: var(--success-bg);
-    color: var(--success);
-}
-
-.avail-badge.busy {
-    background: var(--danger-bg);
-    color: var(--danger);
 }
 
 .eq-row {

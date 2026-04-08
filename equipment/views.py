@@ -1,11 +1,21 @@
+from equipment.serializers import EquipmentFiltersSerializer, EquipmentSerializer
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.decorators import require_role_decorator
+from equipment.forms import EquipmentForm
 from equipment.models import Equipment
-from equipment.serializers import EquipmentFiltersSerializer, EquipmentSerializer
 from equipment.services.equipment_service import AvailableEquipmentService, EquipmentFiltersService
+from rooms.models import Room
 
+from django.db.models import Q
 
 class EquipmentSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -31,3 +41,194 @@ class EquipmentSearchAPIView(APIView):
         serializer = EquipmentSerializer(queryset, many=True)
 
         return Response(serializer.data)
+
+
+class RoomLookupAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        q = (request.query_params.get('q') or '').strip()
+        queryset = Room.objects.all().order_by('building', 'floor', 'name')
+
+        if q:
+            filters = Q(name__icontains=q) | Q(building__icontains=q)
+            if q.isdigit():
+                filters |= Q(pk=int(q))
+            queryset = queryset.filter(filters)
+
+        data = []
+        for room in queryset[:10]:
+            data.append({
+                'id': room.id,
+                'label': f'{room.id} · {room.name} · {room.building}, этаж {room.floor}',
+                'name': room.name,
+                'building': room.building,
+                'floor': room.floor,
+            })
+
+        return Response(data)
+
+@require_role_decorator(roles=['operator'])
+@login_required(login_url='login')
+def equipment_list(request):
+    qs = Equipment.objects.select_related('room').all().order_by('type', 'name', 'inventory_number')
+
+    filters = {
+        'search_query': request.GET.get('search', ''),
+        'type': request.GET.get('type', ''),
+        'status': request.GET.get('status', ''),
+        'room_id': request.GET.get('room_id', ''),
+        'location': request.GET.get('location', ''),
+    }
+    filters = {k: v for k, v in filters.items() if v}
+
+    if filters:
+        qs = EquipmentFiltersService.apply_filters(qs, filters)
+
+    now = timezone.now()
+    current_date = now.date()
+    current_time = now.time()
+
+    equipment_with_status = []
+    for item in qs:
+        try:
+            available_equipment = AvailableEquipmentService.get_available_equipment(
+                Equipment.objects.filter(pk=item.pk),
+                current_date,
+                current_time,
+                current_time,
+            )
+            is_available = available_equipment.exists()
+        except ValueError:
+            is_available = True
+
+        equipment_with_status.append({
+            'equipment': item,
+            'is_available': is_available,
+        })
+
+    paginator = Paginator(equipment_with_status, 10)
+    page = request.GET.get('page', 1)
+    page_data = paginator.get_page(page)
+
+    room_id = request.GET.get('room_id', '')
+    selected_room = Room.objects.filter(pk=room_id).first() if room_id else None
+
+    context = {
+        'equipment': page_data,
+        'add_form': EquipmentForm(),
+        'equipment_types': Equipment.TypeChoices.choices,
+        'equipment_statuses': Equipment.StatusChoices.choices,
+        'search': request.GET.get('search', ''),
+        'filter_type': request.GET.get('type', ''),
+        'filter_status': request.GET.get('status', ''),
+        'filter_location': request.GET.get('location', ''),
+        'filter_room_id': room_id,
+        'filter_room_label': selected_room.name if selected_room else '',
+        'total': paginator.count,
+        'current_date': current_date.strftime('%d.%m.%Y'),
+        'current_time': current_time.strftime('%H:%M'),
+        'room_lookup_url': 'room_lookup_api',
+    }
+    return render(request, 'equipment/equipment.html', context)
+
+
+@require_role_decorator(roles=['operator'])
+@login_required(login_url='login')
+def equipment_add(request):
+    if request.method == 'POST':
+        form = EquipmentForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            Equipment.objects.create(
+                inventory_number=cd['inventory_number'],
+                name=cd['name'],
+                model=cd['model'],
+                type=cd['type'],
+                status=cd['status'],
+                is_stationary=cd['is_stationary'],
+                room_id=cd['room_id'] or None,
+            )
+            messages.success(request, 'Оборудование успешно создано')
+            return redirect('equipment_list')
+
+        qs = Equipment.objects.select_related('room').all().order_by('type', 'name', 'inventory_number')
+        equipment_data = [{'equipment': item, 'is_available': True} for item in qs]
+        page = Paginator(equipment_data, 10).get_page(1)
+
+        return render(request, 'equipment/equipment.html', {
+            'equipment': page,
+            'add_form': form,
+            'open_add_modal': True,
+            'equipment_types': Equipment.TypeChoices.choices,
+            'equipment_statuses': Equipment.StatusChoices.choices,
+            'total': qs.count(),
+        })
+
+    return redirect('equipment_list')
+
+
+@require_role_decorator(roles=['operator'])
+@login_required(login_url='login')
+def equipment_detail(request, equipment_id):
+    item = get_object_or_404(Equipment.objects.select_related('room'), pk=equipment_id)
+    now = timezone.now()
+
+    context = {
+        'item': item,
+        'current_date': now.date().strftime('%d.%m.%Y'),
+        'current_time': now.time().strftime('%H:%M'),
+        'is_in_warehouse': item.room is None,
+    }
+    return render(request, 'equipment/equipment_detail.html', context)
+
+
+@require_role_decorator(roles=['operator'])
+@login_required(login_url='login')
+def equipment_edit(request, equipment_id):
+    item = get_object_or_404(Equipment, pk=equipment_id)
+
+    if request.method == 'POST':
+        form = EquipmentForm(request.POST)
+        form.instance_id = item.pk
+
+        if form.is_valid():
+            cd = form.cleaned_data
+            item.inventory_number = cd['inventory_number']
+            item.name = cd['name']
+            item.model = cd['model']
+            item.type = cd['type']
+            item.status = cd['status']
+            item.is_stationary = cd['is_stationary']
+            item.room_id = cd['room_id'] or None
+            item.save()
+            messages.success(request, 'Оборудование успешно обновлено')
+            return redirect('equipment_list')
+
+        qs = Equipment.objects.select_related('room').all().order_by('type', 'name', 'inventory_number')
+        equipment_data = [{'equipment': row, 'is_available': True} for row in qs]
+        page = Paginator(equipment_data, 10).get_page(1)
+
+        return render(request, 'equipment/equipment_list.html', {
+            'equipment': page,
+            'add_form': EquipmentForm(),
+            'edit_form': form,
+            'edit_equipment_id': item.pk,
+            'open_edit_modal': True,
+            'equipment_types': Equipment.TypeChoices.choices,
+            'equipment_statuses': Equipment.StatusChoices.choices,
+            'total': qs.count(),
+        })
+
+    return redirect('equipment_list')
+
+
+@require_role_decorator(roles=['operator'])
+@login_required(login_url='login')
+def equipment_delete(request, equipment_id):
+    if request.method == 'POST':
+        item = get_object_or_404(Equipment, pk=equipment_id)
+        name = item.name
+        item.delete()
+        messages.success(request, f'Оборудование {name} удалено')
+    return redirect('equipment_list')
