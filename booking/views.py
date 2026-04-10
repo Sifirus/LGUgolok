@@ -101,70 +101,6 @@ from rooms.models import Room
 User = get_user_model()
 
 
-class RoomLookupAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-    allowed_methods = ['get']
-
-    def get(self, request):
-        q = (request.query_params.get('q') or '').strip()
-        queryset = Room.objects.all().order_by('building', 'floor', 'name')
-
-        if q:
-            filters = Q(name__icontains=q) | Q(building__icontains=q)
-            if q.isdigit():
-                filters |= Q(pk=int(q))
-            queryset = queryset.filter(filters)
-
-        data = []
-        for room in queryset[:10]:
-            data.append({
-                'id': room.id,
-                'label': f'{room.id} · {room.name} · {room.building}, этаж {room.floor}',
-            })
-
-        return Response(data)
-
-
-class ApproverLookupAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-    allowed_methods = ['get']
-
-    def get(self, request):
-        q = (request.query_params.get('q') or '').strip()
-        queryset = User.objects.select_related('profile').all().order_by('email')
-
-        if q:
-            filters = (
-                    Q(email__icontains=q) |
-                    Q(profile__first_name__icontains=q) |
-                    Q(profile__second_name__icontains=q) |
-                    Q(profile__last_name__icontains=q) |
-                    Q(profile__department__icontains=q)
-            )
-            if q.isdigit():
-                filters |= Q(pk=int(q))
-            queryset = queryset.filter(filters)
-
-        data = []
-        for user in queryset[:10]:
-            profile = getattr(user, 'profile', None)
-            full_name = ''
-            if profile:
-                parts = [profile.last_name, profile.first_name, profile.second_name or '']
-                full_name = ' '.join(part for part in parts if part).strip()
-
-            label = f'{user.id} · {user.email}'
-            if full_name:
-                label += f' · {full_name}'
-
-            data.append({
-                'id': user.id,
-                'label': label,
-            })
-
-        return Response(data)
-
-
 @require_role_decorator(roles=['initiator', 'operator', 'approver'])
 @login_required(login_url='login')
 def booking_list(request):
@@ -236,8 +172,6 @@ def booking_list(request):
         'filter_approval_decision': request.GET.get('approval_decision', ''),
         'current_date': timezone.localdate().strftime('%d.%m.%Y'),
         'current_time': timezone.localtime().strftime('%H:%M'),
-        'room_lookup_url': 'room_lookup_api',
-        'approver_lookup_url': 'approver_lookup_api',
         'query_string': query_params.urlencode(),
     }
     return render(request, 'booking/bookings_list.html', context)

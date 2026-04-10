@@ -56,7 +56,7 @@
 
         <div class="eq-filter-group eq-filter-group--wide">
             <label class="eq-filter-label">Комната</label>
-            <div class="room-lookup" data-room-lookup data-room-url="{% url room_lookup_url %}">
+            <div class="room-lookup" data-room-lookup data-room-url="{% url 'room_lookup_api' %}">
                 <div class="room-lookup__control">
                     <input type="text"
                            name="room_query"
@@ -275,7 +275,7 @@
 
                     <div class="field-group">
                         <label class="fl">Комната</label>
-                        <div class="room-lookup" data-room-lookup data-room-url="{% url room_lookup_url %}">
+                        <div class="room-lookup" data-room-lookup data-room-url="{% url 'room_lookup_api' %}">
                             <div class="room-lookup__control">
                                 <input type="text" name="room_query" class="fc room-lookup__input" placeholder="ID или название комнаты" value="{{ add_form.room_query.value|default:'' }}" autocomplete="off">
                                 <button type="button" class="room-lookup__clear" data-room-clear title="Очистить"><i class="bi bi-x-lg"></i></button>
@@ -385,7 +385,7 @@
 
                             <div class="field-group">
                                 <label class="fl">Комната</label>
-                                <div class="room-lookup" data-room-lookup data-room-url="{% url room_lookup_url %}">
+                                <div class="room-lookup" data-room-lookup data-room-url="{% url 'room_lookup_api' %}">
                                     <div class="room-lookup__control">
                                         <input type="text" name="room_query" class="fc room-lookup__input" placeholder="ID или название комнаты"
                                                value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.room_query.value|default:'' }}{% else %}{% if item.room %}{{ item.room.id }} · {{ item.room.name }} · {{ item.room.building }}, этаж {{ item.room.floor }}{% endif %}{% endif %}"

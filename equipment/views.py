@@ -42,32 +42,6 @@ class EquipmentSearchAPIView(APIView):
 
         return Response(serializer.data)
 
-
-class RoomLookupAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        q = (request.query_params.get('q') or '').strip()
-        queryset = Room.objects.all().order_by('building', 'floor', 'name')
-
-        if q:
-            filters = Q(name__icontains=q) | Q(building__icontains=q)
-            if q.isdigit():
-                filters |= Q(pk=int(q))
-            queryset = queryset.filter(filters)
-
-        data = []
-        for room in queryset[:10]:
-            data.append({
-                'id': room.id,
-                'label': f'{room.id} · {room.name} · {room.building}, этаж {room.floor}',
-                'name': room.name,
-                'building': room.building,
-                'floor': room.floor,
-            })
-
-        return Response(data)
-
 @require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
 def equipment_list(request):
@@ -128,7 +102,7 @@ def equipment_list(request):
         'total': paginator.count,
         'current_date': current_date.strftime('%d.%m.%Y'),
         'current_time': current_time.strftime('%H:%M'),
-        'room_lookup_url': 'room_lookup_api',
+
     }
     return render(request, 'equipment/equipment.html', context)
 
@@ -185,7 +159,6 @@ def equipment_detail(request, equipment_id):
         'rooms': rooms,
         'eq_types': Equipment.TypeChoices.choices,
         'eq_statuses': Equipment.StatusChoices.choices,
-        'room_lookup_url': 'room_lookup_api',
 
     })
 
@@ -240,7 +213,7 @@ def equipment_edit(request, equipment_id):
             'equipment_types': Equipment.TypeChoices.choices,
             'equipment_statuses': Equipment.StatusChoices.choices,
             'total': qs.count(),
-            'room_lookup_url': 'room_lookup_api',
+
         })
 
     return redirect('equipment_list')

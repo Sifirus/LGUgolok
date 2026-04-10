@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -45,7 +45,30 @@ class RoomSearchAPIView(APIView):
         return Response(serializer.data)
 
 
+class RoomLookupAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        q = (request.query_params.get('q') or '').strip()
+        queryset = Room.objects.all().order_by('building', 'floor', 'name')
+
+        if q:
+            filters = Q(name__icontains=q) | Q(building__icontains=q)
+            if q.isdigit():
+                filters |= Q(pk=int(q))
+            queryset = queryset.filter(filters)
+
+        data = []
+        for room in queryset[:10]:
+            data.append({
+                'id': room.id,
+                'label': f'{room.id} · {room.name} · {room.building}, этаж {room.floor}',
+                'name': room.name,
+                'building': room.building,
+                'floor': room.floor,
+            })
+
+        return Response(data)
 
 
 @require_role_decorator(roles=['operator'])

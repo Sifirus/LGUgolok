@@ -57,7 +57,7 @@
 
         <div class="bk-filter-group bk-filter-group--wide">
             <label class="bk-filter-label">Комната</label>
-            <div class="lookup" data-lookup data-url="{% url room_lookup_url %}">
+            <div class="lookup" data-lookup data-url="{% url 'room_lookup_api' %}">
                 <div class="lookup-control">
                     <input type="text" class="fc lookup-input" name="room_query"
                            placeholder="ID или название комнаты"
@@ -73,7 +73,7 @@
 
         <div class="bk-filter-group bk-filter-group--wide">
             <label class="bk-filter-label">Согласующий</label>
-            <div class="lookup" data-lookup data-url="{% url approver_lookup_url %}">
+            <div class="lookup" data-lookup data-url="{% url 'approver_lookup_api' %}">
                 <div class="lookup-control">
                     <input type="text" class="fc lookup-input" name="approver_query"
                            placeholder="ID, email или имя"

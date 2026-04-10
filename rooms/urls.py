@@ -3,6 +3,7 @@ from rooms import views
 
 urlpatterns = [
     path('api/rooms', views.RoomSearchAPIView.as_view(), name='api_rooms'),
+    path('rooms/lookup/', views.RoomLookupAPIView.as_view(), name='room_lookup_api'),
     path('admin_panel/rooms/', views.rooms_list, name='rooms_list'),
     path('admin_panel/rooms/add/', views.room_add, name='room_add'),
     path('admin_panel/rooms/<int:room_id>/', views.room_detail, name='room_detail'),

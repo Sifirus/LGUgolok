@@ -1,10 +1,13 @@
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import render
 from django.db import transaction
 from rest_framework.generics import ListAPIView, RetrieveAPIView, GenericAPIView
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
 
 from core.decorators import require_role_decorator
 from core.permisions import IsApprover
@@ -12,6 +15,7 @@ from core.permisions import IsApprover
 from booking.models import Booking, Comments
 from approval.models import Approval
 from approval.serializers import BookingApprovalSerializer, BookingApprovalDetailSerializer
+from users.models import User
 
 
 @require_role_decorator(['approver'])
@@ -19,6 +23,44 @@ from approval.serializers import BookingApprovalSerializer, BookingApprovalDetai
 def approval_page(request):
     return render(request, 'approval/pending.html')
 
+class ApproverLookupAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    allowed_methods = ['get']
+
+    def get(self, request):
+        q = (request.query_params.get('q') or '').strip()
+        queryset = User.objects.select_related('profile').all().order_by('email')
+
+        if q:
+            filters = (
+                    Q(email__icontains=q) |
+                    Q(profile__first_name__icontains=q) |
+                    Q(profile__second_name__icontains=q) |
+                    Q(profile__last_name__icontains=q) |
+                    Q(profile__department__icontains=q)
+            )
+            if q.isdigit():
+                filters |= Q(pk=int(q))
+            queryset = queryset.filter(filters)
+
+        data = []
+        for user in queryset[:10]:
+            profile = getattr(user, 'profile', None)
+            full_name = ''
+            if profile:
+                parts = [profile.last_name, profile.first_name, profile.second_name or '']
+                full_name = ' '.join(part for part in parts if part).strip()
+
+            label = f'{user.id} · {user.email}'
+            if full_name:
+                label += f' · {full_name}'
+
+            data.append({
+                'id': user.id,
+                'label': label,
+            })
+
+        return Response(data)
 
 class ApprovalPendingListAPIView(ListAPIView):
     permission_classes = [IsApprover]
