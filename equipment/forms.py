@@ -13,11 +13,23 @@ class EquipmentForm(forms.Form):
     room_query = forms.CharField(required=False, label='Комната')
     room_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
 
+    def __init__(self, *args, **kwargs):
+        # Извлекаем instance из аргументов, если он передан
+        self.instance = kwargs.pop('instance', None)
+        super().__init__(*args, **kwargs)
+
     def clean_inventory_number(self):
         value = self.cleaned_data['inventory_number'].strip()
-        qs = Equipment.objects.filter(inventory_number__iexact=value) #TODO добавить логику для instance
+        qs = Equipment.objects.filter(inventory_number__iexact=value)
+
+        # Если мы редактируем существующий объект (self.instance.pk не None)
+        if self.instance and self.instance.pk:
+            # Исключаем текущий объект из проверки
+            qs = qs.exclude(pk=self.instance.pk)
+
         if qs.exists():
             raise forms.ValidationError('Оборудование с таким инвентарным номером уже существует')
+
         return value
 
     def clean_room_id(self):

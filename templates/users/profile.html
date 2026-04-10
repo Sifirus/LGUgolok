@@ -1,144 +1,223 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load widget_tweaks %}
 
+{% block title %}ЛГУголок - Профиль{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
 {% block content %}
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <!-- Сообщения -->
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
+    <div class="container d-flex align-items-center justify-content-center">
+        <div class="auth-box p-4" style="max-width: 800px; background: var(--surface); border-radius: var(--r); box-shadow: var(--sh)">
+
+            <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.4px; color: var(--text); line-height: 1.1;">
+                Личный кабинет
+            </h1>
+            <p style="color:var(--muted);font-size:14px" class="mb-4">
+                Управление профилем и безопасностью
+            </p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} gap-2 py-2 mb-3">
+                        <i class="bi bi-info-circle"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Аватар и имя -->
+            <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom"
+                 style="border-color: var(--border) !important;">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" class="profile-avatar-img">
+                {% else %}
+                    <div class="profile-avatar-fallback">
+                        {{ avatar_alt|default:"?" }}
+                    </div>
                 {% endif %}
 
-                <!-- Текущий профиль -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Профиль</h5>
+                <div>
+                    <div style="font-size: 18px; font-weight: 700; color: var(--text);">
+                        {{ profile.first_name }} {{ profile.last_name }}
                     </div>
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3 mb-4">
-                            {% if profile.avatar %}
-                                <img src="{{ avatar.url }}" width="60" height="60" class="rounded-circle" alt="Avatar">
-                            {% else %}
-                                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
-                                     style="width: 60px; height: 60px; font-size: 24px;">
-                                    {{ avatar_alt|default:"??" }}
-                                </div>
-                            {% endif %}
-                            <div>
-                                <h5 class="mb-1">{{ profile.first_name }} {{ profile.last_name }}</h5>
-                                <p class="text-muted mb-0">{{ profile.user.email }}</p>
-                            </div>
-                        </div>
-
-                        <!-- Форма редактирования профиля -->
-                        <form method="post" enctype="multipart/form-data" class="mb-4">
-                            {% csrf_token %}
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Имя</label>
-                                    {% render_field profile_form.first_name class="form-control"%}
-                                    {% if profile_form.first_name.errors %}
-                                        <div class="text-danger small mt-1">{{ profile_form.first_name.errors|first }}</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Фамилия</label>
-                                    {% render_field profile_form.last_name class="form-control" %}
-                                    {% if profile_form.last_name.errors %}
-                                        <div class="text-danger small mt-1">{{ profile_form.last_name.errors|first }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Аватар</label>
-
-                                <label class="form-label text-muted small">Загрузить новый:</label>
-                                <input type="file" name="avatar" accept="image/*" class="form-control" id="id_avatar">
-
-                                {% if profile_form.avatar.errors %}
-                                    <div class="text-danger small mt-1">{{ profile_form.avatar.errors|first }}</div>
-                                {% endif %}
-                            </div>
-
-                            {% if profile.avatar %}
-                                <div class="form-check mb-2">
-                                    <input type="checkbox" name="avatar-clear" id="avatar-clear_id"
-                                           class="form-check-input">
-                                    <label for="avatar-clear_id" class="form-check-label text-danger">
-                                        Удалить текущий аватар
-                                    </label>
-                                </div>
-                            {% endif %}
-                            <button type="submit" name="save_profile" class="btn btn-primary">
-                                Сохранить изменения
-                            </button>
-                        </form>
-
-                        <!-- Форма смены почты -->
-                        <hr>
-                        <h6 class="mb-3">Изменить почту</h6>
-
-                        <form method="post">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label class="form-label">Текущая почта</label>
-                                {% render_field email_form.email class="form-control" %}
-                                {% if email_form.email.errors %}
-                                    <div class="text-danger small mt-1">{{ email_form.email.errors|first }}</div>
-                                {% endif %}
-                            </div>
-                            <button type="submit" name="save_email" class="btn btn-primary">
-                                Изменить почту
-                            </button>
-                        </form>
-
-                        <!-- Форма смены пароля -->
-                        <hr>
-                        <h6 class="mb-3">Смена пароля</h6>
-
-                        <form method="post">
-                            {% csrf_token %}
-
-                            <div class="mb-3">
-                                <label class="form-label">Текущий пароль</label>
-                                {% render_field password_form.old_password class="form-control" %}
-                                {% if password_form.old_password.errors %}
-                                    <div class="text-danger small mt-1">{{ password_form.old_password.errors|first }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Новый пароль</label>
-                                {% render_field password_form.new_password1 class="form-control" %}
-                                {% if password_form.new_password1.errors %}
-                                    <div class="text-danger small mt-1">{{ password_form.new_password1.errors|first }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Подтверждение пароля</label>
-                                {% render_field password_form.new_password2 class="form-control" %}
-                                {% if password_form.new_password2.errors %}
-                                    <div class="text-danger small mt-1">{{ password_form.new_password2.errors|first }}</div>
-                                {% endif %}
-                            </div>
-
-                            <button type="submit" name="save_password" class="btn btn-warning">
-                                Изменить пароль
-                            </button>
-                        </form>
-                    </div>
+                    <div style="font-size: 13px; color: var(--muted);">{{ profile.user.email }}</div>
                 </div>
             </div>
+
+            <!-- Форма профиля -->
+            <form method="post" enctype="multipart/form-data" class="mb-4">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">Имя</label>
+                    <div class="position-relative">
+                        <i class="bi bi-person input-icon"></i>
+                        {% render_field profile_form.first_name class="form-control" placeholder="Имя" %}
+                    </div>
+                    {% if profile_form.first_name.errors %}
+                        <div class="text-danger mt-1"
+                             style="font-size:12px">{{ profile_form.first_name.errors|first }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Фамилия</label>
+                    <div class="position-relative">
+                        <i class="bi bi-person input-icon"></i>
+                        {% render_field profile_form.last_name class="form-control" placeholder="Фамилия" %}
+                    </div>
+                    {% if profile_form.last_name.errors %}
+                        <div class="text-danger mt-1"
+                             style="font-size:12px">{{ profile_form.last_name.errors|first }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Отчество</label>
+                    <div class="position-relative">
+                        <i class="bi bi-person input-icon"></i>
+                        {% render_field profile_form.second_name class="form-control" placeholder="Отчество" %}
+                    </div>
+                    {% if profile_form.second_name.errors %}
+                        <div class="text-danger mt-1"
+                             style="font-size:12px">{{ profile_form.second_name.errors|first }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Отдел</label>
+                    <div class="position-relative">
+                        <i class="bi bi-building input-icon"></i>
+                        {% render_field profile_form.department class="form-control" placeholder="Отдел" %}
+                    </div>
+                    {% if profile_form.department.errors %}
+                        <div class="text-danger mt-1"
+                             style="font-size:12px">{{ profile_form.department.errors|first }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Аватар</label>
+                    <div class="position-relative">
+                        <i class="bi bi-image input-icon"></i>
+                        <input type="file" name="avatar" accept="image/*" class="form-control"
+                               style="padding-left: 40px;">
+                    </div>
+                    {% if profile_form.avatar.errors %}
+                        <div class="text-danger mt-1"
+                             style="font-size:12px">{{ profile_form.avatar.errors|first }}</div>
+                    {% endif %}
+                </div>
+
+                {% if profile.avatar %}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="avatar-clear" class="form-check-input" id="avatarClear">
+                            <label for="avatarClear" class="form-check-label text-danger" style="font-size: 13px;">
+                                Удалить аватар
+                            </label>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <button type="submit" name="save_profile" class="btn-login mt-2">
+                    Сохранить профиль
+                </button>
+            </form>
+
+            <div class="divider my-4"></div>
+
+            <!-- Форма email -->
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <div class="position-relative">
+                        <i class="bi bi-envelope input-icon"></i>
+                        {% render_field email_form.email class="form-control" placeholder="email@example.com" %}
+                    </div>
+                    {% if email_form.email.errors %}
+                        <div class="text-danger mt-1" style="font-size:12px">{{ email_form.email.errors|first }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" name="save_email" class="btn-login"
+                        style="background: var(--blue); box-shadow: none;">
+                    Изменить email
+                </button>
+            </form>
+
+            <div class="divider my-4"></div>
+
+            <!-- Форма пароля -->
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">Текущий пароль</label>
+                    <div class="position-relative">
+                        <i class="bi bi-lock input-icon"></i>
+                        {% render_field password_form.old_password class="form-control" id="old_pw" placeholder="Введите текущий пароль" %}
+                        <button type="button" class="pw-toggle" onclick="togglePw('old_pw', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    {% if password_form.old_password.errors %}
+                        <div class="text-danger mt-1"
+                             style="font-size:12px">{{ password_form.old_password.errors|first }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Новый пароль</label>
+                    <div class="position-relative">
+                        <i class="bi bi-key input-icon"></i>
+                        {% render_field password_form.new_password1 class="form-control" id="new_pw1" placeholder="Новый пароль" %}
+                        <button type="button" class="pw-toggle" onclick="togglePw('new_pw1', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    {% if password_form.new_password1.errors %}
+                        <div class="text-danger mt-1"
+                             style="font-size:12px">{{ password_form.new_password1.errors|first }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Подтверждение пароля</label>
+                    <div class="position-relative">
+                        <i class="bi bi-key input-icon"></i>
+                        {% render_field password_form.new_password2 class="form-control" id="new_pw2" placeholder="Подтвердите пароль" %}
+                        <button type="button" class="pw-toggle" onclick="togglePw('new_pw2', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    {% if password_form.new_password2.errors %}
+                        <div class="text-danger mt-1"
+                             style="font-size:12px">{{ password_form.new_password2.errors|first }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" name="save_password" class="btn-sec" style="width: 100%;">
+                    Изменить пароль
+                </button>
+            </form>
+
+            <!-- Подпись как на логине -->
+            <div class="divider my-4"></div>
+            <p class="text-center mt-0 mb-0" style="font-size:13px;color:var(--muted)">
+                <a href="{% url 'password_reset' %}" class="login-link">Забыли пароль?</a>
+            </p>
+
         </div>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/auth.js' %}"></script>
 {% endblock %}

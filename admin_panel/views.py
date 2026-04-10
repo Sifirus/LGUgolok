@@ -110,6 +110,10 @@ def admin_user_detail(request, user_id):
 def admin_user_edit(request, user_id):
     user = get_object_or_404(User.objects.select_related('profile'), pk=user_id)
 
+    if user == request.user:
+        messages.error(request, 'Используйте профиль чтобы редактировать свои данные')
+        return redirect('admin_panel_users')
+
     if request.method == 'POST':
         form = AddUserForm(request.POST, instance=user)  # Reusing AddUserForm with instance for edit
         if form.is_valid():

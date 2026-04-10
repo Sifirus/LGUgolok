@@ -198,10 +198,6 @@
     overflow: hidden;
 }
 
-.table-responsive {
-    overflow-x: auto;
-}
-
 .rooms-table {
     width: 100%;
     border-collapse: collapse;
@@ -347,34 +343,6 @@
     margin: 0;
 }
 
-.ic-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--muted);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.18s ease;
-    text-decoration: none;
-    flex-shrink: 0;
-}
-
-.ic-btn:hover {
-    border-color: var(--blue);
-    color: var(--blue);
-    background: var(--blue-lt);
-}
-
-.ic-btn--danger:hover {
-    border-color: var(--danger);
-    color: var(--danger);
-    background: var(--danger-bg);
-}
-
 .rooms-pager {
     display: flex;
     justify-content: space-between;
@@ -397,185 +365,6 @@
     flex-wrap: wrap;
 }
 
-.pg-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    transition: 0.18s ease;
-}
-
-.pg-btn:hover:not(:disabled) {
-    border-color: var(--blue);
-    color: var(--blue);
-}
-
-.pg-btn.active {
-    background: var(--blue);
-    color: #fff;
-    border-color: var(--blue);
-}
-
-.pg-btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 48px 20px;
-    color: var(--muted);
-}
-
-.empty-state i {
-    font-size: 44px;
-    opacity: 0.35;
-    display: block;
-    margin-bottom: 12px;
-}
-
-.empty-state p {
-    margin: 0;
-    font-size: 14px;
-}
-
-.modal-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.56);
-    backdrop-filter: blur(5px);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.modal-backdrop.open {
-    display: flex;
-}
-
-.modal-card {
-    width: 100%;
-    max-width: 640px;
-    background: var(--surface);
-    border-radius: var(--r);
-    box-shadow: var(--sh-h);
-    overflow: hidden;
-    max-height: 92vh;
-    display: flex;
-    flex-direction: column;
-    animation: modalIn 0.18s ease;
-}
-
-@keyframes modalIn {
-    from {
-        transform: translateY(16px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.modal-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 18px 22px;
-    border-bottom: 1px solid var(--border);
-}
-
-.modal-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--text);
-}
-
-.modal-close {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--muted);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-close:hover {
-    color: var(--text);
-    border-color: var(--blue);
-}
-
-.modal-body {
-    padding: 22px;
-    overflow-y: auto;
-}
-
-.modal-foot {
-    padding: 16px 22px 22px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-.field-row {
-    display: flex;
-    gap: 14px;
-    margin-bottom: 14px;
-}
-
-.field-row > .field-group {
-    flex: 1;
-    margin-bottom: 0;
-}
-
-.field-group {
-    margin-bottom: 14px;
-}
-
-.field-group .fl {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.required {
-    color: var(--danger);
-}
-
-.field-error {
-    margin-top: 6px;
-    font-size: 12px;
-    color: var(--danger);
-    line-height: 1.35;
-}
-
-.fc.is-invalid {
-    border-color: var(--danger);
-    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
-}
-
 @media (max-width: 768px) {
     .rooms-filter-bar {
         flex-direction: column;
@@ -591,10 +380,6 @@
         justify-content: flex-end;
     }
 
-    .field-row {
-        flex-direction: column;
-    }
-
     .rooms-table tbody td,
     .rooms-table thead th {
         padding-left: 12px;
@@ -605,8 +390,90 @@
         justify-content: flex-start;
         flex-wrap: wrap;
     }
-
-    .modal-card {
-        max-width: 100%;
-    }
 }
+
+/* ════════════════════════════════════════════════════
+   rooms.css  —  добавить в конец существующего файла
+   ════════════════════════════════════════════════════ */
+
+/* ── Карточка статуса аудитории ── */
+.room-status-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--sh);
+}
+
+.room-status-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.room-status-icon--active      { background: var(--success-bg); color: var(--success); }
+.room-status-icon--maintenance { background: var(--warn-bg);    color: var(--warn);    }
+.room-status-icon--closed      { background: var(--gray-bg);    color: var(--gray);    }
+
+/* ── Информационная таблица (detail) ── */
+.detail-table { width: 100%; border-collapse: collapse; }
+.detail-table tr { border-bottom: 1px solid var(--border); }
+.detail-table tr:last-child { border-bottom: 0; }
+.detail-table td { padding: 11px 0; font-size: 14px; vertical-align: top; }
+.detail-table td:first-child {
+  width: 160px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.detail-table td:last-child { font-weight: 500; color: var(--text); }
+
+/* ── Список оборудования в аудитории ── */
+.eq-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.eq-inline-row:last-child { border-bottom: 0; }
+
+.eq-type-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--blue-lt);
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.eq-inline-name  { font-size: 14px; font-weight: 600; }
+.eq-inline-model { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.eq-inline-inv   {
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  color: var(--muted);
+  font-family: monospace;
+}
+
+/* ── Тип аудитории бейджи ── */
+.role-badge--lecture    { background: var(--blue-lt);    color: var(--blue);    }
+.role-badge--seminar    { background: var(--info-bg);    color: var(--info);    }
+.role-badge--lab        { background: var(--warn-bg);    color: var(--warn);    }
+.role-badge--conference { background: var(--success-bg); color: var(--success); }
+.role-badge--hall       { background: var(--orange-lt);  color: var(--orange-dk); }

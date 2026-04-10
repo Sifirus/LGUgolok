@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -155,28 +156,26 @@ def room_add(request):
 @require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
 def room_detail(request, room_id):
-    room = get_object_or_404(Room, pk=room_id)
+    room = get_object_or_404(
+        Room.objects.annotate(
+            equipment_count=Count('equipment', distinct=True),
+            bookings_count=Count('bookings', distinct=True),
+        ),
+        pk=room_id
+    )
+    equipment = room.equipment.order_by('type', 'name')
+    recent_bookings = room.bookings.select_related(
+        'initiator'
+    ).order_by('-event_date')[:8]
 
-    # Проверяем занятость сейчас
-    now = timezone.now()
-    try:
-        available_rooms = AvailableRoomsService.get_available_rooms(
-            Room.objects.filter(pk=room.pk),
-            now.date(),
-            now.time(),
-            now.time()
-        )
-        is_available = available_rooms.exists()
-    except ValueError:
-        is_available = True
-
-    context = {
+    return render(request, 'rooms/rooms_detailed.html', {
         'room': room,
-        'is_available': is_available,
-        'current_time': now.time().strftime('%H:%M'),
-        'current_date': now.date().strftime('%d.%m.%Y'),
-    }
-    return render(request, 'rooms/rooms_detailed.html', context)
+        'equipment': equipment,
+        'recent_bookings': recent_bookings,
+        'room_types': Room.RoomType.choices,
+        'room_statuses': Room.RoomStatus.choices,
+        'eq_types': Equipment.TypeChoices.choices,
+    })
 
 
 @require_role_decorator(roles=['operator'])
@@ -187,35 +186,41 @@ def room_edit(request, room_id):
     if request.method == 'POST':
         form = RoomForm(request.POST, instance=room)
         if form.is_valid():
-            cd = form.cleaned_data
-            room.name = cd['name']
-            room.building = cd['building']
-            room.floor = cd['floor']
-            room.capacity = cd['capacity']
-            room.type = cd['type']
-            room.status = cd['status']
-            room.save()
-            messages.success(request, f'Аудитория {room.name} успешно обновлена')
-            return redirect('rooms_list')
+            # Сохраняем форму напрямую (instance=room уже связан, save() обновит поля)
+            form.save()
 
-        # Если форма не валидна, показываем список с ошибками
+            messages.success(request, f'Аудитория {room.name} успешно обновлена')
+
+            # Пытаемся вернуть пользователя туда, откуда он пришел
+            # Если Referer нет, отправляем на список аудиторий
+            return redirect(request.META.get('HTTP_REFERER', 'rooms_list'))
+
+        # Если форма НЕВАЛИДНА (ошибки валидации)
+        # Нужно подготовить данные для рендера списка, чтобы модалка открылась с ошибками
         qs = Room.objects.all().order_by('building', 'floor', 'name')
         rooms_data = []
         for r in qs:
+            # Логика определения доступности (заглушка или вызов сервиса)
             rooms_data.append({'room': r, 'is_available': True})
 
-        rooms = Paginator(rooms_data, 10).get_page(1)
+        paginator = Paginator(rooms_data, 10)
+        rooms_page = paginator.get_page(1)
+
         return render(request, 'rooms/rooms.html', {
-            'rooms': rooms,
+            'rooms': rooms_page,
             'add_form': RoomForm(),
-            'edit_form': form,
+            'edit_form': form,  # Передаем форму с ошибками
             'edit_room_id': room_id,
             'open_edit_modal': True,
             'room_types': Room.RoomType.choices,
             'room_statuses': Room.RoomStatus.choices,
             'total': qs.count(),
+            # Добавьте контекст для даты/времени, если они используются в шаблоне
+            'current_date': timezone.now().strftime('%d.%m.%Y'),
+            'current_time': timezone.now().strftime('%H:%M'),
         })
 
+    # Если это GET запрос, просто уходим на список
     return redirect('rooms_list')
 
 

@@ -171,16 +171,23 @@ def equipment_add(request):
 @require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
 def equipment_detail(request, equipment_id):
-    item = get_object_or_404(Equipment.objects.select_related('room'), pk=equipment_id)
-    now = timezone.now()
+    from rooms.models import Room
+    equip = get_object_or_404(Equipment.objects.select_related('room'), pk=equipment_id)
+    recent_bookings = equip.bookings.select_related(
+        'initiator', 'room'
+    ).order_by('-event_date')[:8]
 
-    context = {
-        'item': item,
-        'current_date': now.date().strftime('%d.%m.%Y'),
-        'current_time': now.time().strftime('%H:%M'),
-        'is_in_warehouse': item.room is None,
-    }
-    return render(request, 'equipment/equipment_detail.html', context)
+    rooms = Room.objects.filter(status='active').order_by('building', 'name')
+
+    return render(request, 'equipment/equipment_detail.html', {
+        'equip': equip,
+        'recent_bookings': recent_bookings,
+        'rooms': rooms,
+        'eq_types': Equipment.TypeChoices.choices,
+        'eq_statuses': Equipment.StatusChoices.choices,
+        'room_lookup_url': 'room_lookup_api',
+
+    })
 
 
 @require_role_decorator(roles=['operator'])
@@ -189,35 +196,51 @@ def equipment_edit(request, equipment_id):
     item = get_object_or_404(Equipment, pk=equipment_id)
 
     if request.method == 'POST':
-        form = EquipmentForm(request.POST)
-        form.instance_id = item.pk
+        # ВАЖНО: передаем instance=item, чтобы отработала логика clean_inventory_number
+        form = EquipmentForm(request.POST, instance=item)
 
         if form.is_valid():
             cd = form.cleaned_data
+            # Обновляем поля объекта из очищенных данных формы
             item.inventory_number = cd['inventory_number']
             item.name = cd['name']
             item.model = cd['model']
             item.type = cd['type']
             item.status = cd['status']
             item.is_stationary = cd['is_stationary']
-            item.room_id = cd['room_id'] or None
+            item.room_id = cd['room_id']  # Если там None, Django запишет NULL
             item.save()
-            messages.success(request, 'Оборудование успешно обновлено')
-            return redirect('equipment_list')
 
+            messages.success(request, f'Оборудование "{item.name}" успешно обновлено')
+            # Перенаправляем на страницу, с которой пришли (Referer) или на детальную
+            return redirect(request.META.get('HTTP_REFERER', 'equipment_list'))
+
+        # Если форма НЕВАЛИДНА (например, номер уже занят кем-то другим)
+        # Собираем данные для рендера списка, чтобы модалка открылась поверх таблицы
         qs = Equipment.objects.select_related('room').all().order_by('type', 'name', 'inventory_number')
-        equipment_data = [{'equipment': row, 'is_available': True} for row in qs]
-        page = Paginator(equipment_data, 10).get_page(1)
 
-        return render(request, 'equipment/equipment_list.html', {
+        # Используем твой метод определения доступности (как в equipment_list)
+        now = timezone.now()
+        equipment_with_status = []
+        for row in qs:
+            equipment_with_status.append({
+                'equipment': row,
+                'is_available': True  # Или вызови здесь AvailableEquipmentService, если критично
+            })
+
+        paginator = Paginator(equipment_with_status, 10)
+        page = paginator.get_page(1)
+
+        return render(request, 'equipment/equipment.html', {
             'equipment': page,
-            'add_form': EquipmentForm(),
-            'edit_form': form,
+            'add_form': EquipmentForm(),  # Пустая форма для кнопки "Добавить"
+            'edit_form': form,  # Форма с ошибками
             'edit_equipment_id': item.pk,
-            'open_edit_modal': True,
+            'open_edit_modal': True,  # Флаг для JS, чтобы модалка не закрылась
             'equipment_types': Equipment.TypeChoices.choices,
             'equipment_statuses': Equipment.StatusChoices.choices,
             'total': qs.count(),
+            'room_lookup_url': 'room_lookup_api',
         })
 
     return redirect('equipment_list')

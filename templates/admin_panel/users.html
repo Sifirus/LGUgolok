@@ -288,8 +288,7 @@
                         </div>
                         <div class="field-group">
                             <label class="fl">Подразделение</label>
-                            <input type="text" name="department" class="fc"
-                                   value="{{ add_form.department.value|default:'' }}">
+                            <input type="text" name="department" class="fc" value="{{ add_form.department.value|default:'' }}">
                         </div>
                     </div>
                     <div class="info-message">
@@ -366,9 +365,7 @@
                             <div class="field-group">
                                 <label class="fl">Подразделение</label>
                                 <input type="text" name="department" class="fc"
-                                       value="
-
-                                               {% if open_edit_modal and edit_user_id == u.id %}{{ edit_form.department.value|default:u.profile.department }}{% else %}{{ u.profile.department|default:'' }}{% endif %}">
+                                       value="{% if open_edit_modal and edit_user_id == u.id %}{{ edit_form.department.value|default:u.profile.department }}{% else %}{{ u.profile.department|default:'' }}{% endif %}">
                             </div>
                         </div>
                     </div>

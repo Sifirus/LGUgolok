@@ -8,154 +8,152 @@
 
 {% block content %}
     <div class="page-wrap">
-        <div class="pc">
-            <h1 style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:20px">Новая заявка на
-                бронирование</h1>
+        <h1 style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:20px">Новая заявка на
+            бронирование</h1>
 
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-warning">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-warning">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
 
-            <form method="post" id="booking-form">
-                {% csrf_token %}
+        <form method="post" id="booking-form">
+            {% csrf_token %}
 
-                <div class="row g-3">
-                    <div class="col-lg-8">
-                        <div class="form-card">
-                            <h3><i class="bi bi-calendar3-event"></i>Параметры мероприятия</h3>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="fl">Тип мероприятия <span style="color:var(--danger)">*</span></label>
-                                    {% render_field form.event_type class="fc" %}
-                                    {% for error in form.event_type.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="fl">Количество участников <span
-                                            style="color:var(--danger)">*</span></label>
-                                    {% render_field form.participants class="fc" id="id_participants" %}
-                                    {% for error in form.participants.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="fl">Дата <span style="color:var(--danger)">*</span></label>
-                                    {% render_field form.event_date class="fc" id="id_event_date" type="date" %}
-                                    {% for error in form.event_date.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="fl">Начало <span style="color:var(--danger)">*</span></label>
-                                    {% render_field form.event_start_time class="fc" id="id_event_start_time" type="time" %}
-                                    {% for error in form.event_start_time.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="fl">Конец <span style="color:var(--danger)">*</span></label>
-                                    {% render_field form.event_end_time class="fc" id="id_event_end_time" type="time" %}
-                                    {% for error in form.event_end_time.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <div class="col-12">
-                                    <label class="fl">Комментарий</label>
-                                    {% render_field form.comment class="fc" rows="2" %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-card">
-                            <h3><i class="bi bi-building"></i>Выбор аудитории</h3>
-                            <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-                                Показаны аудитории по выбранным параметрам. Выберите нужную аудиторию из списка ниже.
-                            </p>
-
-                            {% render_field form.room id="id_room" style="display:none" %}
-                            {% for error in form.room.errors %}
-                                <div class="text-danger small mb-2">{{ error }}</div>
-                            {% endfor %}
-
-                            <div class="row g-2 mb-3">
-                                <div class="col-sm-5">
-                                    <label class="fl">Поиск</label>
-                                    <div class="sw">
-                                        <i class="bi bi-search si"></i>
-                                        <input type="text" id="id_room_search_query" class="fc"
-                                               placeholder="Поиск по названию...">
-                                    </div>
-                                </div>
-                                <div class="col-sm-4">
-                                    <label class="fl">Тип аудитории</label>
-                                    <select id="id_type" class="fc">
-                                        <option value="">Все типы</option>
-                                        {% for value, label in room_types %}
-                                            <option value="{{ value }}">{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-sm-3 d-flex align-items-end">
-                                    <button type="button" class="btn-blue w-100" onclick="loadRooms(this)">Подобрать
-                                    </button>
-                                </div>
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <div class="form-card">
+                        <h3><i class="bi bi-calendar3-event"></i>Параметры мероприятия</h3>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="fl">Тип мероприятия <span style="color:var(--danger)">*</span></label>
+                                {% render_field form.event_type class="fc" %}
+                                {% for error in form.event_type.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
                             </div>
 
-                            <div id="rooms-list" class="room-results"></div>
-                        </div>
-
-                        <div class="form-card">
-                            <h3><i class="bi bi-laptop"></i>Оборудование <span
-                                    style="font-size:12px;font-weight:400;color:var(--muted)">- необязательно</span>
-                            </h3>
-                            <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-                                Показано только доступное оборудование на выбранный промежуток времени.
-                            </p>
-
-                            <div class="sw mb-3" style="max-width:340px">
-                                <i class="bi bi-search si"></i>
-                                <input type="text" id="id_equipment_search_query" class="fc"
-                                       placeholder="Поиск по названию..." oninput="debounceEquipmentSearch()">
+                            <div class="col-md-6">
+                                <label class="fl">Количество участников <span
+                                        style="color:var(--danger)">*</span></label>
+                                {% render_field form.participants class="fc" id="id_participants" %}
+                                {% for error in form.participants.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
                             </div>
 
-                            <div id="equipment-list"></div>
+                            <div class="col-md-4">
+                                <label class="fl">Дата <span style="color:var(--danger)">*</span></label>
+                                {% render_field form.event_date class="fc" id="id_event_date" type="date" %}
+                                {% for error in form.event_date.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="fl">Начало <span style="color:var(--danger)">*</span></label>
+                                {% render_field form.event_start_time class="fc" id="id_event_start_time" type="time" %}
+                                {% for error in form.event_start_time.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="fl">Конец <span style="color:var(--danger)">*</span></label>
+                                {% render_field form.event_end_time class="fc" id="id_event_end_time" type="time" %}
+                                {% for error in form.event_end_time.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="fl">Комментарий</label>
+                                {% render_field form.comment class="fc" rows="2" %}
+                            </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-4">
-                        <div class="form-card" style="position:sticky;top:76px">
-                            <h3 style="margin-bottom:16px"><i class="bi bi-clipboard-check"></i>Сводка заявки</h3>
+                    <div class="form-card">
+                        <h3><i class="bi bi-building"></i>Выбор аудитории</h3>
+                        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+                            Показаны аудитории по выбранным параметрам. Выберите нужную аудиторию из списка ниже.
+                        </p>
 
-                            <div style="margin-bottom:16px">
-                                <div class="sum-row"><span>Тип</span><span id="sum-type">-</span></div>
-                                <div class="sum-row"><span>Дата</span><span id="sum-date">-</span></div>
-                                <div class="sum-row"><span>Время</span><span id="sum-time">-</span></div>
-                                <div class="sum-row"><span>Участников</span><span id="sum-participants">-</span></div>
-                                <div class="sum-row"><span>Аудитория</span><span id="sum-room"
-                                                                                 style="color:var(--blue)">-</span>
+                        {% render_field form.room id="id_room" style="display:none" %}
+                        {% for error in form.room.errors %}
+                            <div class="text-danger small mb-2">{{ error }}</div>
+                        {% endfor %}
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-sm-5">
+                                <label class="fl">Поиск</label>
+                                <div class="sw">
+                                    <i class="bi bi-search si"></i>
+                                    <input type="text" id="id_room_search_query" class="fc"
+                                           placeholder="Поиск по названию...">
                                 </div>
-                                <div class="sum-row"><span>Оборудование</span><span id="sum-equipment">-</span></div>
                             </div>
-
-                            <div class="d-flex flex-column gap-2">
-                                <button type="submit" class="btn-main">Создать заявку</button>
-                                <a href="{% url 'index' %}" class="btn-sec">Отмена</a>
+                            <div class="col-sm-4">
+                                <label class="fl">Тип аудитории</label>
+                                <select id="id_type" class="fc">
+                                    <option value="">Все типы</option>
+                                    {% for value, label in room_types %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
-
-                            {{ form.non_field_errors }}
+                            <div class="col-sm-3 d-flex align-items-end">
+                                <button type="button" class="btn-blue w-100" onclick="loadRooms(this)">Подобрать
+                                </button>
+                            </div>
                         </div>
+
+                        <div id="rooms-list" class="room-results"></div>
+                    </div>
+
+                    <div class="form-card">
+                        <h3><i class="bi bi-laptop"></i>Оборудование <span
+                                style="font-size:12px;font-weight:400;color:var(--muted)">- необязательно</span>
+                        </h3>
+                        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+                            Показано только доступное оборудование на выбранный промежуток времени.
+                        </p>
+
+                        <div class="sw mb-3" style="max-width:340px">
+                            <i class="bi bi-search si"></i>
+                            <input type="text" id="id_equipment_search_query" class="fc"
+                                   placeholder="Поиск по названию..." oninput="debounceEquipmentSearch()">
+                        </div>
+
+                        <div id="equipment-list"></div>
                     </div>
                 </div>
-            </form>
-        </div>
+
+                <div class="col-lg-4">
+                    <div class="form-card" style="position:sticky;top:76px">
+                        <h3 style="margin-bottom:16px"><i class="bi bi-clipboard-check"></i>Сводка заявки</h3>
+
+                        <div style="margin-bottom:16px">
+                            <div class="sum-row"><span>Тип</span><span id="sum-type">-</span></div>
+                            <div class="sum-row"><span>Дата</span><span id="sum-date">-</span></div>
+                            <div class="sum-row"><span>Время</span><span id="sum-time">-</span></div>
+                            <div class="sum-row"><span>Участников</span><span id="sum-participants">-</span></div>
+                            <div class="sum-row"><span>Аудитория</span><span id="sum-room"
+                                                                             style="color:var(--blue)">-</span>
+                            </div>
+                            <div class="sum-row"><span>Оборудование</span><span id="sum-equipment">-</span></div>
+                        </div>
+
+                        <div class="d-flex flex-column gap-2">
+                            <button type="submit" class="btn-main">Создать заявку</button>
+                            <a href="{% url 'index' %}" class="btn-sec">Отмена</a>
+                        </div>
+
+                        {{ form.non_field_errors }}
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
 {% endblock %}
 

@@ -44,7 +44,7 @@ async function fetchApprovalList(listEl) {
             <div class="appr-title">${b.event_type || '—'}</div>
             <div class="appr-meta">
                 <span><i class="bi bi-person"></i>${initiatorName}</span>
-                <span><i class="bi bi-calendar3"></i>${formatDate(b.event_date)}</span>
+                <span><i class="bi bi-calendar3"></i>${b.event_date}</span>
                 <span><i class="bi bi-clock"></i>${(b.event_start_time || '').substring(0, 5)}–${(b.event_end_time || '').substring(0, 5)}</span>
             </div>
         </div>
@@ -92,7 +92,7 @@ async function selectBooking(bookingId) {
         const equipmentHtml = (data.equipment_list || []).map(eq =>
             `<span class="equipment-tag"><i class="bi bi-laptop"></i>${escapeHtml(eq)}</span>`
         ).join('') || '-';
-        const submittedAt = formatDateTime(data.created_at);
+        const submittedAt = formatDate(data.created_at);
 
         panel.innerHTML = `
 <div class="d-flex justify-content-between align-items-start mb-4">
@@ -113,7 +113,7 @@ async function selectBooking(bookingId) {
     <div style="padding:4px 16px">
         <div class="detail-row"><span class="detail-lbl">Инициатор</span><span class="detail-val">${initiatorName}</span></div>
         <div class="detail-row"><span class="detail-lbl">Тип</span><span class="detail-val">${data.event_type || '—'}</span></div>
-        <div class="detail-row"><span class="detail-lbl">Дата</span><span class="detail-val">${formatDate(data.event_date)}</span></div>
+        <div class="detail-row"><span class="detail-lbl">Дата</span><span class="detail-val">${data.event_date}</span></div>
         <div class="detail-row"><span class="detail-lbl">Время</span><span class="detail-val">${(data.event_start_time || '').substring(0, 5)}–${(data.event_end_time || '').substring(0, 5)}</span></div>
         <div class="detail-row"><span class="detail-lbl">Аудитория</span><span class="detail-val" style="color:var(--blue)">${data.room_name || '—'}</span></div>
         <div class="detail-row"><span class="detail-lbl">Участников</span><span class="detail-val">${data.participants} чел.</span></div>

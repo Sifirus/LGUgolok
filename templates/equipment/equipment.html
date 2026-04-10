@@ -111,7 +111,7 @@
                 <tbody>
                 {% for row in equipment %}
                     {% with item=row.equipment %}
-                        <tr>
+                        <tr onclick="window.location.href='{% url 'equipment_detail' item.id %}'" style="cursor: pointer">
                             <td class="eq-mono">{{ item.inventory_number }}</td>
                             <td>
                                 <div class="eq-name">{{ item.name }}</div>
@@ -145,13 +145,10 @@
                             </td>
                             <td>
                                 <div class="eq-actions">
-                                    <a href="{% url 'equipment_detail' item.id %}" class="ic-btn" title="Просмотр">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
                                     <button type="button"
                                             class="ic-btn"
                                             title="Редактировать"
-                                            onclick="openEquipmentEdit(this)"
+                                            onclick="event.stopPropagation();openEquipmentEdit(this)"
                                             data-equipment-id="{{ item.id }}"
                                             data-action="{% url 'equipment_edit' item.id %}"
                                             data-inventory-number="{{ item.inventory_number|escape }}"
@@ -167,7 +164,7 @@
                                     <form method="post" action="{% url 'equipment_delete' item.id %}" id="delete-form-{{ item.id }}" style="margin:0">
                                         {% csrf_token %}
                                         <button type="button" class="ic-btn ic-btn--danger" title="Удалить"
-                                                onclick="confirmEquipmentDelete({{ item.id }}, '{{ item.name|escapejs }}')">
+                                                onclick="event.stopPropagation();confirmEquipmentDelete({{ item.id }}, '{{ item.name|escapejs }}')">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -217,16 +214,16 @@
         {% endif %}
     </div>
 
-    <div class="modal-backdrop {% if open_add_modal %}open{% endif %}" id="modal-add">
-        <div class="modal-card">
-            <div class="modal-head">
-                <div class="modal-title"><i class="bi bi-plus-circle"></i>Новое оборудование</div>
-                <button type="button" class="modal-close" onclick="closeModal('modal-add')"><i class="bi bi-x-lg"></i></button>
+    <div class="modal-lgu-backdrop {% if open_add_modal %}open{% endif %}" id="modal-add">
+        <div class="modal-lgu">
+            <div class="modal-lgu-head">
+                <span class="modal-lgu-title"><i class="bi bi-plus-circle"></i>Новое оборудование</span>
+                <button type="button" class="btn-sec" onclick="closeModal('modal-add')"><i class="bi bi-x-lg"></i></button>
             </div>
 
             <form method="post" action="{% url 'equipment_add' %}">
                 {% csrf_token %}
-                <div class="modal-body">
+                <div class="modal-lgu-body">
                     <div class="field-row">
                         <div class="field-group">
                             <label class="fl">Инвентарный номер <span class="required">*</span></label>
@@ -290,7 +287,7 @@
                     </div>
                 </div>
 
-                <div class="modal-foot">
+                <div class="modal-lgu-foot">
                     <button type="button" class="btn-sec" onclick="closeModal('modal-add')">Отмена</button>
                     <button type="submit" class="btn-main">Создать</button>
                 </div>
@@ -300,16 +297,16 @@
 
     {% for row in equipment %}
         {% with item=row.equipment %}
-            <div class="modal-backdrop {% if open_edit_modal and edit_equipment_id == item.id %}open{% endif %}" id="modal-edit-{{ item.id }}">
-                <div class="modal-card">
-                    <div class="modal-head">
-                        <div class="modal-title"><i class="bi bi-pencil-square"></i>Редактирование оборудования</div>
-                        <button type="button" class="modal-close" onclick="closeModal('modal-edit-{{ item.id }}')"><i class="bi bi-x-lg"></i></button>
+            <div class="modal-lgu-backdrop {% if open_edit_modal and edit_equipment_id == item.id %}open{% endif %}" id="modal-edit-{{ item.id }}">
+                <div class="modal-lgu">
+                    <div class="modal-lgu-head">
+                        <span class="modal-lgu-title"><i class="bi bi-pencil-square"></i>Редактирование оборудования</span>
+                        <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ item.id }}')"><i class="bi bi-x-lg"></i></button>
                     </div>
 
                     <form method="post" action="{% url 'equipment_edit' item.id %}">
                         {% csrf_token %}
-                        <div class="modal-body">
+                        <div class="modal-lgu-body">
                             <div class="field-row">
                                 <div class="field-group">
                                     <label class="fl">Инвентарный номер <span class="required">*</span></label>
@@ -404,7 +401,7 @@
                             </div>
                         </div>
 
-                        <div class="modal-foot">
+                        <div class="modal-lgu-foot">
                             <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ item.id }}')">Отмена</button>
                             <button type="submit" class="btn-main">Сохранить</button>
                         </div>

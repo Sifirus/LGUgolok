@@ -11,7 +11,7 @@
     <div class="bk-page-header">
         <div>
             <div class="bk-page-title">{{ page_title }}</div>
-            <p class="bk-page-subtitle">Всего: {{ total }} · Дата: {{ current_date }} · Время: {{ current_time }}</p>
+            <p class="bk-page-subtitle">Всего: {{ total }} - Дата: {{ current_date }} - Время: {{ current_time }}</p>
         </div>
     </div>
 
@@ -92,7 +92,8 @@
             <select name="approval_decision" class="fc">
                 <option value="">Все</option>
                 {% for val, label in approval_choices %}
-                    <option value="{{ val }}" {% if filter_approval_decision == val %}selected{% endif %}>{{ label }}</option>
+                    <option value="{{ val }}"
+                            {% if filter_approval_decision == val %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -109,7 +110,8 @@
                 <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Инициатор</th>
+                    {% if user.role != 'initiator' %}
+                        <th>Инициатор</th>{% endif %}
                     <th>Комната</th>
                     <th>Дата и время</th>
                     <th>Тип</th>
@@ -120,19 +122,21 @@
                 </thead>
                 <tbody>
                 {% for booking in bookings %}
-                    <tr>
+                    <tr onclick="window.location.href='{% url 'booking_detail' booking.id %}'" style="cursor: pointer;">
                         <td class="bk-mono">#{{ booking.id }}</td>
-
-                        <td>
-                            <div class="bk-title">
-                                {{ booking.initiator.profile.last_name }} {{ booking.initiator.profile.first_name }}
-                                {% if booking.initiator.profile.second_name %}{{ booking.initiator.profile.second_name }}{% endif %}
-                            </div>
-                            <div class="bk-sub">{{ booking.initiator.email }}</div>
-                            {% if booking.initiator.profile.department %}
-                                <div class="bk-sub">{{ booking.initiator.profile.department }}</div>
-                            {% endif %}
-                        </td>
+                        {% if user.role != 'initiator' %}
+                            <td>
+                                <div class="bk-title">
+                                    {{ booking.initiator.profile.last_name }} {{ booking.initiator.profile.first_name }}
+                                    {% if booking.initiator.profile.second_name %}
+                                        {{ booking.initiator.profile.second_name }}{% endif %}
+                                </div>
+                                <div class="bk-sub">{{ booking.initiator.email }}</div>
+                                {% if booking.initiator.profile.department %}
+                                    <div class="bk-sub">{{ booking.initiator.profile.department }}</div>
+                                {% endif %}
+                            </td>
+                        {% endif %}
 
                         <td>
                             <div class="bk-title">{{ booking.room.name }}</div>
@@ -141,7 +145,8 @@
 
                         <td>
                             <div class="bk-title">{{ booking.event_date|date:"d.m.Y" }}</div>
-                            <div class="bk-sub">{{ booking.event_start_time|time:"H:i" }} - {{ booking.event_end_time|time:"H:i" }}</div>
+                            <div class="bk-sub">{{ booking.event_start_time|time:"H:i" }}
+                                - {{ booking.event_end_time|time:"H:i" }}</div>
                         </td>
 
                         <td>
@@ -161,11 +166,12 @@
                         </td>
 
                         <td>
-                            {% if booking.has_approval %}
+                            {% if booking.approval %}
                                 <div class="bk-title">
                                     {{ booking.approval.approver.profile.last_name }}
                                     {{ booking.approval.approver.profile.first_name }}
-                                    {% if booking.approval.approver.profile.second_name %}{{ booking.approval.approver.profile.second_name }}{% endif %}
+                                    {% if booking.approval.approver.profile.second_name %}
+                                        {{ booking.approval.approver.profile.second_name }}{% endif %}
                                 </div>
                                 <div class="bk-sub">
                                     {{ booking.approval.get_decision_display }}
@@ -212,7 +218,9 @@
                 <span class="pager-i">Показано {{ bookings.start_index }}–{{ bookings.end_index }} из {{ total }}</span>
                 <div class="pagination-buttons">
                     {% if bookings.has_previous %}
-                        <a href="?page={{ bookings.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="pg-btn">
+                        <a href="?page=
+                                {{ bookings.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                           class="pg-btn">
                             <i class="bi bi-chevron-left"></i>
                         </a>
                     {% else %}
@@ -223,12 +231,15 @@
                         {% if bookings.number == num %}
                             <button class="pg-btn active">{{ num }}</button>
                         {% elif num >= bookings.number|add:"-2" and num <= bookings.number|add:"2" %}
-                            <a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}" class="pg-btn">{{ num }}</a>
+                            <a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}"
+                               class="pg-btn">{{ num }}</a>
                         {% endif %}
                     {% endfor %}
 
                     {% if bookings.has_next %}
-                        <a href="?page={{ bookings.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="pg-btn">
+                        <a href="?page=
+                                {{ bookings.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                           class="pg-btn">
                             <i class="bi bi-chevron-right"></i>
                         </a>
                     {% else %}

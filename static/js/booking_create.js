@@ -1,4 +1,4 @@
-const selectedEquipmentMeta = new Map(); //TODO на бэке есть момент где оно выдаётся
+const selectedEquipmentMeta = new Map();
 
 function buildEquipmentSummary(eq) {
     const typeLabel = (eq.type_label || eq.type || '').trim();

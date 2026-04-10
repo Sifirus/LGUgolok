@@ -91,10 +91,6 @@
     overflow: hidden;
 }
 
-.table-responsive {
-    overflow-x: auto;
-}
-
 .bk-table {
     width: 100%;
     border-collapse: collapse;
@@ -299,79 +295,6 @@
     padding: 12px 14px;
     color: var(--muted);
     font-size: 13px;
-}
-
-.pager {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 18px;
-    border-top: 1px solid var(--border);
-    flex-wrap: wrap;
-}
-
-.pager-i {
-    font-size: 13px;
-    color: var(--muted);
-}
-
-.pagination-buttons {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.pg-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    transition: 0.18s ease;
-}
-
-.pg-btn:hover:not(:disabled) {
-    border-color: var(--blue);
-    color: var(--blue);
-}
-
-.pg-btn.active {
-    background: var(--blue);
-    color: #fff;
-    border-color: var(--blue);
-}
-
-.pg-btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 48px 20px;
-    color: var(--muted);
-}
-
-.empty-state i {
-    font-size: 44px;
-    opacity: 0.35;
-    display: block;
-    margin-bottom: 12px;
-}
-
-.empty-state p {
-    margin: 0;
-    font-size: 14px;
 }
 
 @media (max-width: 768px) {

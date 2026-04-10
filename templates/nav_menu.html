@@ -11,44 +11,52 @@
 
     <div class="topbar-links">
         <a href="{% url 'index' %}" class="top-link">Главная</a>
-        <a href="{% url 'booking_create' %}" class="top-link">Создать заявку</a>
-        <a href="{% url 'approval' %}" class="top-link">Согласования</a>
-        <a href="{% url 'booking_list' %}">Заявки</a>
 
-        {# TODO: разделение по ролям #}
-        <a href="{% url 'admin_panel_users' %}" class="top-link">Пользователи</a>
-        <a href="/admin/" class="top-link">Админка</a>
-        <a href="{% url 'rooms_list' %}">Аудитории</a>
-        <a href="{% url 'equipment_list' %}">Оборудование</a>
-        <a href="{% url 'reports' %}">Отчёты</a>
+        {% if user.role == 'initiator' %}
+            <a href="{% url 'booking_create' %}" class="top-link">Создать заявку</a>
+        {% endif %}
+
+        <a href="{% url 'booking_list' %}" class="top-link">Заявки</a>
+
+        {% if user.role == 'approver' %}
+            <a href="{% url 'approval' %}" class="top-link">Согласования</a>
+            <a href="{% url 'reports' %}" class="top-link">Отчёты</a>
+        {% endif %}
+
+        {% if user.role == 'operator' %}
+            <a href="{% url 'admin_panel_users' %}" class="top-link">Пользователи</a>
+            <a href="{% url 'rooms_list' %}" class="top-link">Аудитории</a>
+            <a href="{% url 'equipment_list' %}" class="top-link">Оборудование</a>
+            <a href="{% url 'reports' %}" class="top-link">Отчёты</a>
+        {% endif %}
     </div>
 
     <div class="topbar-right">
-        <div class="notif-bell-wrap">
-          <a href="{% url 'notification_list' %}" class="nav-icon-btn" title="Уведомления">
-            <i class="bi bi-bell"></i>
-            <span id="notif-dot" class="nav-dot"
-                  style="{% if not unread_notifications_count %}display:none{% endif %}"></span>
-          </a>
-          <span id="notif-bell-count"
-                style="{% if not unread_notifications_count %}display:none{% endif %}">
-            {% if unread_notifications_count %}{{ unread_notifications_count }}{% endif %}
-          </span>
-        </div>
+        {% if user.role != 'operator' %}
+            <div class="notif-bell-wrap">
+                <a href="{% url 'notification_list' %}" class="nav-icon-btn" title="Уведомления">
+                    <i class="bi bi-bell"></i>
+                    {% if unread_notifications_count %}
+                        <span class="notif-dot"></span>
+                        <span class="notif-bell-count">{{ unread_notifications_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        {% endif %}
 
         <a href="{% url 'profile' %}" class="profile-link" title="Профиль">
             {% if avatar %}
                 <img src="{{ avatar.url }}" class="profile-avatar" alt="Avatar">
             {% else %}
                 <div class="profile-avatar profile-fallback">
-                    {{ avatar_alt|default:"U" }}
+                    {{ avatar_alt|default:"??" }}
                 </div>
             {% endif %}
         </a>
 
         <form method="post" action="{% url 'logout' %}" class="m-0">
             {% csrf_token %}
-            <button type="submit" class="btn-logout">Выйти</button>
+            <button type="submit" class="btn-logout"><i class="bi bi-box-arrow-right"></i></button>
         </form>
 
         <button type="button" class="burger" onclick="toggleTopnav()" aria-label="Меню">
@@ -58,12 +66,24 @@
 
     <div class="topnav-mobile" id="topnavMobile">
         <a href="{% url 'index' %}" class="topnav-item">Главная</a>
-        <a href="{% url 'booking_create' %}" class="topnav-item">Создать заявку</a>
-        <a href="{% url 'approval' %}" class="topnav-item">Согласования</a>
 
-        {# TODO: разделение по ролям #}
-        <a href="{% url 'admin_panel_users' %}" class="topnav-item">Пользователи</a>
-        <a href="/admin/" class="topnav-item">Админка</a>
+        {% if user.role == 'initiator' %}
+            <a href="{% url 'booking_create' %}" class="topnav-item">Создать заявку</a>
+        {% endif %}
+
+        <a href="{% url 'booking_list' %}" class="topnav-item">Заявки</a>
+
+        {% if user.role == 'approver' %}
+            <a href="{% url 'approval' %}" class="topnav-item">Согласования</a>
+            <a href="{% url 'reports' %}" class="topnav-item">Отчёты</a>
+        {% endif %}
+
+        {% if user.role == 'operator' %}
+            <a href="{% url 'admin_panel_users' %}" class="topnav-item">Пользователи</a>
+            <a href="{% url 'rooms_list' %}" class="topnav-item">Аудитории</a>
+            <a href="{% url 'equipment_list' %}" class="topnav-item">Оборудование</a>
+            <a href="{% url 'reports' %}" class="topnav-item">Отчёты</a>
+        {% endif %}
     </div>
 </nav>
 <div class="topnav-overlay" id="topnavOverlay" onclick="closeTopnav()"></div>

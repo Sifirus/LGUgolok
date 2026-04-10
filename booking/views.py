@@ -258,13 +258,10 @@ from core.decorators import require_role_decorator
 def booking_can_view(user, booking: Booking) -> bool:
     role = getattr(user, 'role', None)
 
-    if role == 'operator':
+    if role in ['operator', 'approver']:
         return True
 
     if role == 'initiator' and booking.initiator_id == user.id:
-        return True
-
-    if role == 'approver' and booking.approval and booking.approval.approver_id == user.id:
         return True
 
     return False
@@ -272,11 +269,12 @@ def booking_can_view(user, booking: Booking) -> bool:
 
 def booking_can_comment(user, booking: Booking) -> bool:
     role = getattr(user, 'role', None)
+    has_approval = hasattr(booking, 'approval')
 
     if role == 'initiator' and booking.initiator_id == user.id:
         return True
 
-    if role == 'approver' and booking.approval and booking.approval.approver_id == user.id:
+    if role == 'approver' and has_approval and booking.approval.approver_id == user.id:
         return True
 
     return False
@@ -285,7 +283,7 @@ def booking_can_comment(user, booking: Booking) -> bool:
 def booking_can_cancel(user, booking: Booking) -> bool:
     role = getattr(user, 'role', None)
 
-    if booking.status in (Booking.Status.CANCELED, Booking.Status.COMPLETED):
+    if booking.status in (Booking.Status.CANCELED, Booking.Status.COMPLETED, Booking.Status.REJECTED):
         return False
 
     if role == 'operator':
