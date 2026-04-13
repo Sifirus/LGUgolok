@@ -10,7 +10,6 @@ REPORT_STATUSES = [
 
 
 def _hours_between(t_start, t_end):
-    """Количество часов между двумя time-объектами."""
     dt_start = datetime.combine(date.today(), t_start)
     dt_end   = datetime.combine(date.today(), t_end)
     delta = dt_end - dt_start
@@ -27,12 +26,9 @@ class RoomReportService:
             event_date__lte=date_to,
         ).select_related('room')
 
-        # Период в днях для расчёта загруженности
         period_days = (date_to - date_from).days + 1
-        # Рабочих часов за период (примерно 8 ч/день * 5/7 рабочих дней)
         working_hours = period_days * 8 * 5 / 7
 
-        # Группировка по аудитории
         room_stats = {}
         for b in bookings:
             rid = b.room_id
@@ -48,14 +44,12 @@ class RoomReportService:
             room_stats[rid]['hours']  += hours
             room_stats[rid]['dates'].append(b.event_date)
 
-        # Формируем items
         items = []
         for rid, s in room_stats.items():
             room = s['room']
             total_hours = round(s['hours'], 1)
             load_pct    = min(round(total_hours / working_hours * 100, 1), 100) if working_hours else 0
 
-            # Пиковый день — дата с наибольшим числом бронирований
             from collections import Counter
             date_counts = Counter(s['dates'])
             peak_date   = max(date_counts, key=date_counts.get) if date_counts else None
@@ -73,7 +67,6 @@ class RoomReportService:
                 'peak_day':       peak_date.strftime('%d.%m.%Y') if peak_date else '—',
             })
 
-        # Сортируем по загруженности
         items.sort(key=lambda x: x['load_pct'], reverse=True)
 
         total_hours    = round(sum(i['total_hours'] for i in items), 1)
@@ -130,7 +123,7 @@ class EquipmentReportService:
                 'type':             eq.get_type_display(),
                 'type_key':         eq.type,
                 'is_stationary':    eq.is_stationary,
-                'room':             eq.room.name if eq.room else '— Склад',
+                'room':             eq.room.name if eq.room else 'Склад',
                 'bookings_count':   s['count'],
                 'total_hours':      total_h,
                 'load_pct':         load_pct,

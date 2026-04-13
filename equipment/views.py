@@ -15,7 +15,6 @@ from equipment.models import Equipment
 from equipment.services.equipment_service import AvailableEquipmentService, EquipmentFiltersService
 from rooms.models import Room
 
-from django.db.models import Q
 
 class EquipmentSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -42,8 +41,9 @@ class EquipmentSearchAPIView(APIView):
 
         return Response(serializer.data)
 
-@require_role_decorator(roles=['operator'])
+
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def equipment_list(request):
     qs = Equipment.objects.select_related('room').all().order_by('type', 'name', 'inventory_number')
 
@@ -54,6 +54,7 @@ def equipment_list(request):
         'room_id': request.GET.get('room_id', ''),
         'location': request.GET.get('location', ''),
     }
+
     filters = {k: v for k, v in filters.items() if v}
 
     if filters:
@@ -64,7 +65,7 @@ def equipment_list(request):
     current_time = now.time()
 
     equipment_with_status = []
-    for item in qs:
+    for item in qs: #TODO N+1
         try:
             available_equipment = AvailableEquipmentService.get_available_equipment(
                 Equipment.objects.filter(pk=item.pk),
@@ -107,8 +108,8 @@ def equipment_list(request):
     return render(request, 'equipment/equipment.html', context)
 
 
-@require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def equipment_add(request):
     if request.method == 'POST':
         form = EquipmentForm(request.POST)
@@ -127,7 +128,7 @@ def equipment_add(request):
             return redirect('equipment_list')
 
         qs = Equipment.objects.select_related('room').all().order_by('type', 'name', 'inventory_number')
-        equipment_data = [{'equipment': item, 'is_available': True} for item in qs]
+        equipment_data = [{'equipment': item, 'is_available': True} for item in qs] #TODO ???
         page = Paginator(equipment_data, 10).get_page(1)
 
         return render(request, 'equipment/equipment.html', {
@@ -142,8 +143,8 @@ def equipment_add(request):
     return redirect('equipment_list')
 
 
-@require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def equipment_detail(request, equipment_id):
     from rooms.models import Room
     equip = get_object_or_404(Equipment.objects.select_related('room'), pk=equipment_id)
@@ -163,36 +164,33 @@ def equipment_detail(request, equipment_id):
     })
 
 
-@require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def equipment_edit(request, equipment_id):
     item = get_object_or_404(Equipment, pk=equipment_id)
 
     if request.method == 'POST':
-        # ВАЖНО: передаем instance=item, чтобы отработала логика clean_inventory_number
         form = EquipmentForm(request.POST, instance=item)
 
         if form.is_valid():
             cd = form.cleaned_data
-            # Обновляем поля объекта из очищенных данных формы
+
             item.inventory_number = cd['inventory_number']
             item.name = cd['name']
             item.model = cd['model']
             item.type = cd['type']
             item.status = cd['status']
             item.is_stationary = cd['is_stationary']
-            item.room_id = cd['room_id']  # Если там None, Django запишет NULL
+            item.room_id = cd['room_id']
             item.save()
 
             messages.success(request, f'Оборудование "{item.name}" успешно обновлено')
-            # Перенаправляем на страницу, с которой пришли (Referer) или на детальную
+            #TODO перевод на страницу
             return redirect(request.META.get('HTTP_REFERER', 'equipment_list'))
 
-        # Если форма НЕВАЛИДНА (например, номер уже занят кем-то другим)
-        # Собираем данные для рендера списка, чтобы модалка открылась поверх таблицы
         qs = Equipment.objects.select_related('room').all().order_by('type', 'name', 'inventory_number')
 
-        # Используем твой метод определения доступности (как в equipment_list)
+        #TODO ??? Используем твой метод определения доступности (как в equipment_list)
         now = timezone.now()
         equipment_with_status = []
         for row in qs:
@@ -206,10 +204,10 @@ def equipment_edit(request, equipment_id):
 
         return render(request, 'equipment/equipment.html', {
             'equipment': page,
-            'add_form': EquipmentForm(),  # Пустая форма для кнопки "Добавить"
-            'edit_form': form,  # Форма с ошибками
+            'add_form': EquipmentForm(),
+            'edit_form': form,
             'edit_equipment_id': item.pk,
-            'open_edit_modal': True,  # Флаг для JS, чтобы модалка не закрылась
+            'open_edit_modal': True,
             'equipment_types': Equipment.TypeChoices.choices,
             'equipment_statuses': Equipment.StatusChoices.choices,
             'total': qs.count(),
@@ -219,8 +217,8 @@ def equipment_edit(request, equipment_id):
     return redirect('equipment_list')
 
 
-@require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def equipment_delete(request, equipment_id):
     if request.method == 'POST':
         item = get_object_or_404(Equipment, pk=equipment_id)

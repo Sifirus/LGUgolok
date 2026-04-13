@@ -1,8 +1,6 @@
 from django.urls import path
 from approval import views
 
-from booking.models import Comments
-
 urlpatterns = [
     path('approval', views.approval_page, name='approval'),
     path('users/approver-lookup/', views.ApproverLookupAPIView.as_view(), name='approver_lookup_api'),

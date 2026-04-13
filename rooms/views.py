@@ -28,19 +28,19 @@ class RoomSearchAPIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         cleaned_data = serializer.validated_data
-        queryset = Room.objects.all()
+        qs = Room.objects.all()
 
         if cleaned_data.get('is_available'):
-            queryset = AvailableRoomsService.get_available_rooms(
-                queryset,
+            qs = AvailableRoomsService.get_available_rooms(
+                qs,
                 cleaned_data.get('event_date'),
                 cleaned_data.get('event_start_time'),
                 cleaned_data.get('event_end_time')
             )
 
-        queryset = RoomsFiltersService.apply_filters(queryset, cleaned_data)
+        qs = RoomsFiltersService.apply_filters(qs, cleaned_data)
 
-        serializer = RoomSerializer(queryset, many=True)
+        serializer = RoomSerializer(qs, many=True)
 
         return Response(serializer.data)
 
@@ -50,16 +50,16 @@ class RoomLookupAPIView(APIView):
 
     def get(self, request):
         q = (request.query_params.get('q') or '').strip()
-        queryset = Room.objects.all().order_by('building', 'floor', 'name')
+        qs = Room.objects.all().order_by('building', 'floor', 'name')
 
         if q:
             filters = Q(name__icontains=q) | Q(building__icontains=q)
             if q.isdigit():
                 filters |= Q(pk=int(q))
-            queryset = queryset.filter(filters)
+            qs = qs.filter(filters)
 
         data = []
-        for room in queryset[:10]:
+        for room in qs[:10]:
             data.append({
                 'id': room.id,
                 'label': f'{room.id} · {room.name} · {room.building}, этаж {room.floor}',
@@ -71,12 +71,11 @@ class RoomLookupAPIView(APIView):
         return Response(data)
 
 
-@require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def rooms_list(request):
     qs = Room.objects.all().order_by('building', 'floor', 'name')
 
-    # Применяем фильтры
     filters = {
         'search_query': request.GET.get('search', ''),
         'type': request.GET.get('type', ''),
@@ -86,21 +85,18 @@ def rooms_list(request):
         'equipment': ','.join(request.GET.getlist('equipment', '')),
     }
 
-    # Убираем пустые значения
     filters = {k: v for k, v in filters.items() if v}
 
     if filters:
         qs = RoomsFiltersService.apply_filters(qs, filters)
 
-    # Получаем текущее время для проверки занятости
     now = timezone.now()
     current_date = now.date()
     current_time = now.time()
 
-    # Для каждой аудитории проверяем, занята ли она сейчас
+    # TODO Для каждой аудитории проверяем, занята ли она сейчас N+1
     rooms_with_status = []
     for room in qs:
-        # Проверяем, свободна ли аудитория сейчас
         try:
             available_rooms = AvailableRoomsService.get_available_rooms(
                 Room.objects.filter(pk=room.pk),
@@ -110,7 +106,7 @@ def rooms_list(request):
             )
             is_available = available_rooms.exists()
         except ValueError:
-            is_available = True  # Если ошибка в времени, считаем свободной
+            is_available = True
 
         rooms_with_status.append({
             'room': room,
@@ -140,8 +136,8 @@ def rooms_list(request):
     return render(request, 'rooms/rooms.html', context)
 
 
-@require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def room_add(request):
     if request.method == 'POST':
         form = RoomForm(request.POST)
@@ -157,10 +153,9 @@ def room_add(request):
             messages.success(request, f'Аудитория {room.name} успешно создана')
             return redirect('rooms_list')
 
-        # Если форма не валидна, показываем список с ошибками
         qs = Room.objects.all().order_by('building', 'floor', 'name')
         rooms_data = []
-        for room in qs:
+        for room in qs: #TODO ???
             rooms_data.append({'room': room, 'is_available': True})
 
         rooms = Paginator(rooms_data, 10).get_page(1)
@@ -176,8 +171,8 @@ def room_add(request):
     return redirect('rooms_list')
 
 
-@require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def room_detail(request, room_id):
     room = get_object_or_404(
         Room.objects.annotate(
@@ -201,29 +196,24 @@ def room_detail(request, room_id):
     })
 
 
-@require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def room_edit(request, room_id):
     room = get_object_or_404(Room, pk=room_id)
 
     if request.method == 'POST':
         form = RoomForm(request.POST, instance=room)
         if form.is_valid():
-            # Сохраняем форму напрямую (instance=room уже связан, save() обновит поля)
             form.save()
 
             messages.success(request, f'Аудитория {room.name} успешно обновлена')
 
-            # Пытаемся вернуть пользователя туда, откуда он пришел
-            # Если Referer нет, отправляем на список аудиторий
             return redirect(request.META.get('HTTP_REFERER', 'rooms_list'))
 
-        # Если форма НЕВАЛИДНА (ошибки валидации)
-        # Нужно подготовить данные для рендера списка, чтобы модалка открылась с ошибками
         qs = Room.objects.all().order_by('building', 'floor', 'name')
         rooms_data = []
-        for r in qs:
-            # Логика определения доступности (заглушка или вызов сервиса)
+
+        for r in qs: #TODO ??? Логика определения доступности (заглушка или вызов сервиса)
             rooms_data.append({'room': r, 'is_available': True})
 
         paginator = Paginator(rooms_data, 10)
@@ -232,23 +222,21 @@ def room_edit(request, room_id):
         return render(request, 'rooms/rooms.html', {
             'rooms': rooms_page,
             'add_form': RoomForm(),
-            'edit_form': form,  # Передаем форму с ошибками
+            'edit_form': form,
             'edit_room_id': room_id,
             'open_edit_modal': True,
             'room_types': Room.RoomType.choices,
             'room_statuses': Room.RoomStatus.choices,
             'total': qs.count(),
-            # Добавьте контекст для даты/времени, если они используются в шаблоне
             'current_date': timezone.now().strftime('%d.%m.%Y'),
             'current_time': timezone.now().strftime('%H:%M'),
         })
 
-    # Если это GET запрос, просто уходим на список
     return redirect('rooms_list')
 
 
-@require_role_decorator(roles=['operator'])
 @login_required(login_url='login')
+@require_role_decorator(roles=['operator'])
 def room_delete(request, room_id):
     if request.method == 'POST':
         room = get_object_or_404(Room, pk=room_id)

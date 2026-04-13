@@ -62,9 +62,3 @@
     .catch(function () {});
   });
 })();
-
-
-function getCookie(name) {
-  var match = document.cookie.match(new RegExp('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)'));
-  return match ? decodeURIComponent(match[2]) : '';
-}

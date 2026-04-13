@@ -225,10 +225,10 @@ function renderRooms(data) {
      onclick="selectRoom(this)">
     <div class="room-sel-radio"><i class="bi bi-check-lg" style="font-size:11px"></i></div>
     <div class="room-info">
-        <div class="room-name">${escapeHtml(room.name)}</div>
+        <div class="room-name">${room.name}</div>
         <div class="room-meta">
-            ${room.capacity !== undefined && room.capacity !== null ? `<span><i class="bi bi-people"></i> до ${escapeHtml(room.capacity)} чел.</span>` : ''}
-            ${typeLabel ? `<span><i class="bi bi-tag"></i> ${escapeHtml(typeLabel)}</span>` : ''}
+            ${room.capacity !== undefined && room.capacity !== null ? `<span><i class="bi bi-people"></i> до ${room.capacity} чел.</span>` : ''}
+            ${typeLabel ? `<span><i class="bi bi-tag"></i> ${typeLabel}</span>` : ''}
         </div>
     </div>
 </div>
@@ -310,17 +310,17 @@ function renderEquipment(data) {
         return `
 <div class="eq-row equipment-card ${isSelected ? 'selected' : ''}"
      data-id="${eq.id}"
-     data-summary="${escapeHtml(label)}"
-     data-title="${escapeHtml(eq.name || '')}"
+     data-summary="${label}"
+     data-title="${eq.name || ''}"
      onclick="selectEquipment(${eq.id})"
      style="cursor:pointer">
     <input type="checkbox" class="eq-chk" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); selectEquipment(${eq.id})">
     <div class="eq-icon"><i class="bi bi-laptop"></i></div>
     <div style="flex:1;min-width:0">
-        <div class="eq-name">${escapeHtml(eq.name || '')}${eq.model ? ' - ' + escapeHtml(eq.model) : ''}</div>
+        <div class="eq-name">${eq.name || ''}${eq.model ? ' - ' + eq.model : ''}</div>
         <div class="eq-loc">
-            ${typeLabel ? `<span class="eq-inv">${escapeHtml(typeLabel)}</span>` : ''}
-            ${eq.inventory_number ? `<span class="eq-inv">${escapeHtml(eq.inventory_number)}</span>` : ''}
+            ${typeLabel ? `<span class="eq-inv">${typeLabel}</span>` : ''}
+            ${eq.inventory_number ? `<span class="eq-inv">${eq.inventory_number}</span>` : ''}
         </div>
     </div>
 </div>

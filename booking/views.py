@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect, reverse
-from django.contrib import messages
 from booking.forms import BookingForm
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -11,9 +10,24 @@ from rooms.services.rooms_service import AvailableRoomsService
 from rooms.models import Room
 from approval.services.approval_services import ApprovalEngine
 
+from django.contrib import messages
+from django.core.exceptions import PermissionDenied
+from django.db.models import Prefetch, Count
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
-@require_role_decorator(['initiator'])
+from booking.forms import BookingCommentForm
+from booking.models import Booking, Comments
+
+from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
+
+from approval.models import Approval
+from booking.services.booking_services import BookingAccessService, BookingFiltersService
+
+
 @login_required(login_url='login')
+@require_role_decorator(['initiator'])
 def booking_create(request):
     form = BookingForm(request.POST or None)
     room_types = Room.RoomType.choices
@@ -25,7 +39,6 @@ def booking_create(request):
             cleaned_data = form.cleaned_data
 
             with transaction.atomic():
-                # Блокируем выбранную аудиторию
                 room_qs = Room.objects.select_for_update().filter(pk=cleaned_data['room'].pk)
                 available_room = AvailableRoomsService.get_available_rooms(
                     room_qs,
@@ -37,7 +50,6 @@ def booking_create(request):
                     messages.warning(request, 'Аудиторию только что забронировали')
                     is_conflict = True
 
-                # Блокируем выбранное оборудование
                 if cleaned_data['equipment']:
                     selected_equipment = Equipment.objects.select_for_update().filter(pk__in=cleaned_data['equipment'])
                     available_equipment = AvailableEquipmentService.get_available_equipment(
@@ -62,13 +74,12 @@ def booking_create(request):
                 if is_conflict:
                     return render(request, 'booking/create_booking.html', context)
 
-                # Вычисляем статус через ApprovalEngine
+                # TODO ApprovalEngine
                 status = ApprovalEngine.get_status(
                     cleaned_data['room'], cleaned_data['equipment'], cleaned_data['event_type'],
                     cleaned_data['participants']
                 )
 
-                # Создаём бронирование
                 booking = form.save(commit=False)
                 booking.initiator = request.user
                 booking.status = status
@@ -82,26 +93,9 @@ def booking_create(request):
         return render(request, 'booking/create_booking.html', context)
 
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.db.models import Count, Q
-from django.shortcuts import render
-from django.utils import timezone
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from booking.models import Booking
-from approval.models import Approval
-from booking.services.booking_services import BookingAccessService, BookingFiltersService
-from core.decorators import require_role_decorator
-from rooms.models import Room
-
 User = get_user_model()
 
 
-@require_role_decorator(roles=['initiator', 'operator', 'approver'])
 @login_required(login_url='login')
 def booking_list(request):
     qs = (
@@ -112,7 +106,7 @@ def booking_list(request):
             'initiator__profile',
             'approval',
             'approval__approver',
-            'approval__approver__profile' #TODO fix approver
+            'approval__approver__profile'
         )
         .prefetch_related('equipment')
         .annotate(equipment_count=Count('equipment', distinct=True))
@@ -131,6 +125,7 @@ def booking_list(request):
         'approver_id': request.GET.get('approver_id', ''),
         'approval_decision': request.GET.get('approval_decision', ''),
     }
+
     filters = {k: v for k, v in filters.items() if v}
 
     if filters:
@@ -177,18 +172,6 @@ def booking_list(request):
     return render(request, 'booking/bookings_list.html', context)
 
 
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
-from django.db.models import Prefetch
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
-
-from booking.forms import BookingCommentForm
-from booking.models import Booking, Comments
-from core.decorators import require_role_decorator
-
-
 def booking_can_view(user, booking: Booking) -> bool:
     role = getattr(user, 'role', None)
 
@@ -228,7 +211,7 @@ def booking_can_cancel(user, booking: Booking) -> bool:
 
     return False
 
-@require_role_decorator(roles=['initiator', 'operator', 'approver'])
+
 @login_required(login_url='login')
 def booking_detail(request, booking_id):
     booking_qs = (
@@ -248,7 +231,7 @@ def booking_detail(request, booking_id):
     )
 
     booking = get_object_or_404(booking_qs, pk=booking_id)
-    approval = getattr(booking, 'approval', None)  # Получаем approval, может быть None
+    approval = getattr(booking, 'approval', None)
 
     if not booking_can_view(request.user, booking):
         raise PermissionDenied
@@ -294,7 +277,7 @@ def booking_detail(request, booking_id):
     }
     return render(request, 'booking/booking_detail.html', context)
 
-@require_role_decorator(roles=['initiator', 'operator', 'approver'])
+
 @login_required(login_url='login')
 def booking_cancel(request, booking_id):
     if request.method != 'POST':

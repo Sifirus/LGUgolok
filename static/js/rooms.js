@@ -1,24 +1,3 @@
-function openModal(id) {
-    const modal = document.getElementById(id);
-    if (!modal) return;
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeModal(id) {
-    const modal = document.getElementById(id);
-    if (!modal) return;
-    modal.classList.remove('open');
-    document.body.style.overflow = '';
-}
-
-function closeAllModals() {
-    document.querySelectorAll('.modal-backdrop.open').forEach(function (modal) {
-        modal.classList.remove('open');
-    });
-    document.body.style.overflow = '';
-}
-
 function confirmRoomDelete(roomId, roomName) {
     if (confirm('Удалить аудиторию "' + roomName + '"?')) {
         const form = document.getElementById('delete-form-' + roomId);
@@ -98,9 +77,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('[data-multi-dropdown]').forEach(initMultiDropdown);
 
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            closeAllModals();
-        }
-    });
 });

@@ -18,8 +18,8 @@ from approval.serializers import BookingApprovalSerializer, BookingApprovalDetai
 from users.models import User
 
 
-@require_role_decorator(['approver'])
 @login_required(login_url='login')
+@require_role_decorator(['approver'])
 def approval_page(request):
     return render(request, 'approval/pending.html')
 
@@ -88,7 +88,7 @@ class ApprovalPendingListAPIView(ListAPIView):
 
         return Booking.objects.filter(
             status=Booking.Status.CREATED
-        ).order_by('-created_at')
+        ).order_by('created_at')
 
 
 class ApprovalDetailAPIView(RetrieveAPIView):
@@ -100,7 +100,6 @@ class ApprovalDetailAPIView(RetrieveAPIView):
     def get_object(self):
         obj = super().get_object()
 
-        # Блокируем запись для предотвращения гонки
         obj = Booking.objects.select_for_update().get(pk=obj.pk)
 
         approval = getattr(obj, 'approval', None)
@@ -163,14 +162,12 @@ class ApprovalDecisionAPIView(GenericAPIView):
             return Response({'detail': 'Неверное решение'}, status=status.HTTP_400_BAD_REQUEST)
 
         booking.save(update_fields=['status'])
-        approval.save(update_fields=['decision'])
+        approval.save(update_fields=['decision', 'decided_at'])
 
         decision_display = approval.get_decision_display()
 
         return Response({'detail': f'Заявка {decision_display}'}, status=status.HTTP_200_OK)
 
-
-# approval/views.py (добавить в конец файла)
 
 class ApprovalDetailCancelAPIView(GenericAPIView):
     permission_classes = [IsApprover]
@@ -186,12 +183,9 @@ class ApprovalDetailCancelAPIView(GenericAPIView):
         if approval.decision != 'in_process':
             raise PermissionDenied('Заявка уже обработана')
 
-        # Возвращаем статус заявки в CREATED
         booking.status = Booking.Status.CREATED
         booking.save(update_fields=['status'])
 
-        # Удаляем запись о согласовании (снимаем блокировку)
         approval.delete()
 
-        return Response({'detail': 'Блокировка снята, заявка возвращена в список ожидания'},
-                        status=status.HTTP_200_OK)
+        return Response({'detail': 'Блокировка снята, заявка возвращена в список ожидания'}, status=status.HTTP_200_OK)

@@ -1,24 +1,3 @@
-function openModal(id) {
-    const modal = document.getElementById(id);
-    if (!modal) return;
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeModal(id) {
-    const modal = document.getElementById(id);
-    if (!modal) return;
-    modal.classList.remove('open');
-    document.body.style.overflow = '';
-}
-
-function closeAllModals() {
-    document.querySelectorAll('.modal-backdrop.open').forEach(function (modal) {
-        modal.classList.remove('open');
-    });
-    document.body.style.overflow = '';
-}
-
 function confirmEquipmentDelete(id, name) {
     if (confirm('Удалить оборудование "' + name + '"?')) {
         const form = document.getElementById('delete-form-' + id);
@@ -181,7 +160,4 @@ document.addEventListener('DOMContentLoaded', function () {
         if (equipmentId) openModal('modal-edit-' + equipmentId);
     }
 
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeAllModals();
-    });
 });

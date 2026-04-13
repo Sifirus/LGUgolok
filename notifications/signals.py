@@ -4,13 +4,12 @@ from django.dispatch import receiver
 from booking.models import Booking, Comments
 from notifications.service import NotificationService
 
-# Храним старый статус до сохранения
+# TODO Храним старый статус до сохранения
 _old_status_cache = {}
 
 
 @receiver(pre_save, sender=Booking)
 def capture_old_status(sender, instance, **kwargs):
-    """Запоминаем статус ДО сохранения."""
     if instance.pk:
         try:
             old = Booking.objects.get(pk=instance.pk)
@@ -21,9 +20,8 @@ def capture_old_status(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Booking)
 def on_booking_saved(sender, instance, created, **kwargs):
-    """После сохранения — если статус изменился, отправить уведомление."""
     if created:
-        return  # При создании статус CREATED — уведомлять не нужно
+        return
 
     old_status = _old_status_cache.pop(instance.pk, None)
     if old_status and old_status != instance.status and instance.status != Booking.Status.PENDING:
@@ -32,6 +30,5 @@ def on_booking_saved(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Comments)
 def on_comment_saved(sender, instance, created, **kwargs):
-    """Новый комментарий — уведомить другую сторону."""
     if created:
         NotificationService.comment_added(instance)

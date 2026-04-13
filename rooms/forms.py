@@ -1,11 +1,11 @@
 from django import forms
 from rooms.models import Room
 
-class RoomForm(forms.ModelForm): # Меняем на ModelForm
+
+class RoomForm(forms.ModelForm):
     class Meta:
         model = Room
         fields = ['name', 'building', 'floor', 'capacity', 'type', 'status']
-        # Метки (labels) подтянутся из модели или можно описать здесь:
         labels = {
             'name': 'Название аудитории',
             'building': 'Корпус',

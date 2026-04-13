@@ -13,9 +13,7 @@ class LoginForm(AuthenticationForm):
         super().confirm_login_allowed(user)
 
 
-
 class ProfileForm(ModelForm):
-
     class Meta:
         model = Profile
         exclude = ('user',)

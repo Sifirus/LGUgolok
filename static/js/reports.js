@@ -121,7 +121,7 @@ function renderBars(data) {
         return (
             '<div class="rep-bar">' +
                 '<div class="rep-bar__head">' +
-                    '<span class="rep-bar__name" title="' + escapeHtml(label) + '">' + escapeHtml(label) + '</span>' +
+                    '<span class="rep-bar__name" title="' + label + '">' + label + '</span>' +
                     '<strong>' + (item.load_pct ?? 0) + '%</strong>' +
                 '</div>' +
                 '<div class="rep-bar__track">' +
@@ -154,13 +154,13 @@ function renderTable(data) {
         body.innerHTML = items.map(function (item) {
             var pillClass = item.load_pct > 80 ? 'rep-pill--bad' : item.load_pct > 60 ? 'rep-pill--warn' : item.load_pct > 30 ? 'rep-pill--ok' : 'rep-pill--muted';
             return '<tr>' +
-                '<td class="rep-name">' + escapeHtml(item.name || '') + '</td>' +
-                '<td class="rep-sub">' + escapeHtml(item.building || '') + '</td>' +
-                '<td class="rep-sub">' + escapeHtml(item.type || '') + '</td>' +
+                '<td class="rep-name">' + (item.name || '') + '</td>' +
+                '<td class="rep-sub">' + (item.building || '') + '</td>' +
+                '<td class="rep-sub">' + (item.type || '') + '</td>' +
                 '<td>' + (item.bookings_count ?? 0) + '</td>' +
                 '<td>' + (item.total_hours ?? 0) + ' ч</td>' +
                 '<td><span class="rep-pill ' + pillClass + '">' + (item.load_pct ?? 0) + '%</span></td>' +
-                '<td class="rep-sub">' + escapeHtml(item.peak_day || '') + '</td>' +
+                '<td class="rep-sub">' + (item.peak_day || '') + '</td>' +
                 '</tr>';
         }).join('');
     } else {
@@ -177,19 +177,19 @@ function renderTable(data) {
 
         body.innerHTML = items.map(function (item) {
             var pillClass = item.load_pct > 70 ? 'rep-pill--bad' : item.load_pct > 40 ? 'rep-pill--warn' : item.load_pct > 15 ? 'rep-pill--ok' : 'rep-pill--muted';
-            var inv = '<code class="rep-table__mono" style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--border)">' + escapeHtml(item.inventory_number || '') + '</code>';
+            var inv = '<code class="rep-table__mono" style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--border)">' + item.inventory_number || '' + '</code>';
 
             return '<tr>' +
                 '<td>' + inv + '</td>' +
                 '<td>' +
-                    '<div class="rep-name">' + escapeHtml(item.name || '') + '</div>' +
-                    '<div class="rep-sub">' + escapeHtml(item.model || '') + '</div>' +
+                    '<div class="rep-name">' + (item.name || '') + '</div>' +
+                    '<div class="rep-sub">' + (item.model || '') + '</div>' +
                 '</td>' +
-                '<td class="rep-sub">' + escapeHtml(item.type || '') + '</td>' +
+                '<td class="rep-sub">' + (item.type || '') + '</td>' +
                 '<td>' + (item.bookings_count ?? 0) + '</td>' +
                 '<td>' + (item.total_hours ?? 0) + ' ч</td>' +
                 '<td><span class="rep-pill ' + pillClass + '">' + (item.load_pct ?? 0) + '%</span></td>' +
-                '<td class="rep-sub">' + escapeHtml(item.room || '') + '</td>' +
+                '<td class="rep-sub">' + (item.room || '') + '</td>' +
                 '</tr>';
         }).join('');
     }
@@ -210,15 +210,6 @@ function doExport(format) {
         '&date_to=' + encodeURIComponent(dt);
 
     window.location.href = url;
-}
-
-function escapeHtml(value) {
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
 }
 
 document.addEventListener('DOMContentLoaded', function () {

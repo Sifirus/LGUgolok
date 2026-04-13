@@ -14,7 +14,6 @@ class EquipmentForm(forms.Form):
     room_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
 
     def __init__(self, *args, **kwargs):
-        # Извлекаем instance из аргументов, если он передан
         self.instance = kwargs.pop('instance', None)
         super().__init__(*args, **kwargs)
 
@@ -22,9 +21,7 @@ class EquipmentForm(forms.Form):
         value = self.cleaned_data['inventory_number'].strip()
         qs = Equipment.objects.filter(inventory_number__iexact=value)
 
-        # Если мы редактируем существующий объект (self.instance.pk не None)
         if self.instance and self.instance.pk:
-            # Исключаем текущий объект из проверки
             qs = qs.exclude(pk=self.instance.pk)
 
         if qs.exists():
@@ -34,8 +31,10 @@ class EquipmentForm(forms.Form):
 
     def clean_room_id(self):
         room_id = self.cleaned_data.get('room_id')
+
         if not room_id:
             return None
+
         try:
             Room.objects.get(pk=room_id)
         except Room.DoesNotExist:

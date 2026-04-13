@@ -1,11 +1,10 @@
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
-from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetConfirmView, PasswordResetCompleteView
+from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetConfirmView
 from django.contrib.messages.views import SuccessMessageMixin
 
 from .forms import LoginForm, ProfileForm, EmailForm
@@ -43,10 +42,8 @@ class CustomPasswordResetConfirmView(SuccessMessageMixin, PasswordResetConfirmVi
         return response
 
 
-
 @login_required(login_url='login')
 def user_profile(request):
-
     profile = Profile.objects.get(user=request.user)
 
     profile_form = ProfileForm(instance=profile)
@@ -86,5 +83,3 @@ def user_profile(request):
     }
 
     return render(request, 'users/profile.html', context=context)
-
-

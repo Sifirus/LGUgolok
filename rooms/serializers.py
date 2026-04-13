@@ -1,7 +1,5 @@
 import re
-
 from rest_framework import serializers
-
 from rooms.models import Room
 
 
@@ -23,7 +21,8 @@ class RoomFiltersSerializer(serializers.Serializer):
         event_end_time = data.get('event_end_time')
 
         if is_available and not all([event_date, event_start_time, event_end_time, is_available]):
-            raise serializers.ValidationError('Введите дату события и временной промежуток чтобы получить свободные аудитории')
+            raise serializers.ValidationError(
+                'Введите дату события и временной промежуток чтобы получить свободные аудитории')
 
         if is_available and event_start_time > event_end_time:
             raise serializers.ValidationError('Дата начала события должна быть раньше даты завершения')

@@ -1,22 +1,19 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-VALID_ROLES = [(role.value, role.label) for role in get_user_model().Roles]
-
 
 class AddUserForm(forms.Form):
-    first_name  = forms.CharField(max_length=20, label='Имя')
-    last_name   = forms.CharField(max_length=20, label='Фамилия')
+    first_name = forms.CharField(max_length=20, label='Имя')
+    last_name = forms.CharField(max_length=20, label='Фамилия')
     second_name = forms.CharField(max_length=30, required=False, label='Отчество')
-    email       = forms.EmailField(label='Электронная почта')
-    role        = forms.ChoiceField(choices=VALID_ROLES, label='Роль')
-    department  = forms.CharField(max_length=30, required=False, label='Подразделение')
+    email = forms.EmailField(label='Электронная почта')
+    role = forms.ChoiceField(choices=get_user_model().Roles.choices, label='Роль')
+    department = forms.CharField(max_length=30, required=False, label='Подразделение')
 
     def __init__(self, *args, instance=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance = instance
         if instance:
-            # Pre-populate form when editing
             self.fields['first_name'].initial = instance.profile.first_name
             self.fields['last_name'].initial = instance.profile.last_name
             self.fields['second_name'].initial = instance.profile.second_name

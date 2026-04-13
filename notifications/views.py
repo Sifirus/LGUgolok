@@ -16,7 +16,6 @@ def notification_list(request):
 
 @login_required(login_url='login')
 def notification_read(request, pk):
-    """Пометить прочитанным и перейти к заявке."""
     notif = get_object_or_404(Notification, pk=pk, recipient=request.user)
     notif.is_read = True
     notif.save(update_fields=['is_read'])
@@ -35,6 +34,5 @@ def notification_read_all(request):
 
 @login_required(login_url='login')
 def notification_count(request):
-    """API для polling колокольчика."""
     count = request.user.notifications.filter(is_read=False).count()
     return JsonResponse({'count': count})

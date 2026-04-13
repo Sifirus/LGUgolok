@@ -90,7 +90,7 @@ async function selectBooking(bookingId) {
         const panel = document.getElementById('decisionPanel');
         const initiatorName = [data.initiator_first_name, data.initiator_last_name].filter(Boolean).join(' ') || 'Не указан';
         const equipmentHtml = (data.equipment_list || []).map(eq =>
-            `<span class="equipment-tag"><i class="bi bi-laptop"></i>${escapeHtml(eq)}</span>`
+            `<span class="equipment-tag"><i class="bi bi-laptop"></i>${eq}</span>`
         ).join('') || '-';
         const submittedAt = formatDate(data.created_at);
 

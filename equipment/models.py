@@ -1,17 +1,16 @@
 from django.db import models
-
 from rooms.models import Room
 
 
 class Equipment(models.Model):
-    class TypeChoices(models.TextChoices):  # TODO many to many
+    class TypeChoices(models.TextChoices):
         PROJECTOR = "projector", "Проектор"
         MICROPHONE = "microphone", "Микрофон"
         LAPTOP = "laptop", "Ноутбук"
         SCREEN = "screen", "Экран"
         CAMERA = "camera", "Веб-камера"
 
-    class StatusChoices(models.TextChoices):  # TODO how to get
+    class StatusChoices(models.TextChoices):
         ACTIVE = "active", "Активна"
         MAINTENANCE = "maintenance", "На обслуживании"
         WRITTEN_OFF = "written_off", "Списано"
@@ -33,4 +32,3 @@ class Equipment(models.Model):
     class Meta:
         verbose_name = 'Оборудование'
         verbose_name_plural = verbose_name
-# TODO class avatar

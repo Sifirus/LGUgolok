@@ -1,12 +1,3 @@
-function escapeHtml(value) {
-    return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
-}
-
 function normalizeText(value) {
     return String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase(); //TODO мусор
 }
@@ -80,5 +71,39 @@ document.addEventListener('click', (event) => {
 
     if (!menu.contains(event.target) && !burger.contains(event.target)) {
         closeTopnav();
+    }
+});
+
+// ===== Универсальные функции для модальных окон =====
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+}
+
+function closeAllModals() {
+    // Поддерживаем оба типа модальных окон
+    const modals = document.querySelectorAll('.modal-backdrop.open, .modal-lgu-backdrop.open');
+    modals.forEach(modal => {
+        modal.classList.remove('open');
+    });
+    document.body.style.overflow = '';
+}
+
+// Глобальное закрытие по Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeAllModals();
     }
 });

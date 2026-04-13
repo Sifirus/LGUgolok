@@ -1,33 +1,3 @@
-function openModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) {
-        modal.classList.add('open');
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-function closeModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) {
-        modal.classList.remove('open');
-        document.body.style.overflow = '';
-    }
-}
-
-document.querySelectorAll('.modal-lgu-backdrop').forEach(function (backdrop) {
-    backdrop.addEventListener('click', function (e) {
-        if (e.target === backdrop) closeModal(backdrop.id);
-    });
-});
-
-document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-lgu-backdrop.open').forEach(function (m) {
-            closeModal(m.id);
-        });
-    }
-});
-
 function openEditModal(userId, email, firstName, lastName, secondName, department, role) {
     var form = document.getElementById('edit-form-' + userId);
     if (!form) return;

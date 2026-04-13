@@ -1,7 +1,5 @@
 from django import forms
-
-import datetime
-
+from django.utils import timezone
 from booking.models import Booking
 
 
@@ -31,7 +29,7 @@ class BookingForm(forms.ModelForm):
         participants = cleaned_data.get('participants')
         room = cleaned_data.get('room')
 
-        now = datetime.datetime.now()
+        now = timezone.now()
 
         if event_date and event_date < now.date():
             self.add_error('event_date', 'Дата события не может быть в прошлом')
@@ -48,10 +46,6 @@ class BookingForm(forms.ModelForm):
                 self.add_error('participants', f'В выбранной аудитории всего {room.capacity} мест')
 
         return cleaned_data
-
-# TODO
-
-from django import forms
 
 
 class BookingCommentForm(forms.Form):

@@ -1,6 +1,4 @@
-from django.db.models import Count, Q
-
-from booking.models import Booking
+from django.db.models import Q
 
 
 class BookingAccessService:

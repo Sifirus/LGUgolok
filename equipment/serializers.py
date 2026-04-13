@@ -1,7 +1,5 @@
 from rest_framework import serializers
-
 from rooms.models import Room
-
 from equipment.models import Equipment
 
 
@@ -22,7 +20,7 @@ class EquipmentFiltersSerializer(serializers.Serializer):
         room_id = data.get('room_id')
 
         if is_available and not all([event_date, event_start_time, event_end_time, is_available]):
-            raise serializers.ValidationError('Введите дату события и временной промежуток чтобы получить свободные аудитории') #todo есть вариант пометить поля ошибок
+            raise serializers.ValidationError('Введите дату события и временной промежуток чтобы получить свободные аудитории')
 
         if is_available and event_start_time > event_end_time:
             raise serializers.ValidationError('Дата начала события должна быть раньше даты завершения')
@@ -35,6 +33,7 @@ class EquipmentFiltersSerializer(serializers.Serializer):
 
 class EquipmentSerializer(serializers.ModelSerializer):
     type = serializers.CharField(source='get_type_display')
+
     class Meta:
         model = Equipment
-        fields = ['id','room_id','inventory_number', 'type', 'name', 'model']
+        fields = ['id', 'room_id', 'inventory_number', 'type', 'name', 'model']

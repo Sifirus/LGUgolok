@@ -275,21 +275,6 @@
                                 {% endif %}
                             </div>
                         </div>
-
-                        <div class="bd-row">
-                            <div class="bd-label">Ваши права</div>
-                            <div class="bd-value">
-                                {% if is_initiator %}
-                                    <span class="role-badge">Инициатор</span>
-                                {% endif %}
-                                {% if is_approver %}
-                                    <span class="role-badge approver">Согласующий</span>
-                                {% endif %}
-                                {% if not is_initiator and not is_approver %}
-                                    <span class="role-badge">Только просмотр</span>
-                                {% endif %}
-                            </div>
-                        </div>
                     </div>
 
                     {% if can_cancel and booking.status != 'canceled' %}

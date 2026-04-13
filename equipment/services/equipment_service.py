@@ -59,6 +59,6 @@ class EquipmentFiltersService:
             queryset = queryset.filter(room__isnull=True)
 
         if data.get('location') == 'room':
-            queryset = queryset.filter(room__isnull=False) #TODO добавить в api view
+            queryset = queryset.filter(room__isnull=False)
 
         return queryset

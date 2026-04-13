@@ -1,4 +1,3 @@
-
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -13,7 +12,7 @@ class Booking(models.Model):
         PENDING = 'pending', 'на согласовании'
         APPROVED = 'approved', 'одобрена'
         REJECTED = 'rejected', 'отклонена'
-        COMPLETED = 'completed', 'завершена' #TODO
+        COMPLETED = 'completed', 'завершена'
         CANCELED = 'canceled', 'отменена'
 
     class EventType(models.TextChoices):

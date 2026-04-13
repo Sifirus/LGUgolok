@@ -1,8 +1,6 @@
-from django.core.exceptions import ValidationError
 from django.db.models import Q
 
 from booking.models import Booking
-
 from rooms.models import Room
 
 
@@ -26,7 +24,7 @@ class AvailableRoomsService:
             event_end_time__gt=event_start_time
         ).values_list('room_id', flat=True)
 
-        available_rooms = queryset.exclude(id__in=busy_rooms).filter(status='active')
+        available_rooms = queryset.exclude(id__in=busy_rooms).filter(status=Room.RoomStatus.ACTIVE)
 
         return available_rooms
 
@@ -63,5 +61,3 @@ class RoomsFiltersService:
             queryset = queryset.filter(building__icontains=building)
 
         return queryset
-
-

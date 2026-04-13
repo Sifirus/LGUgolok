@@ -1,4 +1,5 @@
 from notifications.models import Notification
+from django.contrib.auth import get_user_model
 
 
 class NotificationService:
@@ -13,14 +14,8 @@ class NotificationService:
             booking=booking,
         )
 
-    # ── Статус заявки ─────────────────────────────────────
-
     @classmethod
-    def booking_status_changed(cls, booking, old_status):
-        """
-        Один метод на все переходы статуса.
-        Логика: кто получает и что написать — определяется здесь.
-        """
+    def booking_status_changed(cls, booking, old_status): #TODO ???
         status = booking.status
         STATUS_META = {
             'pending':   ('На согласовании', 'Заявка #{pk} отправлена на согласование'),
@@ -38,18 +33,14 @@ class NotificationService:
         body  = f'{booking.get_event_type_display()} · {booking.room} · {booking.event_date}'
 
         if status == 'pending':
-            # Уведомляем всех согласующих
-            from django.contrib.auth import get_user_model
             approvers = get_user_model().objects.filter(
                 role='approver', is_active=True, is_blocked=False
             )
             for approver in approvers:
                 cls._send(approver, Notification.Kind.BOOKING_STATUS, title, body, booking)
         else:
-            # Уведомляем инициатора
             cls._send(booking.initiator, Notification.Kind.BOOKING_STATUS, title, body, booking)
 
-            # Если есть согласующий и статус изменил инициатор — уведомить согласующего
             approval = getattr(booking, 'approval', None)
             if approval and status == 'canceled':
                 cls._send(
@@ -60,21 +51,17 @@ class NotificationService:
                     booking,
                 )
 
-    # ── Комментарий ───────────────────────────────────────
-
     @classmethod
     def comment_added(cls, comment):
         booking  = comment.booking
         approval = getattr(booking, 'approval', None)
 
         if comment.author == booking.initiator:
-            # Пишет инициатор — уведомить согласующего
             if approval:
                 recipient = approval.approver
             else:
                 return
         else:
-            # Пишет согласующий — уведомить инициатора
             recipient = booking.initiator
 
         cls._send(
