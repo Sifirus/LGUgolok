@@ -26,6 +26,14 @@ class Booking(models.Model):
 
     id = models.AutoField(primary_key=True)
 
+    group = models.ForeignKey(
+        'BookingGroup',
+        on_delete=models.CASCADE,
+        related_name='booking_set',
+        blank=True,
+        null=True
+    )
+
     initiator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='bookings')
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='bookings')
     equipment = models.ManyToManyField(Equipment, related_name='bookings', blank=True)
@@ -50,6 +58,28 @@ class Booking(models.Model):
     class Meta:
         verbose_name = 'Заявка на бронирование'
         verbose_name_plural = 'Заявки на бронирование'
+
+
+class BookingGroup(models.Model):
+    initiator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='booking_groups')
+    title = models.CharField(max_length=200)
+    comment = models.TextField(blank=True)
+    date_from = models.DateField()
+    date_to = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Групповая заявка'
+        verbose_name_plural = 'Групповые заявки'
+
+    def __str__(self):
+        return f'Группа #{self.pk} — {self.title}'
+
+    @property
+    def total_count(self):
+        return self.booking_set.count()
 
 
 class Comments(models.Model):

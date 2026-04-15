@@ -110,8 +110,10 @@
                 <thead>
                 <tr>
                     <th>ID</th>
+                    <th>Серия</th>
                     {% if user.role != 'initiator' %}
-                        <th>Инициатор</th>{% endif %}
+                        <th>Инициатор</th>
+                    {% endif %}
                     <th>Комната</th>
                     <th>Дата и время</th>
                     <th>Тип</th>
@@ -124,12 +126,23 @@
                 {% for booking in bookings %}
                     <tr onclick="window.location.href='{% url 'booking_detail' booking.id %}'" style="cursor: pointer;">
                         <td class="bk-mono">#{{ booking.id }}</td>
+
+                        <td>
+                            {% if booking.group %}
+                                <div class="bk-title">{{ booking.group.title }}</div>
+                                <div class="bk-sub">Групповая заявка #{{ booking.group.id }}</div>
+                            {% else %}
+                                <span class="bk-muted">Нет</span>
+                            {% endif %}
+                        </td>
+
                         {% if user.role != 'initiator' %}
                             <td>
                                 <div class="bk-title">
                                     {{ booking.initiator.profile.last_name }} {{ booking.initiator.profile.first_name }}
                                     {% if booking.initiator.profile.second_name %}
-                                        {{ booking.initiator.profile.second_name }}{% endif %}
+                                        {{ booking.initiator.profile.second_name }}
+                                    {% endif %}
                                 </div>
                                 <div class="bk-sub">{{ booking.initiator.email }}</div>
                                 {% if booking.initiator.profile.department %}
@@ -171,7 +184,8 @@
                                     {{ booking.approval.approver.profile.last_name }}
                                     {{ booking.approval.approver.profile.first_name }}
                                     {% if booking.approval.approver.profile.second_name %}
-                                        {{ booking.approval.approver.profile.second_name }}{% endif %}
+                                        {{ booking.approval.approver.profile.second_name }}
+                                    {% endif %}
                                 </div>
                                 <div class="bk-sub">
                                     {{ booking.approval.get_decision_display }}
@@ -201,7 +215,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="8">
+                        <td colspan="{% if user.role != 'initiator' %}9{% else %}8{% endif %}">
                             <div class="empty-state">
                                 <i class="bi bi-journal-text"></i>
                                 <p>Заявки не найдены</p>
@@ -218,8 +232,7 @@
                 <span class="pager-i">Показано {{ bookings.start_index }}–{{ bookings.end_index }} из {{ total }}</span>
                 <div class="pagination-buttons">
                     {% if bookings.has_previous %}
-                        <a href="?page=
-                                {{ bookings.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                        <a href="?page={{ bookings.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
                            class="pg-btn">
                             <i class="bi bi-chevron-left"></i>
                         </a>
@@ -237,8 +250,7 @@
                     {% endfor %}
 
                     {% if bookings.has_next %}
-                        <a href="?page=
-                                {{ bookings.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                        <a href="?page={{ bookings.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
                            class="pg-btn">
                             <i class="bi bi-chevron-right"></i>
                         </a>

@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from booking.forms import BookingCommentForm
-from booking.models import Booking, Comments
+from booking.models import Booking, Comments, BookingGroup
 
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
@@ -101,6 +101,7 @@ def booking_list(request):
     qs = (
         Booking.objects
         .select_related(
+            'group',
             'room',
             'initiator',
             'initiator__profile',
@@ -170,7 +171,6 @@ def booking_list(request):
         'query_string': query_params.urlencode(),
     }
     return render(request, 'booking/bookings_list.html', context)
-
 
 def booking_can_view(user, booking: Booking) -> bool:
     role = getattr(user, 'role', None)

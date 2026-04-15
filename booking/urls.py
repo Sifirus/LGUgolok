@@ -8,3 +8,12 @@ urlpatterns = [
     path('bookings/<int:booking_id>/cancel/', views.booking_cancel, name='booking_cancel'),
 
 ]
+from booking import views_group
+
+urlpatterns += [
+    path('bookings/group/create/', views_group.booking_group_create, name='booking_group_create'),
+    path('bookings/group/check-conflicts/', views_group.booking_group_conflicts, name='booking_group_check_conflicts'),
+    path('bookings/group/submit/', views_group.booking_group_submit, name='booking_group_submit'),
+    path('bookings/group/<int:group_id>/', views_group.booking_group_detail, name='booking_group_detail'),
+    path('bookings/group/<int:group_id>/cancel/', views_group.booking_group_cancel, name='booking_group_cancel'),
+]
