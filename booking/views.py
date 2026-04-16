@@ -118,6 +118,7 @@ def booking_list(request):
 
     filters = {
         'search': request.GET.get('search', ''),
+        'booking_scope': request.GET.get('booking_scope', ''),
         'event_type': request.GET.get('event_type', ''),
         'status': request.GET.get('status', ''),
         'date_from': request.GET.get('date_from', ''),
@@ -155,8 +156,14 @@ def booking_list(request):
         'is_initiator_view': is_initiator_view,
         'event_types': Booking.EventType.choices,
         'statuses': Booking.Status.choices,
+        'booking_scope_choices': [
+            ('all', 'Все'),
+            ('single', 'Одиночные'),
+            ('group', 'Групповые'),
+        ],
         'approval_choices': Approval.Decision.choices,
         'search': request.GET.get('search', ''),
+        'filter_booking_scope': request.GET.get('booking_scope', ''),
         'filter_event_type': request.GET.get('event_type', ''),
         'filter_status': request.GET.get('status', ''),
         'filter_date_from': request.GET.get('date_from', ''),

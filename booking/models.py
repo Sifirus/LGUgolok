@@ -81,6 +81,12 @@ class BookingGroup(models.Model):
     def total_count(self):
         return self.booking_set.count()
 
+    @property
+    def approval_required_count(self):
+        return self.booking_set.filter(
+            status__in=[Booking.Status.CREATED, Booking.Status.PENDING]
+        ).count()
+
 
 class Comments(models.Model):
     id = models.AutoField(primary_key=True)

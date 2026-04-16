@@ -18,6 +18,8 @@ class BookingFiltersService:
             for word in search_query.split():
                 q = (
                     Q(comment__icontains=word) |
+                    Q(group__title__icontains=word) |
+                    Q(group__comment__icontains=word) |
                     Q(initiator__email__icontains=word) |
                     Q(initiator__profile__first_name__icontains=word) |
                     Q(initiator__profile__second_name__icontains=word) |
@@ -42,10 +44,16 @@ class BookingFiltersService:
                         Q(participants=num) |
                         Q(initiator__profile__id=num) |
                         Q(approval__approver__id=num) |
-                        Q(approval__approver__profile__id=num)
+                        Q(approval__approver__profile__id=num) |
+                        Q(group__id=num)
                     )
 
                 queryset = queryset.filter(q)
+
+        if data.get('booking_scope') == 'group':
+            queryset = queryset.filter(group__isnull=False)
+        elif data.get('booking_scope') == 'single':
+            queryset = queryset.filter(group__isnull=True)
 
         if data.get('event_type'):
             queryset = queryset.filter(event_type=data['event_type'])

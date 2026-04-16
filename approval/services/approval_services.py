@@ -4,7 +4,6 @@ from booking.models import Booking
 class ApprovalEngine:
     @staticmethod
     def get_status(room, equipment, event_type, participants):
-
         pending_event_types = [
             Booking.EventType.STATE_EXAM,
             Booking.EventType.THESIS_DEFENSE,
@@ -25,3 +24,4 @@ class ApprovalEngine:
             return Booking.Status.CREATED
 
         return Booking.Status.APPROVED
+

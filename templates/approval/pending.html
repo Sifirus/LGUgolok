@@ -7,8 +7,13 @@
 
 {% block content %}
     <div class="pc">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
-            <h1 style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin:0">Согласование заявок</h1>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-2">
+            <div>
+                <h1 style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin:0">Согласование заявок</h1>
+                <div class="text-muted small mt-1">
+                    Групповые заявки показываются одной карточкой. Внутри доступен список всех подзаявок.
+                </div>
+            </div>
             <button class="btn-blue" onclick="loadApprovalList()" style="padding:8px 16px">
                 <i class="bi bi-arrow-repeat"></i> Обновить
             </button>
@@ -26,8 +31,7 @@
                 <div class="decision-panel" id="decisionPanel">
                     <div class="text-center py-5 text-muted">
                         <i class="bi bi-folder2-open" style="font-size:48px;opacity:0.5"></i>
-                        <p class="mt-3 mb-0">Выберите заявку из списка слева,<br>чтобы просмотреть детали и принять
-                            решение</p>
+                        <p class="mt-3 mb-0">Выберите заявку из списка слева,<br>чтобы просмотреть детали и принять решение</p>
                     </div>
                 </div>
             </div>
@@ -37,5 +41,4 @@
     {% block extra_js %}
         <script src="{% static 'js/approval_pending.js' %}"></script>
     {% endblock %}
-
 {% endblock %}

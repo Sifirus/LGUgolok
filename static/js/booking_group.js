@@ -152,25 +152,18 @@ function renderCal() {
         let cls = 'bg-cal-cell';
         let disabled = false;
 
-        // Если дата "ОТ" не выбрана - всё серое и неактивное
         if (!GS.dateFrom) {
             cls += ' bg-cal-dis';
             disabled = true;
-        }
-        // Если дата "ОТ" выбрана
-        else {
-            // Сравниваем строки дат (YYYY-MM-DD) а не объекты Date
+        } else {
             const currentDateStr = iso;
             const fromDateStr = GS.dateFrom;
             const toDateStr = GS.dateTo;
 
-            // Блокируем только даты строго МЕНЬШЕ даты "ОТ"
             if (fromDateStr && currentDateStr < fromDateStr) {
                 cls += ' bg-cal-dis';
                 disabled = true;
-            }
-            // Блокируем даты больше "ДО"
-            else if (toDateStr && currentDateStr > toDateStr) {
+            } else if (toDateStr && currentDateStr > toDateStr) {
                 cls += ' bg-cal-dis';
                 disabled = true;
             }
@@ -183,7 +176,6 @@ function renderCal() {
 
     grid.innerHTML = html;
 
-    // Добавляем обработчики только для несерых (активных) дат
     grid.querySelectorAll('.bg-cal-cell:not(.bg-cal-out):not(.bg-cal-dis)')
         .forEach(el => el.addEventListener('click', () => toggleDay(el.dataset.date)));
 }
@@ -358,7 +350,12 @@ window.checkRooms = function() {
     if (roomsCont) roomsCont.innerHTML = '';
 
     const payload = {
-        slots: GS.slots.map(s => ({ date: s.date, start: s.start, end: s.end }))
+        slots: GS.slots.map(s => ({
+            date: s.date,
+            start: s.start,
+            end: s.end,
+            participants: s.participants
+        }))
     };
 
     fetch('/bookings/group/check-conflicts/', {
@@ -759,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function onPeriodChange() {
         GS.dateFrom = dfEl?.value || null;
         GS.dateTo = dtEl?.value || null;
-        renderCal();  // Перерисовываем календарь при изменении
+        renderCal();
     }
 
     dfEl?.addEventListener('change', onPeriodChange);

@@ -46,9 +46,10 @@ def booking_group_conflicts(request):
     for s in raw_slots:
         try:
             slots.append({
-                'date':  date.fromisoformat(s['date']),
+                'date': date.fromisoformat(s['date']),
                 'start': dt_time.fromisoformat(s['start']),
-                'end':   dt_time.fromisoformat(s['end']),
+                'end': dt_time.fromisoformat(s['end']),
+                'participants': int(s.get('participants', 0) or 0),
             })
         except (KeyError, ValueError):
             continue

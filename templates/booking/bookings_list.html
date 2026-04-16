@@ -36,6 +36,15 @@
         </div>
 
         <div class="bk-filter-group">
+            <label class="bk-filter-label">Принадлежность к группе</label>
+            <select name="booking_scope" class="fc">
+                {% for val, label in booking_scope_choices %}
+                    <option value="{{ val }}" {% if filter_booking_scope == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="bk-filter-group">
             <label class="bk-filter-label">Статус</label>
             <select name="status" class="fc">
                 <option value="">Все</option>

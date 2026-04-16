@@ -8,7 +8,7 @@ from equipment.models import Equipment
 
 class GroupConflictService:
     """
-    Для набора слотов (дата+время) возвращает матрицу доступности
+    Для набора слотов (дата+время+participants) возвращает матрицу доступности
     всех активных аудиторий и переносного оборудования.
     """
 
@@ -22,13 +22,23 @@ class GroupConflictService:
         rooms_result = []
         for room in rooms:
             free, conflicts = [], []
+
             for slot in slots:
                 try:
+                    participants = int(slot.get('participants', 0) or 0)
+                    slot_date = slot['date']
+                    slot_start = slot['start']
+                    slot_end = slot['end']
+
+                    if room.capacity is not None and participants > room.capacity:
+                        conflicts.append(slot_date.isoformat())
+                        continue
+
                     qs = AvailableRoomsService.get_available_rooms(
                         Room.objects.filter(pk=room.pk),
-                        slot['date'], slot['start'], slot['end'],
+                        slot_date, slot_start, slot_end,
                     )
-                    (free if qs.exists() else conflicts).append(slot['date'].isoformat())
+                    (free if qs.exists() else conflicts).append(slot_date.isoformat())
                 except ValueError:
                     free.append(slot['date'].isoformat())
 
@@ -47,7 +57,7 @@ class GroupConflictService:
 
         rooms_result.sort(key=lambda r: r['conflict_count'])
 
-        equip_result = [] #TODO добавить логику оборудования чтобы не вставлять на каждый
+        equip_result = []
         for eq in equip:
             free, conflicts = [], []
             for slot in slots:
@@ -107,10 +117,18 @@ class GroupCreateService:
                 )
 
             room = Room.objects.get(pk=slot['room_id'])
+            participants = int(slot.get('participants', 0) or 0)
+
+            if room.capacity is not None and participants > room.capacity:
+                raise ValueError(
+                    f"Аудитория «{room.name}» в слоте {slot['date'].isoformat()} "
+                    f"не вмещает {participants} участников. Вместимость: {room.capacity}"
+                )
+
             eq_qs = Equipment.objects.filter(pk__in=slot.get('equipment_ids', []))
 
             engine_status = ApprovalEngine.get_status(
-                room, eq_qs, slot['event_type'], int(slot['participants'])
+                room, eq_qs, slot['event_type'], participants
             )
             engine_statuses.append(engine_status)
 
@@ -119,7 +137,7 @@ class GroupCreateService:
                 'start': slot['start'],
                 'end': slot['end'],
                 'event_type': slot['event_type'],
-                'participants': int(slot['participants']),
+                'participants': participants,
                 'comment': slot.get('comment', ''),
                 'room': room,
                 'equipment_ids': list(slot.get('equipment_ids', [])),
