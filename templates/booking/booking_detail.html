@@ -67,6 +67,12 @@
                         </button>
                     </form>
                 {% endif %}
+
+                {% if booking.status == 'approved' and approval and approval.decision == 'approved' %}
+                    <a href="{% url 'booking_confirmation_pdf' booking.id %}" class="btn-sec">
+                        <i class="bi bi-file-earmark-pdf"></i> Скачать подтверждение
+                    </a>
+                {% endif %}
             </div>
         </div>
 

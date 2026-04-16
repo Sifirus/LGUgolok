@@ -1,0 +1,369 @@
+from io import BytesIO
+from xml.sax.saxutils import escape as xml_escape
+import os
+import logging
+
+from django.urls import reverse
+from django.utils import timezone
+
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.graphics.barcode import createBarcodeDrawing
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class BookingConfirmationPdfService:
+    FONT_REGULAR = 'Arial'
+    FONT_BOLD = 'Arial-Bold'
+    _fonts_registered = False
+
+    @classmethod
+    def _register_fonts(cls):
+        """Регистрация шрифтов для Windows с поддержкой кириллицы."""
+        if cls._fonts_registered:
+            return
+
+        # Пути к шрифтам Arial в Windows (прямые слэши работают)
+        candidates_regular = [
+            'C:/Windows/Fonts/arial.ttf',
+            'C:/Windows/Fonts/ARIAL.TTF',
+            'C:\\Windows\\Fonts\\arial.ttf',
+        ]
+        candidates_bold = [
+            'C:/Windows/Fonts/arialbd.ttf',
+            'C:/Windows/Fonts/ARIALBD.TTF',
+            'C:/Windows/Fonts/arialb.ttf',      # альтернативное имя
+            'C:\\Windows\\Fonts\\arialbd.ttf',
+        ]
+
+        regular_path = None
+        for path in candidates_regular:
+            if os.path.exists(path):
+                regular_path = path
+                break
+
+        bold_path = None
+        for path in candidates_bold:
+            if os.path.exists(path):
+                bold_path = path
+                break
+
+        # Если Arial не найден, пробуем Times New Roman как запасной вариант
+        if not regular_path or not bold_path:
+            logger.warning("Arial not found, trying Times New Roman")
+            candidates_regular = [
+                'C:/Windows/Fonts/times.ttf',
+                'C:/Windows/Fonts/TIMES.TTF',
+                'C:\\Windows\\Fonts\\times.ttf',
+            ]
+            candidates_bold = [
+                'C:/Windows/Fonts/timesbd.ttf',
+                'C:/Windows/Fonts/TIMESBD.TTF',
+                'C:\\Windows\\Fonts\\timesbd.ttf',
+            ]
+            for path in candidates_regular:
+                if os.path.exists(path):
+                    regular_path = path
+                    break
+            for path in candidates_bold:
+                if os.path.exists(path):
+                    bold_path = path
+                    break
+
+        if not regular_path or not bold_path:
+            # Если и этого нет – выдаём понятную ошибку со списком доступных .ttf
+            fonts_dir = 'C:/Windows/Fonts'
+            if os.path.exists(fonts_dir):
+                available = [f for f in os.listdir(fonts_dir) if f.lower().endswith('.ttf')][:10]
+                raise RuntimeError(
+                    f"Не найден шрифт с кириллицей (Arial или Times New Roman). "
+                    f"Доступные TTF-шрифты: {available}"
+                )
+            else:
+                raise RuntimeError("Папка C:/Windows/Fonts не найдена. У вас точно Windows?")
+
+        pdfmetrics.registerFont(TTFont(cls.FONT_REGULAR, regular_path))
+        pdfmetrics.registerFont(TTFont(cls.FONT_BOLD, bold_path))
+        cls._fonts_registered = True
+        logger.info(f"Fonts registered: regular={regular_path}, bold={bold_path}")
+
+    # ========== Остальные методы без изменений ==========
+    @staticmethod
+    def _escape_text(value):
+        return xml_escape(str(value or '')).replace('\n', '<br/>')
+
+    @staticmethod
+    def _format_person(user):
+        profile = getattr(user, 'profile', None)
+        if not profile:
+            return 'Не указано', 'Не указано'
+
+        parts = [
+            getattr(profile, 'last_name', '') or '',
+            getattr(profile, 'first_name', '') or '',
+            getattr(profile, 'second_name', '') or '',
+        ]
+        fio = ' '.join(part for part in parts if part).strip() or 'Не указано'
+        department = getattr(profile, 'department', '') or 'Не указано'
+        return fio, department
+
+    @staticmethod
+    def _format_dt(dt_obj):
+        if not dt_obj:
+            return 'Не указано'
+        local_dt = timezone.localtime(dt_obj)
+        return local_dt.strftime('%d.%m.%Y %H:%M')
+
+    @staticmethod
+    def _format_date(date_obj):
+        if not date_obj:
+            return 'Не указано'
+        return date_obj.strftime('%d.%m.%Y')
+
+    @staticmethod
+    def _format_time_range(booking):
+        if not booking.event_date or not booking.event_start_time or not booking.event_end_time:
+            return 'Не указано'
+        return (
+            f"{booking.event_date.strftime('%d.%m.%Y')} "
+            f"{booking.event_start_time.strftime('%H:%M')} - "
+            f"{booking.event_end_time.strftime('%H:%M')}"
+        )
+
+    @classmethod
+    def build_pdf(cls, booking, request):
+        cls._register_fonts()
+
+        approval = getattr(booking, 'approval', None)
+        if not approval or approval.decision != 'approved':
+            raise PermissionError('Подтверждение доступно только для согласованных заявок')
+
+        booking_url = request.build_absolute_uri(reverse('booking_detail', args=[booking.pk]))
+        now_str = timezone.localtime(timezone.now()).strftime('%d.%m.%Y %H:%M')
+
+        dispatcher_fio, dispatcher_department = cls._format_person(booking.initiator)
+        approver_fio, approver_department = cls._format_person(approval.approver)
+
+        equipment_items = list(booking.equipment.all()) if hasattr(booking, 'equipment') else []
+        equipment_text = ', '.join(str(eq) for eq in equipment_items) if equipment_items else 'Нет'
+
+        group_rows = []
+        if booking.group_id:
+            group_rows = [
+                ('Идентификатор группы', f'#{booking.group_id}'),
+                ('Название группы', booking.group.title or 'Не указано'),
+                ('Период группы', f"{cls._format_date(booking.group.date_from)} - {cls._format_date(booking.group.date_to)}"),
+                ('Всего подзаявок', str(booking.group.total_count)),
+            ]
+
+        detail_rows = [
+            ('Идентификатор заявки в системе', f'#{booking.pk}'),
+            ('Дата формирования документа', now_str),
+            ('Сведения о диспетчере', dispatcher_fio),
+            ('Отдел диспетчера', dispatcher_department),
+            ('Дата и время бронирования', cls._format_time_range(booking)),
+            ('Тип мероприятия', booking.get_event_type_display()),
+            ('Первичный комментарий по заявке', booking.comment or 'Нет'),
+            ('Аудитория', f"{booking.room.name}, вместимость {booking.room.capacity}"),
+            ('Заявленное количество участников', str(booking.participants)),
+            ('Список оборудования', equipment_text),
+            ('Сведения о согласующем', approver_fio),
+            ('Отдел согласующего', approver_department),
+            ('Дата согласования заявки', cls._format_dt(approval.decided_at)),
+        ]
+
+        styles = getSampleStyleSheet()
+
+        title_style = ParagraphStyle(
+            'ConfirmationTitle',
+            parent=styles['Title'],
+            fontName=cls.FONT_BOLD,
+            fontSize=18,
+            leading=22,
+            alignment=TA_LEFT,
+            spaceAfter=6,
+        )
+
+        subtitle_style = ParagraphStyle(
+            'ConfirmationSubtitle',
+            parent=styles['Normal'],
+            fontName=cls.FONT_REGULAR,
+            fontSize=9,
+            leading=12,
+            textColor=colors.HexColor('#5B6472'),
+            spaceAfter=10,
+        )
+
+        section_style = ParagraphStyle(
+            'ConfirmationSection',
+            parent=styles['Heading2'],
+            fontName=cls.FONT_BOLD,
+            fontSize=11,
+            leading=14,
+            textColor=colors.HexColor('#1F3C88'),
+            spaceBefore=8,
+            spaceAfter=6,
+        )
+
+        cell_label_style = ParagraphStyle(
+            'ConfirmationCellLabel',
+            parent=styles['Normal'],
+            fontName=cls.FONT_BOLD,
+            fontSize=8.8,
+            leading=11,
+            textColor=colors.HexColor('#233041'),
+        )
+
+        cell_value_style = ParagraphStyle(
+            'ConfirmationCellValue',
+            parent=styles['Normal'],
+            fontName=cls.FONT_REGULAR,
+            fontSize=8.8,
+            leading=11,
+            textColor=colors.HexColor('#233041'),
+        )
+
+        small_note_style = ParagraphStyle(
+            'ConfirmationSmallNote',
+            parent=styles['Normal'],
+            fontName=cls.FONT_REGULAR,
+            fontSize=8,
+            leading=10,
+            textColor=colors.HexColor('#5B6472'),
+        )
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            leftMargin=16 * mm,
+            rightMargin=16 * mm,
+            topMargin=16 * mm,
+            bottomMargin=16 * mm,
+            title=f'Подтверждение бронирования #{booking.pk}',
+            author='OpenAI',
+            subject='Подтверждение бронирования',
+        )
+
+        story = []
+        story.append(Paragraph('Подтверждение бронирования', title_style))
+
+        header_lines = [
+            f"Заявка #{booking.pk}",
+            f"Ссылка на заявку: {booking_url}",
+        ]
+        if booking.group_id:
+            header_lines.insert(1, f"Группа #{booking.group_id}")
+
+        story.append(
+            Paragraph(
+                '<br/>'.join(cls._escape_text(line) for line in header_lines),
+                subtitle_style,
+            )
+        )
+        story.append(Spacer(1, 3 * mm))
+
+        if group_rows:
+            story.append(Paragraph('Сведения о группе', section_style))
+            group_table_data = [
+                [
+                    Paragraph(cls._escape_text(label), cell_label_style),
+                    Paragraph(cls._escape_text(value), cell_value_style),
+                ]
+                for label, value in group_rows
+            ]
+            group_table = Table(group_table_data, colWidths=[56 * mm, 118 * mm], hAlign='LEFT')
+            group_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F7F9FC')),
+                ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#D9E1EC')),
+                ('INNERGRID', (0, 0), (-1, -1), 0.35, colors.HexColor('#D9E1EC')),
+                ('LEFTPADDING', (0, 0), (-1, -1), 7),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 7),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            story.append(group_table)
+            story.append(Spacer(1, 4 * mm))
+
+        story.append(Paragraph('Реквизиты подтверждения', section_style))
+
+        detail_table_data = [
+            [
+                Paragraph(cls._escape_text(label), cell_label_style),
+                Paragraph(cls._escape_text(value), cell_value_style),
+            ]
+            for label, value in detail_rows
+        ]
+
+        detail_table = Table(detail_table_data, colWidths=[64 * mm, 110 * mm], hAlign='LEFT')
+        detail_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.white),
+            ('BOX', (0, 0), (-1, -1), 0.7, colors.HexColor('#D9E1EC')),
+            ('INNERGRID', (0, 0), (-1, -1), 0.35, colors.HexColor('#D9E1EC')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 7),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 7),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        story.append(detail_table)
+        story.append(Spacer(1, 4 * mm))
+
+        story.append(Paragraph('QR-код для проверки заявки в системе', section_style))
+        qr_drawing = createBarcodeDrawing(
+            'QR',
+            value=booking_url,
+            barLevel='M',
+            width=34 * mm,
+            height=34 * mm,
+        )
+
+        qr_table = Table(
+            [
+                [
+                    Paragraph(
+                        cls._escape_text(
+                            'Откройте ссылку или отсканируйте QR-код для перехода к заявке в системе.'
+                        ),
+                        small_note_style,
+                    ),
+                    qr_drawing,
+                ]
+            ],
+            colWidths=[137 * mm, 38 * mm],
+            hAlign='LEFT',
+        )
+        qr_table.setStyle(TableStyle([
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#D9E1EC')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 5),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        story.append(qr_table)
+
+        doc.build(story)
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+
+        filename_parts = [f'booking_{booking.pk}']
+        if booking.group_id:
+            filename_parts.append(f'group_{booking.group_id}')
+        filename = 'confirmation_' + '_'.join(filename_parts) + '.pdf'
+
+        return pdf_bytes, filename

@@ -25,6 +25,8 @@ from django.core.paginator import Paginator
 from approval.models import Approval
 from booking.services.booking_services import BookingAccessService, BookingFiltersService
 
+from booking.services.confirmation_pdf_service import BookingConfirmationPdfService
+
 
 @login_required(login_url='login')
 @require_role_decorator(['initiator'])
@@ -307,3 +309,37 @@ def booking_cancel(request, booking_id):
 
     messages.success(request, 'Заявка отменена')
     return redirect('booking_detail', booking_id=booking.id)
+
+
+from django.http import HttpResponse
+from django.core.exceptions import PermissionDenied
+
+
+@login_required(login_url='login')
+def booking_confirmation_pdf(request, booking_id):
+    booking = get_object_or_404(
+        Booking.objects.select_related(
+            'group',
+            'room',
+            'initiator__profile',
+            'approval__approver__profile',
+        ).prefetch_related('equipment'),
+        pk=booking_id
+    )
+
+    if not booking_can_view(request.user, booking):
+        raise PermissionDenied
+
+    approval = getattr(booking, 'approval', None)
+    if (
+        booking.status != Booking.Status.APPROVED
+        or not approval
+        or approval.decision != Approval.Decision.APPROVED
+    ):
+        raise PermissionDenied('Подтверждение доступно только для согласованных заявок')
+
+    pdf_bytes, filename = BookingConfirmationPdfService.build_pdf(booking, request)
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
