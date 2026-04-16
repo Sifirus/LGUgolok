@@ -17,6 +17,18 @@
                     <span>#{{ booking.id }}</span>
                 </div>
 
+            {% if booking.group %}
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:13px">
+              <i class="bi bi-collection" style="color:var(--blue)"></i>
+              <span style="color:var(--muted)">Часть серии:</span>
+              <a href="{% url 'booking_group_detail' booking.group.pk %}"
+                 style="color:var(--blue);font-weight:600;text-decoration:none">
+                {{ booking.group.title }}
+                <i class="bi bi-arrow-right" style="font-size:11px"></i>
+              </a>
+            </div>
+            {% endif %}
+
                 <div class="bd-title-row">
                     <h1 class="bd-title">Заявка #{{ booking.id }}</h1>
 

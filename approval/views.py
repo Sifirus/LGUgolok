@@ -123,7 +123,10 @@ class ApprovalPendingListAPIView(APIView):
         pending_bookings = list(
             Booking.objects.filter(status=Booking.Status.CREATED)
             .select_related('initiator', 'room', 'group', 'group__initiator')
-            .prefetch_related('equipment')
+            .prefetch_related(
+                'equipment',
+                'group__booking_set',  # ← все подзаявки группы одним запросом
+            )
             .order_by('created_at', 'id')
         )
 
@@ -159,10 +162,6 @@ class ApprovalPendingListAPIView(APIView):
 
         for group_id, bookings in grouped.items():
             group = bookings[0].group
-            pending_count = sum(
-                1 for b in bookings
-                if b.status in [Booking.Status.CREATED, Booking.Status.PENDING]
-            )
 
             representative = next(
                 (b for b in bookings if b.status in [Booking.Status.CREATED, Booking.Status.PENDING]),
@@ -177,8 +176,9 @@ class ApprovalPendingListAPIView(APIView):
                 'group_comment': group.comment,
                 'group_date_from': group.date_from,
                 'group_date_to': group.date_to,
-                'group_total_count': len(bookings),
-                'group_pending_count': pending_count,
+                # ← используем свойства модели (работают из prefetch без доп. запросов)
+                'group_total_count': group.total_count,
+                'group_pending_count': group.approval_required_count,
                 'initiator_first_name': _safe_profile_value(group.initiator, 'first_name'),
                 'initiator_last_name': _safe_profile_value(group.initiator, 'last_name'),
                 'initiator_name': _safe_full_name(group.initiator),
@@ -315,31 +315,23 @@ class ApprovalDecisionAPIView(APIView):
 
     @transaction.atomic
     def post(self, request, pk):
+        """
+        Принять решение по заявке.
+
+        POST body:
+          decision  : 'approved' | 'rejected'
+          comment   : str  (обязателен при rejected)
+          scope     : 'all' | 'single'  (default 'all')
+                      'all'    — решение применяется ко всем ожидающим в группе
+                      'single' — решение применяется только к этой конкретной заявке
+
+        pk — всегда id конкретной Booking (не группы).
+        """
         booking = Booking.objects.select_for_update().select_related('group').get(pk=pk)
-
-        if booking.group_id:
-            scope_qs = Booking.objects.select_for_update().filter(group_id=booking.group_id)
-        else:
-            scope_qs = Booking.objects.select_for_update().filter(pk=booking.pk)
-
-        scope_bookings = list(scope_qs.order_by('created_at', 'id'))
-        scope_ids = [b.id for b in scope_bookings]
-
-        approvals = Approval.objects.select_for_update().filter(booking_id__in=scope_ids)
-
-        if approvals.filter(decision=Approval.Decision.IN_PROCESS).exclude(approver=request.user).exists():
-            raise PermissionDenied('Эта заявка не назначена вам для согласования')
-
-        own_lock_exists = approvals.filter(
-            approver=request.user,
-            decision=Approval.Decision.IN_PROCESS
-        ).exists()
-
-        if not own_lock_exists:
-            raise PermissionDenied('Эта заявка не назначена вам для согласования')
 
         decision = request.data.get('decision')
         comment_text = (request.data.get('comment') or '').strip()
+        scope = request.data.get('scope', 'all')  # 'all' | 'single'
 
         if decision not in ['approved', 'rejected']:
             return Response({'detail': 'Неверное решение'}, status=status.HTTP_400_BAD_REQUEST)
@@ -347,34 +339,80 @@ class ApprovalDecisionAPIView(APIView):
         if decision == 'rejected' and not comment_text:
             return Response({'detail': 'Введите причину отклонения'}, status=status.HTTP_400_BAD_REQUEST)
 
-        first_requires_approval = next(
-            (b for b in scope_bookings if b.status in [Booking.Status.CREATED, Booking.Status.PENDING]),
-            scope_bookings[0] if scope_bookings else None
+        if scope == 'single' or not booking.group_id:
+            # Решаем только эту одну заявку
+            target_bookings = [booking]
+        else:
+            # scope == 'all': все ожидающие в группе
+            target_bookings = list(
+                Booking.objects.select_for_update().filter(
+                    group_id=booking.group_id,
+                    status__in=[Booking.Status.CREATED, Booking.Status.PENDING],
+                ).order_by('event_date', 'id')
+            )
+            if not target_bookings:
+                target_bookings = [booking]
+
+        target_ids = [b.id for b in target_bookings]
+
+        # Проверить что текущий пользователь держит блокировку на все цели
+        own_locks = set(
+            Approval.objects.filter(
+                booking_id__in=target_ids,
+                approver=request.user,
+                decision=Approval.Decision.IN_PROCESS,
+            ).values_list('booking_id', flat=True)
         )
 
-        if comment_text and first_requires_approval:
-            Comments.objects.create(
-                booking=first_requires_approval,
-                author=request.user,
-                text=comment_text
-            )
+        # Разрешаем принять решение по заявкам где есть наша блокировка
+        # или по booking pk если вызван со scope=single (повторная проверка)
+        if not own_locks:
+            raise PermissionDenied('Эта заявка не назначена вам для согласования')
 
         new_status = Booking.Status.APPROVED if decision == 'approved' else Booking.Status.REJECTED
-        Booking.objects.filter(id__in=scope_ids).update(status=new_status)
 
-        for b in scope_bookings:
-            approval, created = Approval.objects.get_or_create(
+        # Записать комментарий к первой затронутой заявке
+        if comment_text:
+            first = target_bookings[0]
+            Comments.objects.create(
+                booking=first,
+                author=request.user,
+                text=comment_text,
+            )
+
+        # Обновить статус + approval только для заблокированных нами заявок
+        locked_targets = [b for b in target_bookings if b.id in own_locks]
+
+        for b in locked_targets:
+            # Используем .save() а не .update() — чтобы сработали сигналы
+            # pre_save/post_save и отправились уведомления
+            b.status = new_status
+            b.save(update_fields=['status', 'updated_at'])
+
+            approval, _ = Approval.objects.get_or_create(
                 booking=b,
-                defaults={
-                    'approver': request.user,
-                    'decision': Approval.Decision.IN_PROCESS
-                }
+                defaults={'approver': request.user, 'decision': new_status},
             )
             approval.approver = request.user
             approval.decision = new_status
-            approval.save()
+            approval.save(update_fields=['approver', 'decision', 'decided_at'])
 
-        return Response({'detail': f'Заявка {"одобрена" if decision == "approved" else "отклонена"}'}, status=status.HTTP_200_OK)
+        # Посчитать сколько ещё ожидает в группе (если групповая)
+        remaining = 0
+        if booking.group_id:
+            remaining = Booking.objects.filter(
+                group_id=booking.group_id,
+                status__in=[Booking.Status.CREATED, Booking.Status.PENDING],
+            ).count()
+
+        label = 'одобрена' if decision == 'approved' else 'отклонена'
+        n = len(locked_targets)
+        detail = (
+                f'{"Все" if scope == "all" else "Заявка"} ({n} шт.) {label}.'
+                + (f' Осталось {remaining} на согласовании.' if remaining else '')
+        )
+
+        return Response({'detail': detail, 'remaining': remaining}, status=status.HTTP_200_OK)
 
 
 class ApprovalDetailCancelAPIView(APIView):

@@ -261,3 +261,65 @@
         margin-bottom: 20px;
     }
 }
+
+/* ── Добавить в approval_pending.css ── */
+
+/* Кнопки индивидуального решения для подзаявок */
+.subbooking-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.btn-sm-approve {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--r-sm);
+    border: 1px solid #86efac;
+    background: var(--success-bg);
+    color: var(--success);
+    cursor: pointer;
+    transition: .15s;
+    font-family: 'Outfit', sans-serif;
+}
+.btn-sm-approve:hover {
+    background: #86efac;
+    color: #166534;
+}
+
+.btn-sm-reject {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--r-sm);
+    border: 1px solid #FECACA;
+    background: var(--danger-bg);
+    color: var(--danger);
+    cursor: pointer;
+    transition: .15s;
+    font-family: 'Outfit', sans-serif;
+}
+.btn-sm-reject:hover {
+    background: #FECACA;
+    color: #991b1b;
+}
+
+/* Инлайн-форма отклонения */
+.reject-inline {
+    padding: 10px 0;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    animation: fadeIn .15s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }

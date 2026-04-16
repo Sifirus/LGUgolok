@@ -167,6 +167,7 @@ def booking_group_submit(request):
 
     return JsonResponse({'ok': True, 'group_id': group.pk})
 
+
 @login_required(login_url='login')
 def booking_group_detail(request, group_id):
     group = get_object_or_404(
@@ -182,11 +183,23 @@ def booking_group_detail(request, group_id):
         raise PermissionDenied
 
     bookings = group.booking_set.order_by('event_date', 'event_start_time')
+
+    # Заявки которые можно отменить
+    cancelable_statuses = [
+        Booking.Status.CREATED,
+        Booking.Status.PENDING,
+        Booking.Status.APPROVED,
+    ]
+    can_cancel = (
+            role in ['operator', 'initiator']
+            and group.approval_required_count > 0  # хоть что-то активное есть
+            and bookings.filter(status__in=cancelable_statuses).exists()
+    )
+
     return render(request, 'booking/booking_group_detail.html', {
-        'group':      group,
-        'bookings':   bookings,
-        'can_cancel': role in ['operator', 'initiator']
-                      and group.status_summary not in ['canceled', 'rejected'],
+        'group': group,
+        'bookings': bookings,
+        'can_cancel': can_cancel,
     })
 
 
