@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}ЛГУголок — Групповая заявка{% endblock %}
+{% block title %}Уголок - Групповая заявка{% endblock %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/booking_create.css' %}">
@@ -31,6 +31,18 @@ window.__EVENT_TYPES__ = [{% for val, label in event_types %}['{{ val }}','{{ la
       <div class="bg-panel-head"><i class="bi bi-collection"></i>Название серии</div>
       <div class="bg-panel-body">
         <input id="group-title" class="fc" placeholder="Напр.: Лекции по математике, Б-12">
+      </div>
+    </div>
+
+    <div class="bg-panel">
+      <div class="bg-panel-head"><i class="bi bi-chat-left-text"></i>Комментарий к серии</div>
+      <div class="bg-panel-body">
+        <textarea id="group-comment" class="fc" rows="2"
+                  placeholder="Общий комментарий к серии (не к отдельным дням)"></textarea>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">
+          <i class="bi bi-info-circle"></i>
+          Комментарий к каждому дню задаётся отдельно в слотах справа
+        </div>
       </div>
     </div>
 
@@ -152,7 +164,7 @@ window.__EVENT_TYPES__ = [{% for val, label in event_types %}['{{ val }}','{{ la
     <div id="bg-rooms-loading" style="display:none;padding:16px;text-align:center;color:var(--muted)">
       <i class="bi bi-hourglass-split"></i> Проверяем доступность...
     </div>
-    <div id="bg-rooms-list"></div>
+    <div id="bg-rooms-list" style="overflow-y: scroll; max-height: 100vh"></div>
     <div style="padding:0 14px 14px" id="bg-conflict-wrap"></div>
   </div>
 </div>
@@ -182,7 +194,7 @@ window.__EVENT_TYPES__ = [{% for val, label in event_types %}['{{ val }}','{{ la
     </div>
 
     {# Список оборудования — та же структура что у аудиторий #}
-    <div id="bg-equip-list">
+    <div id="bg-equip-list" style="overflow-y: scroll; max-height: 100vh">
       <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">
         Загрузка...
       </div>
@@ -199,8 +211,7 @@ window.__EVENT_TYPES__ = [{% for val, label in event_types %}['{{ val }}','{{ la
       <div id="bg-summary"></div>
       <div class="info-message" style="margin-top:14px">
         <i class="bi bi-info-circle"></i>
-        Каждая заявка проходит движок согласования независимо.
-        Если хотя бы одна требует согласования — вся группа в статусе «Создана».
+        Каждая заявка проходит согласование независимо.
       </div>
     </div>
   </div>

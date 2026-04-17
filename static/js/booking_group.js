@@ -10,6 +10,7 @@ const GS = {
 
     primaryRoomId: null,
     conflictOverrides: {},
+    roomTypeFilter: '',        // фильтр по типу аудитории
 
     calYear: null,
     calMonth: null,
@@ -391,6 +392,11 @@ window.checkRooms = function() {
     });
 };
 
+window.setRoomTypeFilter = function(key) {
+    GS.roomTypeFilter = (GS.roomTypeFilter === key) ? '' : key;
+    renderRoomsList();
+};
+
 function renderRoomsList() {
     const container = document.getElementById('bg-rooms-list');
     if (!container) return;
@@ -400,11 +406,40 @@ function renderRoomsList() {
         return;
     }
 
+    // Средние участники для сортировки по вместимости
+    const avgP = GS.slots.length
+        ? Math.round(GS.slots.reduce((s, x) => s + (x.participants || 60), 0) / GS.slots.length)
+        : 60;
+
     const allDates = GS.slots.map(s => s.date);
 
-    container.innerHTML = GS.roomsMatrix.map(room => {
-        const isPrimary = GS.primaryRoomId === room.id;
+    // Уникальные типы для кнопок-фильтров
+    const typeMap = new Map();
+    GS.roomsMatrix.forEach(r => { if (r.type_key) typeMap.set(r.type_key, r.type); });
+    const types = [...typeMap.entries()];
 
+    const filterBar = types.length > 1 ? `
+<div style="padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:8px">
+  <label style="font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap">Тип аудитории</label>
+  <select class="fc" style="max-width:220px;font-size:13px;padding:5px 8px"
+          onchange="setRoomTypeFilter(this.value)">
+    <option value="">Все типы</option>
+    ${types.map(([k, l]) => `<option value="${k}" ${GS.roomTypeFilter === k ? 'selected' : ''}>${escH(l)}</option>`).join('')}
+  </select>
+</div>` : '';
+
+    // Фильтр + сортировка: сначала по конфликтам, потом по близости вместимости
+    let rooms = GS.roomTypeFilter
+        ? GS.roomsMatrix.filter(r => r.type_key === GS.roomTypeFilter)
+        : [...GS.roomsMatrix];
+
+    rooms.sort((a, b) => {
+        if (a.conflict_count !== b.conflict_count) return a.conflict_count - b.conflict_count;
+        return Math.abs(a.capacity - avgP) - Math.abs(b.capacity - avgP);
+    });
+
+    const rows = rooms.map(room => {
+        const isPrimary = GS.primaryRoomId === room.id;
         const chips = allDates.map(d => {
             const isFree = room.free.includes(d);
             return `<span class="bg-chip ${isFree ? 'bg-chip-free' : 'bg-chip-conflict'}">${fmtShort(d)}</span>`;
@@ -420,6 +455,10 @@ function renderRoomsList() {
   ${isPrimary ? '<i class="bi bi-check-circle-fill" style="color:var(--blue);flex-shrink:0"></i>' : ''}
 </div>`;
     }).join('');
+
+    container.innerHTML = filterBar + (rooms.length
+        ? rows
+        : '<div style="padding:14px;text-align:center;color:var(--muted)">Нет аудиторий этого типа</div>');
 }
 
 window.selectPrimary = function(roomId) {
@@ -454,19 +493,30 @@ function renderConflictResolve(primaryRoom) {
         return;
     }
 
+    const avgPconflict = GS.slots.length
+        ? Math.round(GS.slots.reduce((s, x) => s + (x.participants || 60), 0) / GS.slots.length)
+        : 60;
+
     const rowsHtml = conflictDates.map(d => {
-        const alts = GS.roomsMatrix.filter(r => r.id !== primaryRoom.id && r.free.includes(d));
+        let alts = GS.roomsMatrix.filter(r => r.id !== primaryRoom.id && r.free.includes(d));
         const currentSlot = GS.slots.find(s => s.date === d);
         const currentRoom = currentSlot?.roomId ? GS.roomsMatrix.find(r => r.id === currentSlot.roomId) : null;
 
+        // Сортировать замены по ближайшей вместимости к участникам этого слота
+        const slotP = GS.slots.find(s => s.date === d)?.participants || avgPconflict;
+        alts.sort((a, b) => Math.abs(a.capacity - slotP) - Math.abs(b.capacity - slotP));
+
         const buttons = alts.length
-            ? alts.map(r => `
+            ? alts.map(r => {
+                const isActive = currentRoom?.id === r.id;
+                return `
 <button type="button"
-        class="bg-room-choice ${currentRoom?.id === r.id ? 'active' : ''}"
-        onclick="setConflictOverride('${d}', ${r.id})">
+        class="bg-room-choice ${isActive ? 'active' : ''}"
+        onclick="setConflictOverride('${d}', ${r.id}); renderConflictResolve(GS.roomsMatrix.find(x=>x.id===GS.primaryRoomId))">
   <span>${escH(r.name)}</span>
-  <small>${escH(r.building)}, ${r.capacity} м.</small>
-</button>`).join('')
+  <small>${escH(r.building)}, ${r.capacity} м. · ${escH(r.type)}</small>
+</button>`;
+              }).join('')
             : `<div style="font-size:12px;color:var(--muted);padding:6px 0">Нет свободных аудиторий</div>`;
 
         return `
@@ -549,7 +599,7 @@ function renderSummary() {
 
 window.submitGroup = function() {
     const title = (document.getElementById('group-title')?.value || '').trim();
-    const comment = (document.getElementById('def-comment')?.value || '').trim();
+    const comment = (document.getElementById('group-comment')?.value || '').trim();
     const dfFrom = document.getElementById('date-from')?.value;
     const dfTo = document.getElementById('date-to')?.value;
 

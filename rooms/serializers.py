@@ -36,8 +36,12 @@ class RoomFiltersSerializer(serializers.Serializer):
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    type = serializers.CharField(source='get_type_display')
+    type = serializers.CharField(source='get_type_display')   # человекочитаемый тип
+    type_key = serializers.SerializerMethodField()             # ← raw ключ типа для JS-фильтров
 
     class Meta:
         model = Room
-        fields = ['id', 'name', 'type', 'capacity', 'building', 'floor']
+        fields = ['id', 'name', 'type', 'type_key', 'capacity', 'building', 'floor']
+
+    def get_type_key(self, obj):
+        return obj.type   # obj.type — CharField с raw значением, obj.get_type_display() — уже взят выше

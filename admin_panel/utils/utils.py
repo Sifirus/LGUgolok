@@ -6,7 +6,7 @@ from django.core.mail import send_mail
 def send_new_user_email(email, temp_password):
     subject = render_to_string(
         'admin_panel/new_user_email_subject.txt',
-        context={'site_name': 'ЛГУголок'}
+        context={'site_name': 'Уголок'}
     )
     message = render_to_string(
         'admin_panel/new_user_email.html',

@@ -31,6 +31,8 @@
 .room-results {
     display: flex;
     flex-direction: column;
+    overflow-y: scroll;
+    max-height: 100vh;
     gap: 10px;
 }
 

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Booking, Comments
+from .models import Booking, Comments, BookingGroup
 
 
 @admin.register(Booking)
@@ -17,6 +17,15 @@ class CommentsAdmin(admin.ModelAdmin):
     list_display = ('text', 'booking', 'author', 'created_at')
     list_filter = ('author',)
     search_fields = ('text', 'author__email', 'booking__room__name')
+    ordering = ('created_at',)
+    list_per_page = 25
+
+
+@admin.register(BookingGroup)
+class BookingGroupAdmin(admin.ModelAdmin):
+    list_display = ('initiator', 'title', 'comment', 'date_from', 'date_to')
+    list_filter = ('initiator', 'title')
+    search_fields = ('title',)
     ordering = ('created_at',)
     list_per_page = 25
 

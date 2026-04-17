@@ -318,7 +318,7 @@
 
 .bg-conflict-room-list {
     display: flex;
-    flex-wrap: wrap;
+    overflow-x: scroll;
     gap: 6px;
     flex: 1;
 }

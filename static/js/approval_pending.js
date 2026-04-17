@@ -4,8 +4,13 @@
     window.__approvalPendingState = window.__approvalPendingState || {
         currentBookingId: null,
         currentScope:     null,
+        activeTab:        localStorage.getItem('appr_tab') || 'pending',
     };
     const S = window.__approvalPendingState;
+
+    // Восстановить текущую заявку из localStorage
+    const _storedId = parseInt(localStorage.getItem('appr_current_id') || '0', 10);
+    if (_storedId && !S.currentBookingId) S.currentBookingId = _storedId;
 
     /* ── utils ── */
     function escH(v) {
@@ -288,6 +293,7 @@ ${globalActions}`;
 
             S.currentBookingId = data.id;
             S.currentScope     = data.scope || 'booking';
+            localStorage.setItem('appr_current_id', data.id);
 
             document.querySelectorAll('.appr-card').forEach(c => {
                 c.classList.toggle('selected', parseInt(c.dataset.id) === bookingId);
@@ -328,7 +334,9 @@ ${globalActions}`;
             showMessage(data.detail, 'success');
             S.currentBookingId = null;
             S.currentScope     = null;
+            localStorage.removeItem('appr_current_id');
             await loadApprovalList();
+            if (S.activeTab === 'mine') await loadMyApprovals();
             document.getElementById('decisionPanel').innerHTML = emptyPanel();
         } catch {
             showMessage('Ошибка отправки', 'error');
@@ -416,19 +424,75 @@ ${globalActions}`;
             showMessage(data.detail, 'success');
             S.currentBookingId = null;
             S.currentScope     = null;
+            localStorage.removeItem('appr_current_id');
             await loadApprovalList();
+            if (S.activeTab === 'mine') await loadMyApprovals();
             document.getElementById('decisionPanel').innerHTML = emptyPanel();
         } catch {
             showMessage('Ошибка', 'error');
         }
     }
 
+    /* ════════════════ МОИ ЗАЯВКИ (вкладка) ════════════════ */
+
+    async function loadMyApprovals() {
+        const el = document.getElementById('approval-list');
+        el.innerHTML = '<div class="text-center py-4">Загрузка...</div>';
+        try {
+            const resp = await fetch('/api/approval/my-locked/');
+            const data = await resp.json();
+            if (resp.ok) {
+                const list = Array.isArray(data) ? data : [];
+                el.innerHTML = list.length
+                    ? list.map(item => renderCard({...item, _isMyTab: true})).join('')
+                    : '<div class="text-muted text-center py-4">Нет взятых заявок</div>';
+            } else {
+                showMessage(data.detail || 'Ошибка загрузки', 'error');
+            }
+        } catch {
+            showMessage('Ошибка соединения', 'error');
+        }
+    }
+
+    /* ════════════════ ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ════════════════ */
+
+    window.switchTab = function(tab) {
+        S.activeTab = tab;
+        localStorage.setItem('appr_tab', tab);
+        // Обновить классы кнопок
+        document.querySelectorAll('.appr-tab-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.tab === tab);
+        });
+        if (tab === 'pending') {
+            loadApprovalList();
+        } else {
+            loadMyApprovals();
+        }
+    };
+
     /* ════════════════ ЭКСПОРТ ════════════════ */
 
     window.loadApprovalList = loadApprovalList;
+    window.loadMyApprovals  = loadMyApprovals;
     window.selectBooking    = selectBooking;
     window.submitApproval   = submitApproval;
     window.cancelBooking    = cancelBooking;
 
-    document.addEventListener('DOMContentLoaded', loadApprovalList);
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Восстановить активную вкладку
+        document.querySelectorAll('.appr-tab-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.tab === S.activeTab);
+        });
+
+        if (S.activeTab === 'mine') {
+            await loadMyApprovals();
+        } else {
+            await loadApprovalList();
+        }
+
+        // Восстановить открытую заявку
+        if (S.currentBookingId) {
+            try { await selectBooking(S.currentBookingId); } catch {}
+        }
+    });
 })();

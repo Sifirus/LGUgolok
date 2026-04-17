@@ -23,6 +23,15 @@
 
         <div class="row g-4">
             <div class="col-lg-5">
+                <!-- Вкладки -->
+                <div class="appr-tabs">
+                    <button class="appr-tab-btn active" data-tab="pending" onclick="switchTab('pending')">
+                        <i class="bi bi-hourglass-split"></i> Ожидают решения
+                    </button>
+                    <button class="appr-tab-btn" data-tab="mine" onclick="switchTab('mine')">
+                        <i class="bi bi-person-check"></i> Взяты мной
+                    </button>
+                </div>
                 <div id="approval-list">
                     <div class="text-muted text-center py-4">Загрузка заявок...</div>
                 </div>
