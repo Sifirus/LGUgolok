@@ -71,6 +71,31 @@ class RoomLookupAPIView(APIView):
         return Response(data)
 
 
+class RoomDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            room = Room.objects.prefetch_related('equipment').get(pk=pk)
+        except Room.DoesNotExist:
+            return Response({'detail': 'Аудитория не найдена'}, status=404)
+
+        data = {
+            'id': room.id,
+            'name': room.name,
+            'building': room.building,
+            'floor': room.floor,
+            'capacity': room.capacity,
+            'type': room.get_type_display(),
+            'status': room.get_status_display(),
+            'equipment': [
+                {'id': e.id, 'name': e.name, 'type': e.get_type_display()}
+                for e in room.equipment.all()
+            ],
+        }
+        return Response(data)
+
+
 @login_required(login_url='login')
 @require_role_decorator(roles=['operator'])
 def rooms_list(request):
@@ -172,7 +197,6 @@ def room_add(request):
 
 
 @login_required(login_url='login')
-@require_role_decorator(roles=['operator'])
 def room_detail(request, room_id):
     room = get_object_or_404(
         Room.objects.annotate(

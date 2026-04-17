@@ -120,7 +120,7 @@
                         <div class="bd-line">
                             <div class="bd-label">Аудитория</div>
                             <div class="bd-value">
-                                {{ booking.room.name }}
+                                <a class="link" href="{% url 'room_detail' booking.room.id %}">{{ booking.room.name }}</a>
                                 <div class="bd-sub">{{ booking.room.building }}, этаж {{ booking.room.floor }}</div>
                                 <div class="bd-sub">Вместимость: {{ booking.room.capacity }} чел.</div>
                             </div>
@@ -132,8 +132,8 @@
                                 <div class="bd-list">
                                     {% for eq in booking.equipment.all %}
                                         <div class="bd-list-item">
-                                            <span class="bd-list-main">{{ eq.name }}</span>
-                                            <span class="bd-list-sub">{{ eq.model }} · Инв. №{{ eq.inventory_number }}</span>
+                                            <a class="link" href="{% url 'equipment_detail' eq.id %}">{{ eq.name }}</a>
+                                            <span class="bd-list-sub">{{ eq.model }} · Инв. №{{ eq.inventory_number}}</span>
                                         </div>
                                     {% endfor %}
                                 </div>

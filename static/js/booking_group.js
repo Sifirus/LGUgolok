@@ -448,7 +448,15 @@ function renderRoomsList() {
         return `
 <div class="bg-room-row ${isPrimary ? 'primary-selected' : ''}" onclick="selectPrimary(${room.id})">
   <div style="flex:1;min-width:0">
-    <div class="bg-room-name">${escH(room.name)}</div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="bg-room-name">${escH(room.name)}</span>
+      <button type="button" class="btn-sec" 
+              onclick="event.stopPropagation(); showRoomInfo(${room.id})" 
+              style="padding: 2px 8px; font-size: 11px; min-width: auto;" 
+              title="Подробнее об аудитории">
+        <i class="bi bi-info-circle"></i>
+      </button>
+    </div>
     <div class="bg-room-meta">${escH(room.building)}, ${room.floor} эт. · ${room.capacity} мест · ${escH(room.type)}</div>
   </div>
   <div class="bg-date-chips">${chips}</div>
@@ -510,12 +518,22 @@ function renderConflictResolve(primaryRoom) {
             ? alts.map(r => {
                 const isActive = currentRoom?.id === r.id;
                 return `
-<button type="button"
-        class="bg-room-choice ${isActive ? 'active' : ''}"
-        onclick="setConflictOverride('${d}', ${r.id}); renderConflictResolve(GS.roomsMatrix.find(x=>x.id===GS.primaryRoomId))">
-  <span>${escH(r.name)}</span>
-  <small>${escH(r.building)}, ${r.capacity} м. · ${escH(r.type)}</small>
-</button>`;
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button"
+                    class="bg-room-choice ${isActive ? 'active' : ''}"
+                    style="flex: 1;"
+                    onclick="setConflictOverride('${d}', ${r.id}); renderConflictResolve(GS.roomsMatrix.find(x=>x.id===GS.primaryRoomId))">
+                <span>${escH(r.name)}</span>
+                <small>${escH(r.building)}, ${r.capacity} м. · ${escH(r.type)}</small>
+            </button>
+            <button type="button" 
+                    class="btn-sec" 
+                    onclick="event.stopPropagation(); showRoomInfo(${r.id})" 
+                    style="padding: 4px 10px; font-size: 11px; min-width: auto;" 
+                    title="Подробнее об аудитории">
+                <i class="bi bi-info-circle"></i>
+            </button>
+        </div>`;
               }).join('')
             : `<div style="font-size:12px;color:var(--muted);padding:6px 0">Нет свободных аудиторий</div>`;
 
@@ -896,7 +914,15 @@ function renderEquipList() {
   <input type="checkbox" class="bg-eq-check" ${isSelected?'checked':''}
          onclick="event.stopPropagation(); toggleGlobalEquip(${eq.id})">
   <div style="flex:1;min-width:0">
-    <div class="bg-eq-name">${escH(eq.name)}${eq.model?` <span style="font-weight:400;color:var(--muted)">— ${escH(eq.model)}</span>`:''}</div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="bg-eq-name">${escH(eq.name)}${eq.model?` <span style="font-weight:400;color:var(--muted)">— ${escH(eq.model)}</span>`:''}</span>
+      <button type="button" class="btn-sec" 
+              onclick="event.stopPropagation(); showEquipmentInfo(${eq.id})" 
+              style="padding: 2px 6px; font-size: 10px; min-width: auto;" 
+              title="Подробнее об оборудовании">
+        <i class="bi bi-info-circle"></i>
+      </button>
+    </div>
     <div class="bg-eq-meta">${escH(eq.type)} · инв. ${escH(eq.inventory)}</div>
     ${hasAnyConflict ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">На ${eq.conflict_count} дат — не добавится (занято)</div>` : ''}
   </div>
@@ -999,7 +1025,15 @@ function renderEquipmentModal() {
          onclick="event.stopPropagation(); toggleEquipInModal(${eq.id})">
   <div class="eq-icon"><i class="bi bi-laptop"></i></div>
   <div style="flex:1;min-width:0">
-    <div class="eq-name">${escH(eq.name||'')}${eq.model?' — '+escH(eq.model):''}${hint}</div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="eq-name">${escH(eq.name||'')}${eq.model?' — '+escH(eq.model):''}${hint}</span>
+        <button type="button" class="btn-sec" 
+                onclick="event.stopPropagation(); showEquipmentInfo(${eq.id})" 
+                style="padding: 2px 6px; font-size: 10px; min-width: auto;" 
+                title="Подробнее об оборудовании">
+            <i class="bi bi-info-circle"></i>
+        </button>
+    </div>
     <div class="eq-loc">
       ${eq.type_label||eq.type ? `<span class="eq-inv">${escH(eq.type_label||eq.type)}</span>` : ''}
       ${eq.inventory_number    ? `<span class="eq-inv">${escH(eq.inventory_number)}</span>`    : ''}
@@ -1165,3 +1199,248 @@ document.addEventListener('DOMContentLoaded', function() {
     initCal();
     renderSlots();
 });
+
+// Вспомогательные функции для экранирования
+function escH(s) {
+    return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// Показать информацию об аудитории
+async function showRoomInfo(roomId) {
+    const modal = document.getElementById('infoModal');
+    const title = document.getElementById('infoModalTitle');
+    const subtitle = document.getElementById('infoModalSubtitle');
+    const body = document.getElementById('infoModalBody');
+    const link = document.getElementById('infoModalLink');
+
+    if (!modal) return;
+
+    openModal('infoModal');
+    title.textContent = 'Информация об аудитории';
+    subtitle.textContent = `ID: ${roomId}`;
+    body.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: var(--muted);">
+            <div class="spinner-border" style="margin-bottom: 12px;"></div>
+            <div>Загрузка данных...</div>
+        </div>
+    `;
+    link.style.display = 'none';
+
+    try {
+        const resp = await fetch(`/api/room/${roomId}/`);
+        const data = await resp.json();
+
+        if (resp.ok) {
+            body.innerHTML = `
+                <div class="info-detail-grid">
+                    <div class="info-detail-row">
+                        <div class="info-detail-icon">
+                            <i class="bi bi-door-open" style="font-size: 16px;"></i>
+                        </div>
+                        <div class="info-detail-content">
+                            <div class="info-detail-label">Название</div>
+                            <div class="info-detail-value">${escH(data.name)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-detail-row">
+                        <div class="info-detail-icon">
+                            <i class="bi bi-geo-alt" style="font-size: 16px;"></i>
+                        </div>
+                        <div class="info-detail-content">
+                            <div class="info-detail-label">Расположение</div>
+                            <div class="info-detail-value">${escH(data.building)}, ${data.floor} этаж</div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-detail-row">
+                        <div class="info-detail-icon">
+                            <i class="bi bi-people" style="font-size: 16px;"></i>
+                        </div>
+                        <div class="info-detail-content">
+                            <div class="info-detail-label">Вместимость</div>
+                            <div class="info-detail-value">${data.capacity} человек</div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-detail-row">
+                        <div class="info-detail-icon">
+                            <i class="bi bi-tag" style="font-size: 16px;"></i>
+                        </div>
+                        <div class="info-detail-content">
+                            <div class="info-detail-label">Характеристики</div>
+                            <div class="info-detail-value">
+                                <span class="info-badge"><i class="bi bi-building"></i> ${escH(data.type)}</span>
+                                <span class="info-badge"><i class="bi bi-circle-fill" style="font-size: 8px; color: ${data.status === 'Активна' ? 'var(--success)' : 'var(--warning)'};"></i> ${escH(data.status)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${data.equipment && data.equipment.length > 0 ? `
+                        <div style="margin-top: 8px;">
+                            <div class="info-section-title">
+                                <i class="bi bi-laptop"></i>
+                                Стационарное оборудование
+                                <span style="font-size: 11px; font-weight: 400; color: var(--muted); margin-left: auto;">${data.equipment.length} ед.</span>
+                            </div>
+                            <div class="info-equipment-list">
+                                ${data.equipment.map(eq => `
+                                    <span class="info-equipment-tag" onclick="showEquipmentInfo(${eq.id})" title="Нажмите для подробностей">
+                                        <i class="bi bi-laptop"></i>
+                                        ${escH(eq.name)}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="info-detail-row">
+                            <div class="info-detail-icon">
+                                <i class="bi bi-laptop" style="font-size: 16px;"></i>
+                            </div>
+                            <div class="info-detail-content">
+                                <div class="info-detail-label">Оборудование</div>
+                                <div class="info-detail-value" style="color: var(--muted);">Отсутствует</div>
+                            </div>
+                        </div>
+                    `}
+                </div>
+            `;
+
+            link.href = `/rooms/${roomId}/`;
+            link.style.display = 'inline-flex';
+        } else {
+            body.innerHTML = `
+                <div style="padding: 20px; text-align: center;">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 32px; color: var(--danger); margin-bottom: 12px;"></i>
+                    <div style="color: var(--danger);">${escH(data.detail || 'Ошибка загрузки данных')}</div>
+                </div>
+            `;
+        }
+    } catch (e) {
+        body.innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+                <i class="bi bi-wifi-off" style="font-size: 32px; color: var(--muted); margin-bottom: 12px;"></i>
+                <div style="color: var(--muted);">Ошибка соединения с сервером</div>
+            </div>
+        `;
+    }
+}
+
+// Показать информацию об оборудовании
+async function showEquipmentInfo(equipId) {
+    const modal = document.getElementById('infoModal');
+    const title = document.getElementById('infoModalTitle');
+    const subtitle = document.getElementById('infoModalSubtitle');
+    const body = document.getElementById('infoModalBody');
+    const link = document.getElementById('infoModalLink');
+
+    if (!modal) return;
+
+    openModal('infoModal');
+    title.textContent = 'Информация об оборудовании';
+    subtitle.textContent = `ID: ${equipId}`;
+    body.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: var(--muted);">
+            <div class="spinner-border" style="margin-bottom: 12px;"></div>
+            <div>Загрузка данных...</div>
+        </div>
+    `;
+    link.style.display = 'none';
+
+    try {
+        const resp = await fetch(`/api/equipment/${equipId}/`);
+        const data = await resp.json();
+
+        if (resp.ok) {
+            const statusColor = data.status === 'Активно' ? 'var(--success)' :
+                               data.status === 'На обслуживании' ? 'var(--warning)' : 'var(--danger)';
+
+            body.innerHTML = `
+                <div class="info-detail-grid">
+                    <div class="info-detail-row">
+                        <div class="info-detail-icon">
+                            <i class="bi bi-upc-scan" style="font-size: 16px;"></i>
+                        </div>
+                        <div class="info-detail-content">
+                            <div class="info-detail-label">Инвентарный номер</div>
+                            <div class="info-detail-value" style="font-family: monospace;">${escH(data.inventory_number)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-detail-row">
+                        <div class="info-detail-icon">
+                            <i class="bi bi-laptop" style="font-size: 16px;"></i>
+                        </div>
+                        <div class="info-detail-content">
+                            <div class="info-detail-label">Название</div>
+                            <div class="info-detail-value">${escH(data.name)}</div>
+                            ${data.model ? `<div class="info-detail-sub">Модель: ${escH(data.model)}</div>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="info-detail-row">
+                        <div class="info-detail-icon">
+                            <i class="bi bi-tags" style="font-size: 16px;"></i>
+                        </div>
+                        <div class="info-detail-content">
+                            <div class="info-detail-label">Характеристики</div>
+                            <div class="info-detail-value">
+                                <span class="info-badge"><i class="bi bi-diagram-3"></i> ${escH(data.type)}</span>
+                                <span class="info-badge"><i class="bi bi-circle-fill" style="font-size: 8px; color: ${statusColor};"></i> ${escH(data.status)}</span>
+                                <span class="info-badge"><i class="bi bi-pin${data.is_stationary ? '-fill' : ''}"></i> ${data.is_stationary ? 'Стационарное' : 'Переносное'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${data.room_name ? `
+                        <div class="info-detail-row">
+                            <div class="info-detail-icon">
+                                <i class="bi bi-geo-alt" style="font-size: 16px;"></i>
+                            </div>
+                            <div class="info-detail-content">
+                                <div class="info-detail-label">Расположение</div>
+                                <div class="info-detail-value">
+                                    <a href="#" onclick="showRoomInfo(${data.room_id}); return false;" style="color: var(--blue); text-decoration: none;">
+                                        ${escH(data.room_name)}
+                                        <i class="bi bi-box-arrow-up-right" style="font-size: 11px; margin-left: 4px;"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="info-detail-row">
+                            <div class="info-detail-icon">
+                                <i class="bi bi-box" style="font-size: 16px;"></i>
+                            </div>
+                            <div class="info-detail-content">
+                                <div class="info-detail-label">Расположение</div>
+                                <div class="info-detail-value" style="color: var(--muted);">На складе</div>
+                            </div>
+                        </div>
+                    `}
+                </div>
+            `;
+
+            link.href = `/equipment/${equipId}/`;
+            link.style.display = 'inline-flex';
+        } else {
+            body.innerHTML = `
+                <div style="padding: 20px; text-align: center;">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 32px; color: var(--danger); margin-bottom: 12px;"></i>
+                    <div style="color: var(--danger);">${escH(data.detail || 'Ошибка загрузки данных')}</div>
+                </div>
+            `;
+        }
+    } catch (e) {
+        body.innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+                <i class="bi bi-wifi-off" style="font-size: 32px; color: var(--muted); margin-bottom: 12px;"></i>
+                <div style="color: var(--muted);">Ошибка соединения с сервером</div>
+            </div>
+        `;
+    }
+}

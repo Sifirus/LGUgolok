@@ -418,6 +418,15 @@ a {
     margin-top: 2px;
 }
 
+.link {
+    color: var(--text);
+}
+
+.link:hover {
+    color: var(--blue);
+    text-decoration: underline;
+}
+
 .top-link {
     font-size: 14px;
     font-weight: 600;
@@ -652,7 +661,8 @@ a {
 }
 
 .modal-card,
-.modal-lgu {
+.modal-lgu,
+.modal-lgu-card{
     width: 100%;
     background: var(--surface);
     border-radius: var(--r);
@@ -664,7 +674,8 @@ a {
     overflow: hidden;
 }
 
-.modal-lgu {
+.modal-lgu,
+.modal-lgu-card{
     max-width: 560px;
     overflow-y: auto;
 }

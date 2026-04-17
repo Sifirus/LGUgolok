@@ -42,6 +42,29 @@ class EquipmentSearchAPIView(APIView):
         return Response(serializer.data)
 
 
+class EquipmentDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            equip = Equipment.objects.select_related('room').get(pk=pk)
+        except Equipment.DoesNotExist:
+            return Response({'detail': 'Оборудование не найдено'}, status=404)
+
+        data = {
+            'id': equip.id,
+            'inventory_number': equip.inventory_number,
+            'name': equip.name,
+            'model': equip.model,
+            'type': equip.get_type_display(),
+            'status': equip.get_status_display(),
+            'is_stationary': equip.is_stationary,
+            'room_id': equip.room_id,
+            'room_name': equip.room.name if equip.room else None,
+        }
+        return Response(data)
+
+
 @login_required(login_url='login')
 @require_role_decorator(roles=['operator'])
 def equipment_list(request):
@@ -144,7 +167,6 @@ def equipment_add(request):
 
 
 @login_required(login_url='login')
-@require_role_decorator(roles=['operator'])
 def equipment_detail(request, equipment_id):
     from rooms.models import Room
     equip = get_object_or_404(Equipment.objects.select_related('room'), pk=equipment_id)

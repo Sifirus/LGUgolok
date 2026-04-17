@@ -21,6 +21,7 @@ class BookingApprovalDetailItemSerializer(serializers.ModelSerializer):
         model = Booking
         fields = [
             'id',
+            'room_id',
             'initiator_first_name',
             'initiator_last_name',
             'department',
@@ -77,6 +78,7 @@ class BookingApprovalDetailSerializer(serializers.ModelSerializer):
         model = Booking
         fields = [
             'id',
+            'room_id',
             'scope',
             'initiator_first_name',
             'initiator_last_name',

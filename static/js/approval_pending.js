@@ -40,9 +40,16 @@
 
     function renderEquipmentTags(list) {
         if (!(list || []).length) return '<span class="text-muted">—</span>';
-        return (list || []).map(e =>
-            `<span class="equipment-tag"><i class="bi bi-laptop"></i>${escH(e)}</span>`
-        ).join('');
+        return (list || []).map(e => {
+            const id = e.id || (typeof e === 'object' ? e.id : null);
+            const name = e.name || e;
+            if (id) {
+                return `<a class="link" href="/equipment/${id}/" target="_blank" rel="noopener noreferrer" class="equipment-tag" style="text-decoration:none;">
+                    <i class="bi bi-laptop"></i>${escH(name)}
+                </a>`;
+            }
+            return `<span class="equipment-tag"><i class="bi bi-laptop"></i>${escH(name)}</span>`;
+        }).join('');
     }
 
     /* ════════════════ СПИСОК ЗАЯВОК ════════════════ */
@@ -126,28 +133,31 @@
 </div>` : '';
 
         return `
-<div class="subbooking-item ${pending?'subbooking-item--needs-approval':''}" id="subbooking-${item.id}">
+<div class="subbooking-item ${pending ? 'subbooking-item--needs-approval' : ''}" id="subbooking-${item.id}">
   <div class="subbooking-item__head">
     <div>
-      <div class="subbooking-item__title">Заявка #${escH(item.id)} · ${escH(item.event_type||'—')}</div>
+      <div class="subbooking-item__title">Заявка #${escH(item.id)} · ${escH(item.event_type || '—')}</div>
       <div class="subbooking-item__meta">
         <span><i class="bi bi-calendar3"></i>${escH(item.event_date)}</span>
-        <span><i class="bi bi-clock"></i>${escH((item.event_start_time||'').substring(0,5))}–${escH((item.event_end_time||'').substring(0,5))}</span>
-        <span><i class="bi bi-building"></i>${escH(item.room_name||'—')}</span>
+        <span><i class="bi bi-clock"></i>${escH((item.event_start_time || '').substring(0, 5))}–${escH((item.event_end_time || '').substring(0, 5))}</span>
+        <span><i class="bi bi-building"></i>${escH(item.room_name || '—')}</span>
         <span><i class="bi bi-people"></i>${escH(item.participants)} чел.</span>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-      <span class="pill ${pillCls}">${escH(item.status_display||'—')}</span>
+      <span class="pill ${pillCls}">${escH(item.status_display || '—')}</span>
     </div>
   </div>
 
-  <div class="detail-row">
-    <span class="detail-lbl">Аудитория</span>
-    <span class="detail-val">
-      ${escH(item.room_name||'—')}${item.room_building?`, корп. ${escH(item.room_building)}`:''}${item.room_floor?`, эт. ${escH(item.room_floor)}`:''}${item.room_capacity?`, ${escH(item.room_capacity)} мест`:''}
-    </span>
-  </div>
+    <div class="detail-row">
+      <span class="detail-lbl">Аудитория</span>
+      <span class="detail-val">
+        <a class="link" href="rooms/${item.room_id}/" target="_blank" rel="noopener noreferrer">
+          ${escH(item.room_name || '—')}
+        </a>
+        ${item.room_building ? `, корп. ${escH(item.room_building)}` : ''}${item.room_floor ? `, эт. ${escH(item.room_floor)}` : ''}${item.room_capacity ? `, ${escH(item.room_capacity)} мест` : ''}
+      </span>
+    </div>
 
   <div class="detail-row">
     <span class="detail-lbl">Оборудование</span>
@@ -197,7 +207,14 @@
     <div class="detail-row"><span class="detail-lbl">Тип</span><span class="detail-val">${escH(data.event_type||'—')}</span></div>
     <div class="detail-row"><span class="detail-lbl">Дата</span><span class="detail-val">${escH(data.event_date)}</span></div>
     <div class="detail-row"><span class="detail-lbl">Время</span><span class="detail-val">${escH((data.event_start_time||'').substring(0,5))}–${escH((data.event_end_time||'').substring(0,5))}</span></div>
-    <div class="detail-row"><span class="detail-lbl">Аудитория</span><span class="detail-val" style="color:var(--blue)">${escH(data.room_name||'—')}</span></div>
+    <div class="detail-row">
+        <span class="detail-lbl">Аудитория</span>
+        <span class="detail-val">
+            <a class="link" href="/rooms/${data.room_id}/" target="_blank" rel="noopener noreferrer" style="color:var(--blue);">
+                ${escH(data.room_name||'—')}
+            </a>
+        </span>
+    </div>
     <div class="detail-row"><span class="detail-lbl">Участников</span><span class="detail-val">${escH(data.participants)} чел.</span></div>
     <div class="detail-row"><span class="detail-lbl">Оборудование</span><span class="detail-val">${eqHtml}</span></div>
     ${data.comment ? `<div class="detail-row" style="border-bottom:0"><span class="detail-lbl">Комментарий</span><div class="detail-val comment-box">${escBr(data.comment)}</div></div>` : ''}

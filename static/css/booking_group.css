@@ -513,6 +513,133 @@
     font-size: 12px;
 }
 
+.info-detail-grid {
+    display: grid;
+    gap: 14px;
+}
+
+.info-detail-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.info-detail-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--blue-lt, #e6f0ff);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--blue);
+    flex-shrink: 0;
+}
+
+.info-detail-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.info-detail-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.info-detail-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    word-break: break-word;
+}
+
+.info-detail-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--bg);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    border: 1px solid var(--border);
+    margin-right: 6px;
+    margin-bottom: 6px;
+}
+
+.info-badge i {
+    font-size: 12px;
+    color: var(--blue);
+}
+
+.info-equipment-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.info-equipment-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--blue-lt);
+    color: var(--blue);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+}
+
+.info-equipment-tag:hover {
+    background: var(--blue);
+    color: white;
+    border-color: var(--blue);
+}
+
+.info-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-section-title i {
+    color: var(--blue);
+    font-size: 14px;
+}
+
+/* Анимация загрузки */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.spinner-border {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
 @media (max-width: 900px) {
     .bg-layout { grid-template-columns: 1fr; }
     .bg-left { position: static; }

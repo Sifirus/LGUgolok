@@ -9,11 +9,13 @@
 {% block content %}
 
     <!-- Хлебные крошки -->
-    <nav style="font-size:13px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:6px">
-        <a href="{% url 'rooms_list' %}" style="color:var(--blue)">Аудитории</a>
-        <i class="bi bi-chevron-right" style="font-size:11px"></i>
-        <span>{{ room.name }}</span>
-    </nav>
+    {% if user.role == 'operator' %}
+        <nav style="font-size:13px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:6px">
+            <a href="{% url 'rooms_list' %}" style="color:var(--blue)">Аудитории</a>
+            <i class="bi bi-chevron-right" style="font-size:11px"></i>
+            <span>{{ room.name }}</span>
+        </nav>
+    {% endif %}
 
     <!-- Заголовок -->
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
@@ -21,11 +23,13 @@
             <h1 style="font-size:22px;font-weight:800;margin-bottom:4px;letter-spacing:-.3px">{{ room.name }}</h1>
             <p style="font-size:14px;color:var(--muted);margin:0">{{ room.building }}, {{ room.floor }} этаж</p>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn-sec" onclick="openModal('modal-edit')">
-                <i class="bi bi-pencil"></i>Редактировать
-            </button>
-        </div>
+        {% if user.role == 'operator' %}
+            <div class="d-flex gap-2">
+                <button class="btn-sec" onclick="openModal('modal-edit')">
+                    <i class="bi bi-pencil"></i>Редактировать
+                </button>
+            </div>
+        {% endif %}
     </div>
 
     <div class="row g-4">
@@ -158,7 +162,7 @@
                         </thead>
                         <tbody>
                         {% for b in recent_bookings %}
-                            <tr>
+                            <tr onclick="window.location.href='{% url 'booking_detail' b.id %}'" style="cursor: pointer;">
                                 <td style="font-weight:600">{{ b.get_event_type_display }}</td>
                                 <td style="font-size:13px;color:var(--muted)">
                                     {{ b.initiator.profile.last_name }} {{ b.initiator.profile.first_name|first }}.
@@ -188,65 +192,67 @@
     </div>
 
     <!-- Модалка редактирования -->
-    <div class="modal-lgu-backdrop" id="modal-edit">
-        <div class="modal-lgu">
-            <div class="modal-lgu-head">
-                <span class="modal-lgu-title"><i class="bi bi-pencil-square"></i>Редактировать — {{ room.name }}</span>
-                <button class="btn-sec" onclick="closeModal('modal-edit')"><i class="bi bi-x-lg"></i></button>
+    {% if user.role == 'operator' %}
+        <div class="modal-lgu-backdrop" id="modal-edit">
+            <div class="modal-lgu">
+                <div class="modal-lgu-head">
+                    <span class="modal-lgu-title"><i class="bi bi-pencil-square"></i>Редактировать — {{ room.name }}</span>
+                    <button class="btn-sec" onclick="closeModal('modal-edit')"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <form method="post" action="{% url 'room_edit' room.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="_action" value="edit">
+                    <input type="hidden" name="room_id" value="{{ room.id }}">
+                    <div class="modal-lgu-body">
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label class="fl">Название *</label>
+                                <input name="name" class="fc" value="{{ room.name }}">
+                            </div>
+                            <div class="field-group">
+                                <label class="fl">Корпус *</label>
+                                <input name="building" class="fc" value="{{ room.building }}">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label class="fl">Этаж</label>
+                                <input name="floor" type="number" class="fc" value="{{ room.floor }}">
+                            </div>
+                            <div class="field-group">
+                                <label class="fl">Вместимость *</label>
+                                <input name="capacity" type="number" class="fc" value="{{ room.capacity }}" min="1">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label class="fl">Тип</label>
+                                <select name="type" class="fc">
+                                    {% for val, label in room_types %}
+                                        <option value="{{ val }}"
+                                                {% if room.type == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="fl">Статус</label>
+                                <select name="status" class="fc">
+                                    {% for val, label in room_statuses %}
+                                        <option value="{{ val }}"
+                                                {% if room.status == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-lgu-foot">
+                        <button type="button" class="btn-sec" onclick="closeModal('modal-edit')">Отмена</button>
+                        <button type="submit" class="btn-main"><i class="bi bi-check-lg"></i>Сохранить</button>
+                    </div>
+                </form>
             </div>
-            <form method="post" action="{% url 'room_edit' room.pk %}">
-                {% csrf_token %}
-                <input type="hidden" name="_action" value="edit">
-                <input type="hidden" name="room_id" value="{{ room.id }}">
-                <div class="modal-lgu-body">
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label class="fl">Название *</label>
-                            <input name="name" class="fc" value="{{ room.name }}">
-                        </div>
-                        <div class="field-group">
-                            <label class="fl">Корпус *</label>
-                            <input name="building" class="fc" value="{{ room.building }}">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label class="fl">Этаж</label>
-                            <input name="floor" type="number" class="fc" value="{{ room.floor }}">
-                        </div>
-                        <div class="field-group">
-                            <label class="fl">Вместимость *</label>
-                            <input name="capacity" type="number" class="fc" value="{{ room.capacity }}" min="1">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label class="fl">Тип</label>
-                            <select name="type" class="fc">
-                                {% for val, label in room_types %}
-                                    <option value="{{ val }}"
-                                            {% if room.type == val %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="field-group">
-                            <label class="fl">Статус</label>
-                            <select name="status" class="fc">
-                                {% for val, label in room_statuses %}
-                                    <option value="{{ val }}"
-                                            {% if room.status == val %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-lgu-foot">
-                    <button type="button" class="btn-sec" onclick="closeModal('modal-edit')">Отмена</button>
-                    <button type="submit" class="btn-main"><i class="bi bi-check-lg"></i>Сохранить</button>
-                </div>
-            </form>
         </div>
-    </div>
+    {% endif %}
 
 {% endblock %}
 {% block extra_js %}

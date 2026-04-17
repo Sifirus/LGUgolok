@@ -3,254 +3,285 @@
 {% block title %}Уголок - Групповая заявка{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/booking_create.css' %}">
-  <link rel="stylesheet" href="{% static 'css/booking_group.css' %}">
+    <link rel="stylesheet" href="{% static 'css/booking_create.css' %}">
+    <link rel="stylesheet" href="{% static 'css/booking_group.css' %}">
 {% endblock %}
 
 {% block content %}
 
-<script>
-window.__EVENT_TYPES__ = [{% for val, label in event_types %}['{{ val }}','{{ label|escapejs }}'],{% endfor %}];
-</script>
+    <script>
+        window.__EVENT_TYPES__ = [{% for val, label in event_types %}['{{ val }}','{{ label|escapejs }}'],{% endfor %}];
+    </script>
 
-<div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
-  <div>
-    <h1 style="font-size:20px;font-weight:800;margin-bottom:3px;letter-spacing:-.3px">Групповая заявка</h1>
-    <p style="font-size:14px;color:var(--muted);margin:0">Серия периодических бронирований</p>
-  </div>
-  <a href="{% url 'booking_create' %}" class="btn-sec">
-    <i class="bi bi-calendar-plus"></i>Разовая заявка
-  </a>
-</div>
-
-<div class="bg-layout">
-
-  <div class="bg-left">
-
-    <div class="bg-panel">
-      <div class="bg-panel-head"><i class="bi bi-collection"></i>Название серии</div>
-      <div class="bg-panel-body">
-        <input id="group-title" class="fc" placeholder="Напр.: Лекции по математике, Б-12">
-      </div>
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+        <div>
+            <h1 style="font-size:20px;font-weight:800;margin-bottom:3px;letter-spacing:-.3px">Групповая заявка</h1>
+            <p style="font-size:14px;color:var(--muted);margin:0">Серия периодических бронирований</p>
+        </div>
+        <a href="{% url 'booking_create' %}" class="btn-sec">
+            <i class="bi bi-calendar-plus"></i>Разовая заявка
+        </a>
     </div>
 
-    <div class="bg-panel">
-      <div class="bg-panel-head"><i class="bi bi-chat-left-text"></i>Комментарий к серии</div>
-      <div class="bg-panel-body">
+    <div class="bg-layout">
+
+        <div class="bg-left">
+
+            <div class="bg-panel">
+                <div class="bg-panel-head"><i class="bi bi-collection"></i>Название серии</div>
+                <div class="bg-panel-body">
+                    <input id="group-title" class="fc" placeholder="Напр.: Лекции по математике, Б-12">
+                </div>
+            </div>
+
+            <div class="bg-panel">
+                <div class="bg-panel-head"><i class="bi bi-chat-left-text"></i>Комментарий к серии</div>
+                <div class="bg-panel-body">
         <textarea id="group-comment" class="fc" rows="2"
                   placeholder="Общий комментарий к серии (не к отдельным дням)"></textarea>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px">
-          <i class="bi bi-info-circle"></i>
-          Комментарий к каждому дню задаётся отдельно в слотах справа
-        </div>
-      </div>
-    </div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:6px">
+                        <i class="bi bi-info-circle"></i>
+                        Комментарий к каждому дню задаётся отдельно в слотах справа
+                    </div>
+                </div>
+            </div>
 
-    <div class="bg-panel">
-      <div class="bg-panel-head"><i class="bi bi-calendar-range"></i>Период</div>
-      <div class="bg-panel-body">
-        <div class="field-row">
-          <div class="field-group">
-            <label class="fl">От</label>
-            <input id="date-from" type="date" class="fc">
-          </div>
-          <div class="field-group">
-            <label class="fl">До</label>
-            <input id="date-to" type="date" class="fc">
-          </div>
-        </div>
-        <div class="info-message" style="margin-top:0">
-          <i class="bi bi-info-circle"></i>
-          Только даты внутри периода можно выбрать на календаре
-        </div>
-      </div>
-    </div>
+            <div class="bg-panel">
+                <div class="bg-panel-head"><i class="bi bi-calendar-range"></i>Период</div>
+                <div class="bg-panel-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="fl">От</label>
+                            <input id="date-from" type="date" class="fc">
+                        </div>
+                        <div class="field-group">
+                            <label class="fl">До</label>
+                            <input id="date-to" type="date" class="fc">
+                        </div>
+                    </div>
+                    <div class="info-message" style="margin-top:0">
+                        <i class="bi bi-info-circle"></i>
+                        Только даты внутри периода можно выбрать на календаре
+                    </div>
+                </div>
+            </div>
 
-    <div class="bg-panel">
-      <div class="bg-panel-head"><i class="bi bi-sliders"></i>Умолчания для новых дат</div>
-      <div class="bg-panel-body">
-        <div class="field-row">
-          <div class="field-group">
-            <label class="fl">Начало</label>
-            <input id="def-start" type="time" class="fc" value="08:00">
-          </div>
-          <div class="field-group">
-            <label class="fl">Конец</label>
-            <input id="def-end" type="time" class="fc" value="09:30">
-          </div>
-        </div>
-        <div class="field-group">
-          <label class="fl">Тип мероприятия</label>
-          <select id="def-type" class="fc">
-            {% for val, label in event_types %}
-              <option value="{{ val }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label class="fl">Участников</label>
-            <input id="def-participants" type="number" class="fc" value="60" min="1">
-          </div>
-        </div>
-        <div class="field-group">
-          <label class="fl">Комментарий</label>
-          <textarea id="def-comment" class="fc" rows="2" placeholder="Подставится в каждую заявку, можно изменить"></textarea>
-        </div>
-      </div>
-    </div>
+            <div class="bg-panel">
+                <div class="bg-panel-head"><i class="bi bi-sliders"></i>Умолчания для новых дат</div>
+                <div class="bg-panel-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="fl">Начало</label>
+                            <input id="def-start" type="time" class="fc" value="08:00">
+                        </div>
+                        <div class="field-group">
+                            <label class="fl">Конец</label>
+                            <input id="def-end" type="time" class="fc" value="09:30">
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="fl">Тип мероприятия</label>
+                        <select id="def-type" class="fc">
+                            {% for val, label in event_types %}
+                                <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="fl">Участников</label>
+                            <input id="def-participants" type="number" class="fc" value="60" min="1">
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="fl">Комментарий</label>
+                        <textarea id="def-comment" class="fc" rows="2"
+                                  placeholder="Подставится в каждую заявку, можно изменить"></textarea>
+                    </div>
+                </div>
+            </div>
 
-    <div class="bg-panel">
-      <div class="bg-panel-head">
-        <i class="bi bi-calendar3"></i>Выберите дни
-        <span id="bg-slots-count" style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">0 дн.</span>
-      </div>
-      <div class="bg-panel-body" style="padding:12px">
-        <div class="bg-cal-nav">
-          <button class="bg-cal-arr" onclick="calPrev()"><i class="bi bi-chevron-left"></i></button>
-          <span id="bg-cal-month" class="bg-cal-month"></span>
-          <button class="bg-cal-arr" onclick="calNext()"><i class="bi bi-chevron-right"></i></button>
+            <div class="bg-panel">
+                <div class="bg-panel-head">
+                    <i class="bi bi-calendar3"></i>Выберите дни
+                    <span id="bg-slots-count"
+                          style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">0 дн.</span>
+                </div>
+                <div class="bg-panel-body" style="padding:12px">
+                    <div class="bg-cal-nav">
+                        <button class="bg-cal-arr" onclick="calPrev()"><i class="bi bi-chevron-left"></i></button>
+                        <span id="bg-cal-month" class="bg-cal-month"></span>
+                        <button class="bg-cal-arr" onclick="calNext()"><i class="bi bi-chevron-right"></i></button>
+                    </div>
+                    <div class="bg-cal-grid">
+                        <div class="bg-cal-wday">Пн</div>
+                        <div class="bg-cal-wday">Вт</div>
+                        <div class="bg-cal-wday">Ср</div>
+                        <div class="bg-cal-wday">Чт</div>
+                        <div class="bg-cal-wday">Пт</div>
+                        <div class="bg-cal-wday">Сб</div>
+                        <div class="bg-cal-wday">Вс</div>
+                        <div id="bg-cal-cells" style="display:contents"></div>
+                    </div>
+                    <p style="font-size:11px;color:var(--muted);margin-top:10px;margin-bottom:0">
+                        Синий = выбрано. Нажмите ещё раз, чтобы снять
+                    </p>
+                </div>
+            </div>
+
         </div>
-        <div class="bg-cal-grid">
-          <div class="bg-cal-wday">Пн</div>
-          <div class="bg-cal-wday">Вт</div>
-          <div class="bg-cal-wday">Ср</div>
-          <div class="bg-cal-wday">Чт</div>
-          <div class="bg-cal-wday">Пт</div>
-          <div class="bg-cal-wday">Сб</div>
-          <div class="bg-cal-wday">Вс</div>
-          <div id="bg-cal-cells" style="display:contents"></div>
-        </div>
-        <p style="font-size:11px;color:var(--muted);margin-top:10px;margin-bottom:0">
-          Синий = выбрано. Нажмите ещё раз, чтобы снять
-        </p>
-      </div>
-    </div>
 
-  </div>
+        <div class="bg-right">
 
-  <div class="bg-right">
-
-    <div class="bg-panel">
-      <div class="bg-panel-head">
-        <i class="bi bi-list-ul"></i>Настройка по дням
-        <span style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:400">
+            <div class="bg-panel">
+                <div class="bg-panel-head">
+                    <i class="bi bi-list-ul"></i>Настройка по дням
+                    <span style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:400">
           Время, тип, участники, комментарий, оборудование
         </span>
-      </div>
-      <div class="bg-panel-body" style="padding:10px">
-        <div id="bg-slots"></div>
-      </div>
+                </div>
+                <div class="bg-panel-body" style="padding:10px">
+                    <div id="bg-slots"></div>
+                </div>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+                <button id="btn-check-rooms" class="btn-blue" onclick="checkRooms()">
+                    <i class="bi bi-building"></i>Проверить аудитории
+                </button>
+            </div>
+
+        </div>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
-      <button id="btn-check-rooms" class="btn-blue" onclick="checkRooms()">
-        <i class="bi bi-building"></i>Проверить аудитории
-      </button>
-    </div>
-
-  </div>
-</div>
-
-{# ═══ Аудитории ═══ #}
-<div id="bg-rooms-section">
-  <div class="bg-panel">
-    <div class="bg-panel-head">
-      <i class="bi bi-building"></i>Аудитории - доступность по датам
-      <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">
+    {# ═══ Аудитории ═══ #}
+    <div id="bg-rooms-section">
+        <div class="bg-panel">
+            <div class="bg-panel-head">
+                <i class="bi bi-building"></i>Аудитории - доступность по датам
+                <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">
         Зелёный = свободна. Красный = конфликт. Сортировка по числу конфликтов
       </span>
+            </div>
+            <div id="bg-rooms-loading" style="display:none;padding:16px;text-align:center;color:var(--muted)">
+                <i class="bi bi-hourglass-split"></i> Проверяем доступность...
+            </div>
+            <div id="bg-rooms-list" style="overflow-y: scroll; max-height: 100vh"></div>
+            <div style="padding:0 14px 14px" id="bg-conflict-wrap"></div>
+        </div>
     </div>
-    <div id="bg-rooms-loading" style="display:none;padding:16px;text-align:center;color:var(--muted)">
-      <i class="bi bi-hourglass-split"></i> Проверяем доступность...
-    </div>
-    <div id="bg-rooms-list" style="overflow-y: scroll; max-height: 100vh"></div>
-    <div style="padding:0 14px 14px" id="bg-conflict-wrap"></div>
-  </div>
-</div>
 
-{# ═══ Оборудование (появляется после выбора аудитории) ═══ #}
-<div id="bg-equip-section">
-  <div class="bg-panel">
+    {# ═══ Оборудование (появляется после выбора аудитории) ═══ #}
+    <div id="bg-equip-section">
+        <div class="bg-panel">
 
-    <div class="bg-panel-head">
-      <i class="bi bi-laptop"></i>Оборудование для всех дат
-      <span id="bg-eq-count" style="margin-left:6px;font-size:11px;font-weight:600;color:var(--orange)"></span>
-      <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">
+            <div class="bg-panel-head">
+                <i class="bi bi-laptop"></i>Оборудование для всех дат
+                <span id="bg-eq-count"
+                      style="margin-left:6px;font-size:11px;font-weight:600;color:var(--orange)"></span>
+                <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">
         Зелёный = свободно · Красный = занято в эту дату (не добавится)
       </span>
+            </div>
+
+            {# Поиск — используем те же классы .sw/.si что и в модалке оборудования #}
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg)">
+                <div class="sw">
+                    <i class="bi bi-search si"></i>
+                    <input type="text"
+                           id="bg-equip-search"
+                           class="fc"
+                           placeholder="Поиск по названию, типу, инв. номеру..."
+                           oninput="filterEquip(this.value)">
+                </div>
+            </div>
+
+            {# Список оборудования — та же структура что у аудиторий #}
+            <div id="bg-equip-list" style="overflow-y: scroll; max-height: 100vh">
+                <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">
+                    Загрузка...
+                </div>
+            </div>
+
+        </div>
     </div>
 
-    {# Поиск — используем те же классы .sw/.si что и в модалке оборудования #}
-    <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg)">
-      <div class="sw">
-        <i class="bi bi-search si"></i>
-        <input type="text"
-               id="bg-equip-search"
-               class="fc"
-               placeholder="Поиск по названию, типу, инв. номеру..."
-               oninput="filterEquip(this.value)">
-      </div>
+    {# ═══ Итог ═══ #}
+    <div id="bg-submit-section">
+        <div class="bg-panel">
+            <div class="bg-panel-head"><i class="bi bi-check2-all"></i>Итог серии</div>
+            <div class="bg-panel-body">
+                <div id="bg-summary"></div>
+                <div class="info-message" style="margin-top:14px">
+                    <i class="bi bi-info-circle"></i>
+                    Каждая заявка проходит согласование независимо.
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
+            <a href="{% url 'booking_list' %}" class="btn-sec">Отмена</a>
+            <button id="btn-submit" class="btn-main" onclick="submitGroup()">
+                <i class="bi bi-check-circle"></i>Создать заявки
+            </button>
+        </div>
     </div>
 
-    {# Список оборудования — та же структура что у аудиторий #}
-    <div id="bg-equip-list" style="overflow-y: scroll; max-height: 100vh">
-      <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">
-        Загрузка...
-      </div>
+    {# Модалка оборудования на 1 день #}
+    <div class="modal-lgu-backdrop" id="eq-modal" onclick="if(event.target===this) closeModal('eq-modal')">
+        <div class="modal-lgu-card modal-eq-card">
+            <div class="modal-lgu-head">
+                <div>
+                    <div style="font-size:14px;font-weight:700">Выбор оборудования</div>
+                    <div style="font-size:12px;color:var(--muted)">Дата: <span id="eq-modal-title"></span></div>
+                </div>
+                <button type="button" class="modal-lgu-close" onclick="closeModal('eq-modal')">×</button>
+            </div>
+            <div class="modal-lgu-body">
+                <div class="sw mb-3" style="max-width:340px">
+                    <i class="bi bi-search si"></i>
+                    <input type="text" id="id_equipment_search_query_group" class="fc"
+                           placeholder="Поиск по названию..."
+                           oninput="debounceEquipmentSearchGroup()">
+                </div>
+                <div id="equipment-list-group"></div>
+            </div>
+            <div class="modal-lgu-foot">
+                <button type="button" class="btn-sec" onclick="closeModal('eq-modal')">Закрыть</button>
+                <button type="button" class="btn-main" onclick="applyEquipmentSelection()">Применить</button>
+            </div>
+        </div>
     </div>
 
-  </div>
-</div>
+    <div class="modal-lgu-backdrop" id="infoModal" onclick="if(event.target===this) closeModal('infoModal')">
+        <div class="modal-lgu-card" style="max-width: 550px;">
+            <div class="modal-lgu-head">
+                <div>
+                    <div style="font-size: 15px; font-weight: 700;" id="infoModalTitle">Информация</div>
+                    <div style="font-size: 12px; color: var(--muted);" id="infoModalSubtitle"></div>
+                </div>
+                <button type="button" class="modal-lgu-close" onclick="closeModal('infoModal')">×</button>
+            </div>
 
-{# ═══ Итог ═══ #}
-<div id="bg-submit-section">
-  <div class="bg-panel">
-    <div class="bg-panel-head"><i class="bi bi-check2-all"></i>Итог серии</div>
-    <div class="bg-panel-body">
-      <div id="bg-summary"></div>
-      <div class="info-message" style="margin-top:14px">
-        <i class="bi bi-info-circle"></i>
-        Каждая заявка проходит согласование независимо.
-      </div>
-    </div>
-  </div>
-  <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:32px">
-    <a href="{% url 'booking_list' %}" class="btn-sec">Отмена</a>
-    <button id="btn-submit" class="btn-main" onclick="submitGroup()">
-      <i class="bi bi-check-circle"></i>Создать заявки
-    </button>
-  </div>
-</div>
+            <div class="modal-lgu-body" id="infoModalBody">
+                <div style="padding: 20px; text-align: center; color: var(--muted);">
+                    <div class="spinner-border" style="width: 32px; height: 32px; margin-bottom: 12px;"></div>
+                    <div>Загрузка...</div>
+                </div>
+            </div>
 
-{# Модалка оборудования на 1 день #}
-<div class="modal-lgu-backdrop" id="eq-modal" onclick="if(event.target===this) closeModal('eq-modal')">
-  <div class="modal-lgu-card modal-eq-card">
-    <div class="modal-lgu-head">
-      <div>
-        <div style="font-size:14px;font-weight:700">Выбор оборудования</div>
-        <div style="font-size:12px;color:var(--muted)">Дата: <span id="eq-modal-title"></span></div>
-      </div>
-      <button type="button" class="modal-lgu-close" onclick="closeModal('eq-modal')">×</button>
+            <div class="modal-lgu-foot">
+                <button type="button" class="btn-sec" onclick="closeModal('infoModal')">
+                    <i class="bi bi-x"></i> Закрыть
+                </button>
+                <a href="#" id="infoModalLink" target="_blank" class="btn-main" style="display: none;">
+                    <i class="bi bi-box-arrow-up-right"></i> Открыть страницу
+                </a>
+            </div>
+        </div>
     </div>
-    <div class="modal-lgu-body">
-      <div class="sw mb-3" style="max-width:340px">
-        <i class="bi bi-search si"></i>
-        <input type="text" id="id_equipment_search_query_group" class="fc"
-               placeholder="Поиск по названию..."
-               oninput="debounceEquipmentSearchGroup()">
-      </div>
-      <div id="equipment-list-group"></div>
-    </div>
-    <div class="modal-lgu-foot">
-      <button type="button" class="btn-sec" onclick="closeModal('eq-modal')">Закрыть</button>
-      <button type="button" class="btn-main" onclick="applyEquipmentSelection()">Применить</button>
-    </div>
-  </div>
-</div>
 
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/booking_group.js' %}"></script>
+    <script src="{% static 'js/booking_group.js' %}"></script>
 {% endblock %}

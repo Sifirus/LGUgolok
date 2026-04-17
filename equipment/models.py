@@ -11,7 +11,7 @@ class Equipment(models.Model):
         CAMERA = "camera", "Веб-камера"
 
     class StatusChoices(models.TextChoices):
-        ACTIVE = "active", "Активна"
+        ACTIVE = "active", "Активно"
         MAINTENANCE = "maintenance", "На обслуживании"
         WRITTEN_OFF = "written_off", "Списано"
 
