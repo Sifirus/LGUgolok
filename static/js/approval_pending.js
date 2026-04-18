@@ -319,9 +319,8 @@ ${globalActions}`;
             const panel = document.getElementById('decisionPanel');
             panel.innerHTML = renderDetailPanel(data);
 
-            if (window.innerWidth <= 1199) {
-                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
         } catch {
             showMessage('Ошибка загрузки деталей', 'error');
         }

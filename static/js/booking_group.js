@@ -10,7 +10,7 @@ const GS = {
 
     primaryRoomId: null,
     conflictOverrides: {},
-    roomTypeFilter: '',        // фильтр по типу аудитории
+    roomTypeFilter: '',
 
     calYear: null,
     calMonth: null,
@@ -18,8 +18,12 @@ const GS = {
     equipmentCache: new Map(),
     equipmentModal: {
         slotIndex: null,
-        items: []
-    }
+        items: [],
+        tempSelection: new Set()
+    },
+
+    globalEquipment: new Set(),
+    _equipSearchQuery: ''
 };
 
 function getDefaults() {
@@ -90,12 +94,6 @@ function toISO(d) {
         String(d.getDate()).padStart(2, '0');
 }
 
-function sameDay(a, b) {
-    return a.getFullYear() === b.getFullYear() &&
-           a.getMonth() === b.getMonth() &&
-           a.getDate() === b.getDate();
-}
-
 function formatDateRu(iso) {
     if (!iso) return '-';
     const [y, m, d] = iso.split('-');
@@ -119,9 +117,21 @@ function resetRooms() {
     GS.equipMatrix = [];
     GS.primaryRoomId = null;
     GS.conflictOverrides = {};
+    GS.globalEquipment.clear();
+    GS._equipSearchQuery = '';
+
+    GS.slots.forEach(s => {
+        s.equipmentIds = [];
+        s._individualEquipment = [];
+    });
+
     document.getElementById('bg-rooms-section')?.classList.remove('visible');
+    document.getElementById('bg-equip-section')?.classList.remove('visible');
     document.getElementById('bg-submit-section')?.classList.remove('visible');
     document.getElementById('bg-conflict-wrap')?.replaceChildren();
+
+    const eqCount = document.getElementById('bg-eq-count');
+    if (eqCount) eqCount.textContent = '';
 }
 
 function renderCal() {
@@ -222,6 +232,7 @@ function toggleDay(iso) {
             participants: d.participants,
             comment: d.comment,
             equipmentIds: [],
+            _individualEquipment: [],
             roomId: null,
         });
         GS.slots.sort((a, b) => a.date.localeCompare(b.date));
@@ -406,14 +417,12 @@ function renderRoomsList() {
         return;
     }
 
-    // Средние участники для сортировки по вместимости
     const avgP = GS.slots.length
         ? Math.round(GS.slots.reduce((s, x) => s + (x.participants || 60), 0) / GS.slots.length)
         : 60;
 
     const allDates = GS.slots.map(s => s.date);
 
-    // Уникальные типы для кнопок-фильтров
     const typeMap = new Map();
     GS.roomsMatrix.forEach(r => { if (r.type_key) typeMap.set(r.type_key, r.type); });
     const types = [...typeMap.entries()];
@@ -428,7 +437,6 @@ function renderRoomsList() {
   </select>
 </div>` : '';
 
-    // Фильтр + сортировка: сначала по конфликтам, потом по близости вместимости
     let rooms = GS.roomTypeFilter
         ? GS.roomsMatrix.filter(r => r.type_key === GS.roomTypeFilter)
         : [...GS.roomsMatrix];
@@ -510,7 +518,6 @@ function renderConflictResolve(primaryRoom) {
         const currentSlot = GS.slots.find(s => s.date === d);
         const currentRoom = currentSlot?.roomId ? GS.roomsMatrix.find(r => r.id === currentSlot.roomId) : null;
 
-        // Сортировать замены по ближайшей вместимости к участникам этого слота
         const slotP = GS.slots.find(s => s.date === d)?.participants || avgPconflict;
         alts.sort((a, b) => Math.abs(a.capacity - slotP) - Math.abs(b.capacity - slotP));
 
@@ -579,14 +586,21 @@ function checkAllResolved() {
     const primaryRoom = GS.roomsMatrix.find(r => r.id === GS.primaryRoomId);
     if (!primaryRoom) return;
 
-    const unresolved = (primaryRoom.conflicts || []).filter(d => !GS.conflictOverrides[d]);
+    const allDates = GS.slots.map(s => s.date);
+    const unresolved = (primaryRoom.conflicts || []).filter(
+        d => allDates.includes(d) && !GS.conflictOverrides[d]
+    );
+
     const submitSection = document.getElementById('bg-submit-section');
 
     if (unresolved.length === 0) {
+        showEquipBlock();
+        syncAllSlotsEquipment();
         submitSection?.classList.add('visible');
         renderSummary();
         submitSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
+        document.getElementById('bg-equip-section')?.classList.remove('visible');
         submitSection?.classList.remove('visible');
     }
 }
@@ -595,11 +609,18 @@ function renderSummary() {
     const container = document.getElementById('bg-summary');
     if (!container) return;
 
+    syncAllSlotsEquipment();
+
     container.innerHTML = GS.slots.map(slot => {
         const room = GS.roomsMatrix.find(r => r.id === slot.roomId);
         const roomLabel = room ? `${room.name} · ${room.building}` : '—';
         const isOverride = slot.roomId !== GS.primaryRoomId;
-        const eqText = getEquipmentSummaryText(slot);
+
+        const eqNames = (slot.equipmentIds || []).map(id => {
+            const eq = GS.equipMatrix.find(e => e.id === id);
+            return eq ? buildEquipmentSummary(eq) : `#${id}`;
+        });
+        const eqText = eqNames.length ? eqNames.join(', ') : 'Без оборудования';
 
         return `
 <div class="bg-summary-row">
@@ -609,7 +630,8 @@ function renderSummary() {
     ${isOverride ? '<i class="bi bi-arrow-left-right" title="Запасная"></i> ' : ''}${escH(roomLabel)}
   </span>
   <span class="bg-eq-badge" title="${escH(eqText)}">
-    <i class="bi bi-laptop"></i> ${escH(eqText)}
+    <i class="bi bi-laptop"></i>
+    ${escH(eqText.length > 45 ? eqText.slice(0, 45) + '…' : eqText)}
   </span>
 </div>`;
     }).join('');
@@ -630,9 +652,13 @@ window.submitGroup = function() {
         return;
     }
 
-    const today = toISO(new Date());
-    if (dfFrom < today) {
-        alert('Дата серии не может быть в прошлом');
+    const now = new Date();
+    const todayStr = toISO(now);
+    const currentTimeStr = now.toTimeString().slice(0, 5); // HH:MM
+
+    // Проверка даты начала периода
+    if (dfFrom < todayStr) {
+        alert('Дата начала серии не может быть в прошлом');
         return;
     }
     if (dfTo < dfFrom) {
@@ -640,10 +666,34 @@ window.submitGroup = function() {
         return;
     }
 
-    const badSlot = GS.slots.find(s => s.end <= s.start);
-    if (badSlot) {
-        alert(`На ${formatDateRu(badSlot.date)} время окончания должно быть позже времени начала`);
-        return;
+    // Проверка каждого слота на прошедшее время
+    for (const slot of GS.slots) {
+        const slotDateTime = new Date(`${slot.date}T${slot.start}`);
+        const nowDateTime = new Date();
+
+        // Если дата слота в прошлом
+        if (slot.date < todayStr) {
+            alert(`Дата ${formatDateRu(slot.date)} уже прошла. Удалите этот день или измените дату.`);
+            return;
+        }
+
+        // Если дата слота сегодня и время начала уже прошло
+        if (slot.date === todayStr && slot.start < currentTimeStr) {
+            alert(`Время начала ${slot.start} на ${formatDateRu(slot.date)} уже прошло. Измените время начала.`);
+            return;
+        }
+
+        // Проверка что время окончания позже времени начала
+        if (slot.end <= slot.start) {
+            alert(`На ${formatDateRu(slot.date)} время окончания (${slot.end}) должно быть позже времени начала (${slot.start})`);
+            return;
+        }
+
+        // Проверка что дата слота входит в период серии
+        if (slot.date < dfFrom || slot.date > dfTo) {
+            alert(`Дата ${formatDateRu(slot.date)} выходит за пределы периода серии (${formatDateRu(dfFrom)} – ${formatDateRu(dfTo)})`);
+            return;
+        }
     }
 
     const noRoom = GS.slots.find(s => !s.roomId);
@@ -651,6 +701,8 @@ window.submitGroup = function() {
         alert('Не назначена аудитория для ' + formatDateRu(noRoom.date));
         return;
     }
+
+    syncAllSlotsEquipment();
 
     const btn = document.getElementById('btn-submit');
     if (btn) {
@@ -702,12 +754,149 @@ window.submitGroup = function() {
     });
 };
 
+// ==================== ОБОРУДОВАНИЕ ====================
+
+function finalEquipForSlot(slot) {
+    // Комбинируем: индивидуальное (из модалки) + глобальное (которое свободно)
+    const result = new Set(slot._individualEquipment || []);
+
+    // Добавляем глобальное оборудование, которое свободно в эту дату
+    for (const eqId of GS.globalEquipment) {
+        const eq = GS.equipMatrix.find(e => e.id === eqId);
+        if (eq && eq.free && eq.free.includes(slot.date)) {
+            result.add(eqId);
+        }
+    }
+
+    return [...result];
+}
+
+function syncAllSlotsEquipment() {
+    GS.slots.forEach(slot => {
+        slot.equipmentIds = finalEquipForSlot(slot);
+    });
+}
+
+function showEquipBlock() {
+    const section = document.getElementById('bg-equip-section');
+    if (!section) return;
+    section.classList.add('visible');
+    renderEquipList();
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderEquipList() {
+    const container = document.getElementById('bg-equip-list');
+    if (!container) return;
+
+    const q = (GS._equipSearchQuery || '').toLowerCase();
+    const allDates = GS.slots.map(s => s.date);
+
+    const filtered = GS.equipMatrix.filter(eq => {
+        if (!q) return true;
+        return (eq.name + ' ' + (eq.model || '') + ' ' + eq.type + ' ' + eq.inventory)
+            .toLowerCase().includes(q);
+    });
+
+    if (!filtered.length) {
+        container.innerHTML = '<div style="padding:14px;text-align:center;color:var(--muted);font-size:13px">Ничего не найдено</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(eq => {
+        const isSelected = GS.globalEquipment.has(eq.id);
+        const hasAnyConflict = eq.conflict_count > 0 && isSelected;
+
+        const chips = allDates.map(d => {
+            const isFree = eq.free && eq.free.includes(d);
+            const slot = GS.slots.find(s => s.date === d);
+            const hasIndividual = slot?._individualEquipment?.includes(eq.id);
+
+            const cls = hasIndividual ? 'bg-chip bg-chip-specific'
+                      : isFree ? 'bg-chip bg-chip-free'
+                      : 'bg-chip bg-chip-conflict';
+
+            const title = hasIndividual ? 'Выбрано индивидуально'
+                        : isFree ? 'Свободно' : 'Занято — не добавится';
+
+            return `<span class="${cls}" title="${title}">${fmtShort(d)}</span>`;
+        }).join('');
+
+        return `
+<div class="bg-eq-row ${isSelected ? 'eq-selected' : ''}" onclick="toggleGlobalEquip(${eq.id})">
+  <input type="checkbox" class="bg-eq-check" ${isSelected ? 'checked' : ''}
+         onclick="event.stopPropagation(); toggleGlobalEquip(${eq.id})">
+  <div style="flex:1;min-width:0">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="bg-eq-name">${escH(eq.name)}${eq.model ? ` <span style="font-weight:400;color:var(--muted)">— ${escH(eq.model)}</span>` : ''}</span>
+      <button type="button" class="btn-sec" 
+              onclick="event.stopPropagation(); showEquipmentInfo(${eq.id})" 
+              style="padding: 2px 6px; font-size: 10px; min-width: auto;" 
+              title="Подробнее об оборудовании">
+        <i class="bi bi-info-circle"></i>
+      </button>
+    </div>
+    <div class="bg-eq-meta">${escH(eq.type)} · инв. ${escH(eq.inventory)}</div>
+    ${hasAnyConflict ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">На ${eq.conflict_count} дат — не добавится (занято)</div>` : ''}
+  </div>
+  <div class="bg-date-chips">${chips}</div>
+  ${isSelected ? '<i class="bi bi-check-circle-fill" style="color:var(--orange);flex-shrink:0"></i>' : ''}
+</div>`;
+    }).join('');
+}
+
+window.toggleGlobalEquip = function(eqId) {
+    if (GS.globalEquipment.has(eqId)) {
+        GS.globalEquipment.delete(eqId);
+    } else {
+        GS.globalEquipment.add(eqId);
+    }
+
+    updateEquipCount();
+
+    // Применяем глобальное оборудование КО ВСЕМ слотам, ДОБАВЛЯЯ к индивидуальному
+    GS.slots.forEach(slot => {
+        slot.equipmentIds = finalEquipForSlot(slot);
+    });
+
+    renderEquipList();
+    renderSlots();
+
+    if (document.getElementById('bg-submit-section')?.classList.contains('visible')) {
+        renderSummary();
+    }
+};
+
+window.filterEquip = function(value) {
+    GS._equipSearchQuery = value;
+    renderEquipList();
+};
+
+function updateEquipCount() {
+    const el = document.getElementById('bg-eq-count');
+    if (!el) return;
+    const n = GS.globalEquipment.size;
+    el.textContent = n ? `${n} выбрано` : '';
+}
+
+// ==================== МОДАЛЬНОЕ ОКНО ОБОРУДОВАНИЯ ====================
+
+let equipmentDebounceTimer = null;
+
+window.debounceEquipmentSearchGroup = function() {
+    clearTimeout(equipmentDebounceTimer);
+    equipmentDebounceTimer = setTimeout(loadEquipmentModal, 300);
+};
+
 window.openEquipmentModal = function(slotIdx) {
     const slot = GS.slots[slotIdx];
     if (!slot) return;
 
     GS.equipmentModal.slotIndex = slotIdx;
     GS.equipmentModal.items = [];
+
+    // Инициализируем временную выборку ТОЛЬКО индивидуальным оборудованием слота
+    GS.equipmentModal.tempSelection = new Set(slot._individualEquipment || []);
 
     const input = document.getElementById('id_equipment_search_query_group');
     if (input) input.value = '';
@@ -717,13 +906,6 @@ window.openEquipmentModal = function(slotIdx) {
 
     openModal('eq-modal');
     loadEquipmentModal();
-};
-
-let equipmentDebounceTimer = null;
-
-window.debounceEquipmentSearchGroup = function() {
-    clearTimeout(equipmentDebounceTimer);
-    equipmentDebounceTimer = setTimeout(loadEquipmentModal, 300);
 };
 
 async function loadEquipmentModal() {
@@ -768,243 +950,6 @@ function renderEquipmentModal() {
     const listEl = document.getElementById('equipment-list-group');
     if (!slot || !listEl) return;
 
-    const selectedIds = new Set(slot.equipmentIds || []);
-
-    if (!GS.equipmentModal.items.length) {
-        listEl.innerHTML = '<div style="padding:14px;color:var(--muted)">Ничего не найдено</div>';
-        return;
-    }
-
-    listEl.innerHTML = GS.equipmentModal.items.map(eq => {
-        const isSelected = selectedIds.has(eq.id);
-        const typeLabel = eq.type_label || eq.type || '';
-        const label = buildEquipmentSummary(eq);
-        rememberEquipmentFromItem(eq);
-
-        return `
-<div class="eq-row equipment-card ${isSelected ? 'selected' : ''}"
-     data-id="${eq.id}"
-     onclick="toggleEquipmentInModal(${eq.id})"
-     style="cursor:pointer">
-    <input type="checkbox" class="eq-chk" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleEquipmentInModal(${eq.id})">
-    <div class="eq-icon"><i class="bi bi-laptop"></i></div>
-    <div style="flex:1;min-width:0">
-        <div class="eq-name">${escH(eq.name || '')}${eq.model ? ' - ' + escH(eq.model) : ''}</div>
-        <div class="eq-loc">
-            ${typeLabel ? `<span class="eq-inv">${escH(typeLabel)}</span>` : ''}
-            ${eq.inventory_number ? `<span class="eq-inv">${escH(eq.inventory_number)}</span>` : ''}
-        </div>
-    </div>
-</div>`;
-    }).join('');
-}
-
-window.toggleEquipmentInModal = function(id) {
-    const slot = GS.slots[GS.equipmentModal.slotIndex];
-    if (!slot) return;
-
-    const current = new Set(slot.equipmentIds || []);
-    if (current.has(id)) current.delete(id);
-    else current.add(id);
-
-    slot.equipmentIds = [...current];
-    renderEquipmentModal();
-    renderSlots();
-};
-
-window.applyEquipmentSelection = function() {
-    closeModal('eq-modal');
-    renderSlots();
-};
-
-/* ════════════════════════════════════════════════════════════════
-   Добавить в booking_group.js — блок глобального оборудования.
-   Вставить ПЕРЕД document.addEventListener('DOMContentLoaded', ...)
-   ════════════════════════════════════════════════════════════════
-
-   Логика:
-   - GS.globalEquipment = Set<eqId>  — выбранные глобально
-   - При выборе: назначить на все слоты где это оборудование СВОБОДНО
-     На конфликтные даты — просто не добавляем (без замены)
-   - При снятии галочки — убрать из всех слотов
-   - slot._specificEquipment — из модальника (1 день), приоритет выше глобального
-*/
-
-// Расширить GS
-GS.globalEquipment   = GS.globalEquipment   || new Set();
-GS._equipSearchQuery = GS._equipSearchQuery || '';
-
-/* ── Вычислить итоговое оборудование для слота ─────────────────── */
-function finalEquipForSlot(slot) {
-    // Если пользователь явно выбрал оборудование через модалку (Apply) —
-    // возвращаем только его явный выбор, глобальное не примешиваем.
-    if (slot._explicitEquipment) {
-        return [...(slot._specificEquipment || [])];
-    }
-
-    // Иначе: _specificEquipment + глобальные свободные на эту дату
-    const specific = new Set(slot._specificEquipment || []);
-    const result   = new Set(specific);
-
-    for (const eqId of GS.globalEquipment) {
-        if (specific.has(eqId)) continue;
-        const eq = GS.equipMatrix.find(e => e.id === eqId);
-        if (!eq) continue;
-        if (eq.free.includes(slot.date)) result.add(eqId);
-    }
-    return [...result];
-}
-
-function syncAllSlotsEquipment() {
-    GS.slots.forEach(slot => {
-        slot.equipmentIds = finalEquipForSlot(slot);
-    });
-}
-
-/* ── Показать блок оборудования ─────────────────────────────────── */
-function showEquipBlock() {
-    const section = document.getElementById('bg-equip-section');
-    if (!section) return;
-    section.classList.add('visible');
-    renderEquipList();
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-/* ── Рендер списка оборудования ─────────────────────────────────── */
-function renderEquipList() {
-    const container = document.getElementById('bg-equip-list');
-    if (!container) return;
-
-    const q        = (GS._equipSearchQuery || '').toLowerCase();
-    const allDates = GS.slots.map(s => s.date);
-
-    const filtered = GS.equipMatrix.filter(eq => {
-        if (!q) return true;
-        return (eq.name + ' ' + (eq.model || '') + ' ' + eq.type + ' ' + eq.inventory)
-            .toLowerCase().includes(q);
-    });
-
-    if (!filtered.length) {
-        container.innerHTML = '<div style="padding:14px;text-align:center;color:var(--muted);font-size:13px">Ничего не найдено</div>';
-        return;
-    }
-
-    container.innerHTML = filtered.map(eq => {
-        const isSelected = GS.globalEquipment.has(eq.id);
-
-        /* Чипы дат: зелёный=свободно, красный=занято, оранжевый=выбрано индивидуально */
-        const chips = allDates.map(d => {
-            const isSpecific = GS.slots.find(s => s.date === d)
-                               ?._specificEquipment?.includes(eq.id);
-            const isFree     = eq.free.includes(d);
-
-            const cls   = isSpecific ? 'bg-chip bg-chip-specific'
-                        : isFree     ? 'bg-chip bg-chip-free'
-                        :              'bg-chip bg-chip-conflict';
-            const title = isSpecific ? 'Выбрано индивидуально'
-                        : isFree     ? 'Свободно' : 'Занято — не добавится';
-
-            return `<span class="${cls}" title="${title}">${fmtShort(d)}</span>`;
-        }).join('');
-
-        const hasAnyConflict = eq.conflict_count > 0 && isSelected;
-
-        return `
-<div class="bg-eq-row ${isSelected?'eq-selected':''}" onclick="toggleGlobalEquip(${eq.id})">
-  <input type="checkbox" class="bg-eq-check" ${isSelected?'checked':''}
-         onclick="event.stopPropagation(); toggleGlobalEquip(${eq.id})">
-  <div style="flex:1;min-width:0">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <span class="bg-eq-name">${escH(eq.name)}${eq.model?` <span style="font-weight:400;color:var(--muted)">— ${escH(eq.model)}</span>`:''}</span>
-      <button type="button" class="btn-sec" 
-              onclick="event.stopPropagation(); showEquipmentInfo(${eq.id})" 
-              style="padding: 2px 6px; font-size: 10px; min-width: auto;" 
-              title="Подробнее об оборудовании">
-        <i class="bi bi-info-circle"></i>
-      </button>
-    </div>
-    <div class="bg-eq-meta">${escH(eq.type)} · инв. ${escH(eq.inventory)}</div>
-    ${hasAnyConflict ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">На ${eq.conflict_count} дат — не добавится (занято)</div>` : ''}
-  </div>
-  <div class="bg-date-chips">${chips}</div>
-  ${isSelected ? '<i class="bi bi-check-circle-fill" style="color:var(--orange);flex-shrink:0"></i>' : ''}
-</div>`;
-    }).join('');
-}
-
-/* ── Actions ─────────────────────────────────────────────────────── */
-
-window.toggleGlobalEquip = function(eqId) {
-    if (GS.globalEquipment.has(eqId)) {
-        GS.globalEquipment.delete(eqId);
-    } else {
-        GS.globalEquipment.add(eqId);
-    }
-
-    updateEquipCount();
-    syncAllSlotsEquipment();
-    renderEquipList();
-    renderSlots();
-    // При изменении оборудования пересчитать итог если уже виден
-    if (document.getElementById('bg-submit-section')?.classList.contains('visible')) {
-        renderSummary();
-    }
-};
-
-window.filterEquip = function(value) {
-    GS._equipSearchQuery = value;
-    renderEquipList();
-};
-
-function updateEquipCount() {
-    const el = document.getElementById('bg-eq-count');
-    if (!el) return;
-    const n = GS.globalEquipment.size;
-    el.textContent = n ? `${n} выбрано` : '';
-}
-
-/* ══════════════════════════════════════════════════════════════
-   Патчи модального окна оборудования на 1 день.
-   Переопределяют openEquipmentModal, renderEquipmentModal,
-   toggleEquipInModal, applyEquipmentSelection из booking_group.js.
-
-   Принцип:
-   - При открытии модалки инициализируем tempSelection = полное текущее
-     состояние слота (specific + global что свободны на эту дату).
-     Пользователь видит ВСЁ что сейчас выбрано, включая глобальное.
-   - toggleEquipInModal работает на tempSelection (не трогает _specific).
-   - Apply сохраняет tempSelection → _specificEquipment и equipmentIds.
-     Это явный выбор для конкретного дня, он полностью перекрывает global.
-   ══════════════════════════════════════════════════════════════ */
-
-// tempSelection живёт только пока модалка открыта
-GS.equipmentModal.tempSelection = new Set();
-
-window.openEquipmentModal = function(slotIdx) {
-    const slot = GS.slots[slotIdx];
-    if (!slot) return;
-
-    GS.equipmentModal.slotIndex = slotIdx;
-    GS.equipmentModal.items     = [];
-    // Инициализировать tempSelection из полного текущего состояния слота
-    GS.equipmentModal.tempSelection = new Set(finalEquipForSlot(slot));
-
-    const input = document.getElementById('id_equipment_search_query_group');
-    if (input) input.value = '';
-
-    const title = document.getElementById('eq-modal-title');
-    if (title) title.textContent = formatDateRu(slot.date);
-
-    openModal('eq-modal');
-    loadEquipmentModal();
-};
-
-// Переопределяем renderEquipmentModal — использует tempSelection
-function renderEquipmentModal() {
-    const slot   = GS.slots[GS.equipmentModal.slotIndex];
-    const listEl = document.getElementById('equipment-list-group');
-    if (!slot || !listEl) return;
-
     const selectedIds = GS.equipmentModal.tempSelection;
 
     if (!GS.equipmentModal.items.length) {
@@ -1014,202 +959,67 @@ function renderEquipmentModal() {
 
     listEl.innerHTML = GS.equipmentModal.items.map(eq => {
         const isSelected = selectedIds.has(eq.id);
-        const isGlobal   = GS.globalEquipment.has(eq.id);
+        const isGlobal = GS.globalEquipment.has(eq.id);
         const hint = isGlobal
-            ? '<span style="font-size:10px;color:var(--orange);margin-left:4px">глобальное</span>'
+            ? '<span style="font-size:10px;color:var(--orange);margin-left:4px">(глобальное)</span>'
             : '';
+
         return `
-<div class="eq-row equipment-card ${isSelected?'selected':''}"
-     data-id="${eq.id}" onclick="toggleEquipInModal(${eq.id})" style="cursor:pointer">
-  <input type="checkbox" class="eq-chk" ${isSelected?'checked':''}
-         onclick="event.stopPropagation(); toggleEquipInModal(${eq.id})">
-  <div class="eq-icon"><i class="bi bi-laptop"></i></div>
-  <div style="flex:1;min-width:0">
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span class="eq-name">${escH(eq.name||'')}${eq.model?' — '+escH(eq.model):''}${hint}</span>
-        <button type="button" class="btn-sec" 
-                onclick="event.stopPropagation(); showEquipmentInfo(${eq.id})" 
-                style="padding: 2px 6px; font-size: 10px; min-width: auto;" 
-                title="Подробнее об оборудовании">
-            <i class="bi bi-info-circle"></i>
-        </button>
+<div class="eq-row equipment-card ${isSelected ? 'selected' : ''}"
+     data-id="${eq.id}"
+     onclick="toggleEquipInModal(${eq.id})"
+     style="cursor:pointer">
+    <input type="checkbox" class="eq-chk" ${isSelected ? 'checked' : ''} 
+           onclick="event.stopPropagation(); toggleEquipInModal(${eq.id})">
+    <div class="eq-icon"><i class="bi bi-laptop"></i></div>
+    <div style="flex:1;min-width:0">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="eq-name">${escH(eq.name || '')}${eq.model ? ' — ' + escH(eq.model) : ''} ${hint}</span>
+            <button type="button" class="btn-sec" 
+                    onclick="event.stopPropagation(); showEquipmentInfo(${eq.id})" 
+                    style="padding: 2px 6px; font-size: 10px; min-width: auto;" 
+                    title="Подробнее об оборудовании">
+                <i class="bi bi-info-circle"></i>
+            </button>
+        </div>
+        <div class="eq-loc">
+            ${eq.type_label || eq.type ? `<span class="eq-inv">${escH(eq.type_label || eq.type)}</span>` : ''}
+            ${eq.inventory_number ? `<span class="eq-inv">${escH(eq.inventory_number)}</span>` : ''}
+        </div>
     </div>
-    <div class="eq-loc">
-      ${eq.type_label||eq.type ? `<span class="eq-inv">${escH(eq.type_label||eq.type)}</span>` : ''}
-      ${eq.inventory_number    ? `<span class="eq-inv">${escH(eq.inventory_number)}</span>`    : ''}
-    </div>
-  </div>
 </div>`;
     }).join('');
 }
 
-// Переопределяем toggleEquipInModal — работает на tempSelection
 window.toggleEquipInModal = function(id) {
     const sel = GS.equipmentModal.tempSelection;
-    if (sel.has(id)) sel.delete(id); else sel.add(id);
+    if (sel.has(id)) {
+        sel.delete(id);
+    } else {
+        sel.add(id);
+    }
     renderEquipmentModal();
 };
 
-// Переопределяем applyEquipmentSelection
 window.applyEquipmentSelection = function() {
     const slot = GS.slots[GS.equipmentModal.slotIndex];
     if (slot) {
-        slot._specificEquipment = [...GS.equipmentModal.tempSelection];
-        slot._explicitEquipment = true;   // ← глобальное больше не примешивается
-        slot.equipmentIds       = [...GS.equipmentModal.tempSelection];
+        // Сохраняем индивидуальный выбор
+        slot._individualEquipment = [...GS.equipmentModal.tempSelection];
+        // Обновляем полный список (индивидуальное + глобальное)
+        slot.equipmentIds = finalEquipForSlot(slot);
     }
     closeModal('eq-modal');
     renderSlots();
     renderEquipList();
-};
 
-/* ── Патч: checkAllResolved — после разрешения аудиторий показать оборудование ── */
-const _origCheckAllResolved = window.checkAllResolved;
-window.checkAllResolved = function() {
-    if (!GS.primaryRoomId) return;
-
-    const primaryRoom = GS.roomsMatrix.find(r => r.id === GS.primaryRoomId);
-    if (!primaryRoom) return;
-
-    const allDates   = GS.slots.map(s => s.date);
-    const unresolved = (primaryRoom.conflicts || []).filter(
-        d => allDates.includes(d) && !GS.conflictOverrides[d]
-    );
-
-    const submitSection = document.getElementById('bg-submit-section');
-
-    if (unresolved.length === 0) {
-        // Аудитории разрешены → показать оборудование
-        showEquipBlock();
-        // Итоговую секцию показываем сразу (оборудование не блокирует)
-        syncAllSlotsEquipment();
-        submitSection?.classList.add('visible');
+    if (document.getElementById('bg-submit-section')?.classList.contains('visible')) {
         renderSummary();
-        submitSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-        document.getElementById('bg-equip-section')?.classList.remove('visible');
-        submitSection?.classList.remove('visible');
     }
 };
 
-/* ── Патч: renderSummary — добавить оборудование в итог ──────────── */
-window.renderSummary = function() {
-    const container = document.getElementById('bg-summary');
-    if (!container) return;
+// ==================== ИНФОРМАЦИОННЫЕ МОДАЛКИ ====================
 
-    // Пересчитать equipmentIds через finalEquipForSlot (уважает _explicitEquipment)
-    GS.slots.forEach(slot => { slot.equipmentIds = finalEquipForSlot(slot); });
-
-    container.innerHTML = GS.slots.map(slot => {
-        const room       = GS.roomsMatrix.find(r => r.id === slot.roomId);
-        const roomLabel  = room ? `${room.name} · ${room.building}` : '—';
-        const isOverride = slot.roomId !== GS.primaryRoomId;
-
-        const eqNames = (slot.equipmentIds || []).map(id => {
-            const eq = GS.equipMatrix.find(e => e.id === id);
-            return eq ? eq.name : `#${id}`;
-        });
-        const eqText = eqNames.length ? eqNames.join(', ') : 'Без оборудования';
-
-        return `
-<div class="bg-summary-row">
-  <span style="font-weight:600;min-width:90px">${formatDateRu(slot.date)}</span>
-  <span style="color:var(--muted);font-size:12px">${slot.start}–${slot.end}</span>
-  <span class="bg-room-badge ${isOverride?'bg-room-badge-alt':''}">
-    ${isOverride?'<i class="bi bi-arrow-left-right"></i> ':''}${escH(roomLabel)}
-  </span>
-  <span class="bg-eq-badge" title="${escH(eqText)}">
-    <i class="bi bi-laptop"></i>
-    ${escH(eqText.length > 45 ? eqText.slice(0,45)+'…' : eqText)}
-  </span>
-</div>`;
-    }).join('');
-};
-
-/* ── Патч: resetRooms — сбросить оборудование тоже ─────────────── */
-const _origResetRooms = window.resetRooms;
-window.resetRooms = function() {
-    _origResetRooms && _origResetRooms();
-    GS.globalEquipment.clear();
-    GS._equipSearchQuery = '';
-    // Сбросить явный выбор и specific у всех слотов —
-    // при повторной проверке аудиторий глобальное снова начнёт работать
-    GS.slots.forEach(s => {
-        s._explicitEquipment = false;
-        s._specificEquipment = [];
-        s.equipmentIds       = [];
-    });
-    document.getElementById('bg-equip-section')?.classList.remove('visible');
-    const eq = document.getElementById('bg-eq-count');
-    if (eq) eq.textContent = '';
-};
-
-/* ── Патч: submitGroup — финальная синхронизация ─────────────────── */
-const _origSubmitGroup = window.submitGroup;
-window.submitGroup = function() {
-    syncAllSlotsEquipment(); // убедиться что всё актуально
-    _origSubmitGroup && _origSubmitGroup();
-};
-
-/* ── CSS для новых классов (добавляется инлайн) ──────────────────── */
-(function injectEquipStyles() {
-    if (document.getElementById('bg-equip-inline-styles')) return;
-    const s = document.createElement('style');
-    s.id = 'bg-equip-inline-styles';
-    s.textContent = `
-#bg-equip-section { display: none; }
-#bg-equip-section.visible { display: block; }
-
-.bg-eq-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer; transition: background .12s; user-select: none;
-}
-.bg-eq-row:last-child { border-bottom: 0; }
-.bg-eq-row:hover { background: var(--orange-lt, #fff7ed); }
-.bg-eq-row.eq-selected { background: var(--orange-lt, #fff7ed); border-left: 3px solid var(--orange); }
-
-.bg-eq-check { width:16px; height:16px; accent-color:var(--orange); flex-shrink:0; cursor:pointer; }
-.bg-eq-name  { font-weight:600; font-size:13px; }
-.bg-eq-meta  { font-size:11px; color:var(--muted); margin-top:1px; }
-
-.bg-chip-specific { background: var(--orange-lt, #fff7ed); color: var(--orange); }
-`;
-    document.head.appendChild(s);
-})();
-
-document.addEventListener('DOMContentLoaded', function() {
-    const dfEl = document.getElementById('date-from');
-    const dtEl = document.getElementById('date-to');
-
-    function onPeriodChange() {
-        GS.dateFrom = dfEl?.value || null;
-        GS.dateTo = dtEl?.value || null;
-        renderCal();
-    }
-
-    dfEl?.addEventListener('change', onPeriodChange);
-    dtEl?.addEventListener('change', onPeriodChange);
-
-    const today = toISO(new Date());
-    if (dfEl) dfEl.min = today;
-    if (dtEl) dtEl.min = today;
-
-    initCal();
-    renderSlots();
-});
-
-// Вспомогательные функции для экранирования
-function escH(s) {
-    return String(s ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-// Показать информацию об аудитории
 async function showRoomInfo(roomId) {
     const modal = document.getElementById('infoModal');
     const title = document.getElementById('infoModalTitle');
@@ -1330,7 +1140,6 @@ async function showRoomInfo(roomId) {
     }
 }
 
-// Показать информацию об оборудовании
 async function showEquipmentInfo(equipId) {
     const modal = document.getElementById('infoModal');
     const title = document.getElementById('infoModalTitle');
@@ -1444,3 +1253,58 @@ async function showEquipmentInfo(equipId) {
         `;
     }
 }
+
+// ==================== СТИЛИ ====================
+
+(function injectEquipStyles() {
+    if (document.getElementById('bg-equip-inline-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'bg-equip-inline-styles';
+    s.textContent = `
+#bg-equip-section { display: none; }
+#bg-equip-section.visible { display: block; }
+
+.bg-eq-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background .12s; user-select: none;
+}
+.bg-eq-row:last-child { border-bottom: 0; }
+.bg-eq-row:hover { background: var(--orange-lt, #fff7ed); }
+.bg-eq-row.eq-selected { background: var(--orange-lt, #fff7ed); border-left: 3px solid var(--orange); }
+
+.bg-eq-check { width: 16px; height: 16px; accent-color: var(--orange); flex-shrink: 0; cursor: pointer; }
+.bg-eq-name { font-weight: 600; font-size: 13px; }
+.bg-eq-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.bg-chip-specific { background: var(--orange-lt, #fff7ed); color: var(--orange); }
+`;
+    document.head.appendChild(s);
+})();
+
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const dfEl = document.getElementById('date-from');
+    const dtEl = document.getElementById('date-to');
+
+    function onPeriodChange() {
+        GS.dateFrom = dfEl?.value || null;
+        GS.dateTo = dtEl?.value || null;
+        renderCal();
+    }
+
+    dfEl?.addEventListener('change', onPeriodChange);
+    dtEl?.addEventListener('change', onPeriodChange);
+
+    const today = toISO(new Date());
+    if (dfEl) dfEl.min = today;
+    if (dtEl) dtEl.min = today;
+
+    initCal();
+    renderSlots();
+});
+
+window.showRoomInfo = showRoomInfo;
+window.showEquipmentInfo = showEquipmentInfo;

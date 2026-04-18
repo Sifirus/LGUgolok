@@ -136,8 +136,6 @@
     border-radius: var(--r);
     box-shadow: var(--sh);
     padding: 24px 28px;
-    position: sticky;
-    top: 76px;
 }
 
 .group-badges {

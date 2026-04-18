@@ -2,7 +2,7 @@
 booking/views_group.py
 """
 import json
-from datetime import date, time as dt_time
+from datetime import date, time as dt_time, datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -102,6 +102,8 @@ def booking_group_submit(request):
         return JsonResponse({'error': 'Неверные даты периода'}, status=400)
 
     today = date.today()
+    now = datetime.now().time()
+
     if date_from < today:
         return JsonResponse({'error': 'Дата серии не может быть в прошлом'}, status=400)
 
@@ -118,6 +120,20 @@ def booking_group_submit(request):
             slot_date = date.fromisoformat(s['date'])
             start = dt_time.fromisoformat(s['start'])
             end = dt_time.fromisoformat(s['end'])
+
+            # Проверка что дата не в прошлом
+            if slot_date < today:
+                return JsonResponse(
+                    {'error': f'Дата {slot_date.isoformat()} уже прошла'},
+                    status=400
+                )
+
+            # Проверка что время не в прошлом для сегодняшней даты
+            if slot_date == today and start <= now:
+                return JsonResponse(
+                    {'error': f'Время начала {start} на сегодня уже прошло'},
+                    status=400
+                )
 
             if slot_date < date_from or slot_date > date_to:
                 return JsonResponse(
