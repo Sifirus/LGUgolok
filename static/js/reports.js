@@ -854,32 +854,34 @@ function renderHeatmap(containerId, days, hours, matrix) {
     });
     if (!max) max = 1;
 
-    // Минимальная ширина = 25px * 24 часа + 42px лейбл = ~642px — на мобиле скролл
-    var minHeatmapWidth = 42 + 24 * 25;
-
-    var html = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">' +
+    // Инфо-строка остается вне скролла
+    var infoHtml = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">' +
         '<i class="bi bi-info-circle"></i> ' +
         'Значение — средний % времени, когда ресурс занят в данный день недели и час. ' +
         '<strong>100%</strong> = занят каждый такой день периода весь час. ' +
-        '</div>' +
-        '<div class="heatmap-wrap" style="min-width:' + minHeatmapWidth + 'px"><div class="heatmap-grid">' +
+        '</div>';
+
+    // Сама сетка внутри скролл-контейнера
+    var gridHtml = '<div class="heatmap-scroll-container">' +
+        '<div class="heatmap-grid">' +
         '<div class="heatmap-head"></div>';
 
     for (var h = 0; h < hours.length; h++) {
-        html += '<div class="heatmap-head">' + String(hours[h]).padStart(2, '0') + '</div>';
+        gridHtml += '<div class="heatmap-head">' + String(hours[h]).padStart(2, '0') + '</div>';
     }
     for (var d = 0; d < days.length; d++) {
-        html += '<div class="heatmap-label">' + escapeHtml(days[d]) + '</div>';
+        gridHtml += '<div class="heatmap-label">' + escapeHtml(days[d]) + '</div>';
         for (var hh = 0; hh < 24; hh++) {
             var value = (matrix[d] && matrix[d][hh]) ? matrix[d][hh] : 0;
             var alpha = Math.max(0.06, Math.min(value / max, 1));
-            html += '<div class="heatmap-cell" title="' + escapeHtml(days[d]) + ' ' + hh +
+            gridHtml += '<div class="heatmap-cell" title="' + escapeHtml(days[d]) + ' ' + hh +
                 ':00 — ' + value + '%" style="background:rgba(30,75,163,' + alpha + ')">' +
                 (value ? value : '') + '</div>';
         }
     }
-    html += '</div></div>';
-    container.innerHTML = html;
+    gridHtml += '</div></div>';
+
+    container.innerHTML = infoHtml + gridHtml;
 }
 
 /* ══════════════════════════════════════════════════════════

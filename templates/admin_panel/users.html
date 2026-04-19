@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load widget_tweaks %}
 
 {% block title %}Уголок - Пользователи{% endblock %}
 
@@ -83,7 +84,7 @@
                 </thead>
                 <tbody>
                 {% for u in users %}
-                    <tr>
+                    <tr style="cursor:pointer" onclick="window.location.href='{% url 'user_detail' u.pk %}'">
                         <td>
                             <div class="user-avatar">
                                 {% if u.profile.avatar %}
@@ -129,7 +130,7 @@
                             {% endif %}
                         </td>
 
-                        <td>
+                        <td onclick="event.stopPropagation()">
                             <div class="action-buttons">
                                 <button class="ic-btn" title="Редактировать"
                                         onclick="openEditModal(

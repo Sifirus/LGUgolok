@@ -100,11 +100,53 @@ def admin_users_add(request):
 
 
 @login_required(login_url='login')
-@require_role_decorator(roles=['operator'])  # TODO
-def admin_user_detail(request, user_id):
-    user = get_object_or_404(User.objects.select_related('profile'), pk=user_id)
-    return render(request, 'admin_panel/user_detail.html', {'target_user': user})
+def admin_user_detail(request, user_id): #TODO пагинация и фильтры
+    from booking.models import Booking
+    from approval.models import Approval
 
+    target = get_object_or_404(User.objects.select_related('profile'), pk=user_id)
+    viewer_role = getattr(request.user, 'role', None)
+
+    bookings = None
+    approvals = None
+
+    if viewer_role == 'operator':
+        bookings = (
+            Booking.objects
+            .filter(initiator=target)
+            .select_related('room', 'approval__approver__profile')
+            .prefetch_related('equipment')
+            .order_by('-created_at')[:30]
+        )
+        if target.role == 'approver':
+            approvals = (
+                Approval.objects
+                .filter(approver=target)
+                .select_related('booking__room', 'booking__initiator__profile')
+                .order_by('-created_at')[:30]
+            )
+
+    elif viewer_role == 'approver':
+        # Согласующий видит заявки инициатора, но не историю других согласующих
+        if target.role in ('initiator', 'approver'):
+            bookings = (
+                Booking.objects
+                .filter(initiator=target)
+                .select_related('room')
+                .order_by('-created_at')[:30]
+            )
+
+    can_edit = viewer_role == 'operator' and target != request.user
+
+    context = {
+        'target_user': target,
+        'bookings': bookings,
+        'approvals': approvals,
+        'can_edit': can_edit,
+        'roles': User.Roles.choices,
+        'viewer_role': viewer_role,
+    }
+    return render(request, 'users/user_detail.html', context)
 
 @login_required(login_url='login')
 @require_role_decorator(roles=['operator'])

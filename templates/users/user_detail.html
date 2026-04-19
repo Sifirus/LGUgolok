@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Уголок - {{ target_user.profile.last_name }} {{ target_user.profile.first_name }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin_users.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-header-title">Профиль пользователя</div>
+        <p class="page-header-sub">
+            Просмотр данных, заявок и истории согласования
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="javascript:history.back()" class="btn-sec">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
+        {% if can_edit %}
+        <button class="btn-blue" onclick="openEditModal(
+            {{ target_user.pk }},
+            '{{ target_user.email|escapejs }}',
+            '{{ target_user.profile.first_name|default:''|escapejs }}',
+            '{{ target_user.profile.last_name|default:''|escapejs }}',
+            '{{ target_user.profile.second_name|default:''|escapejs }}',
+            '{{ target_user.profile.department|default:''|escapejs }}',
+            '{{ target_user.role }}'
+        )">
+            <i class="bi bi-pencil"></i> Редактировать
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="row g-4">
+
+    {# ── Левая колонка: карточка пользователя ── #}
+    <div class="col-lg-4">
+        <div class="ud-card">
+            <div class="ud-card__avatar-wrap">
+                {% if target_user.profile.avatar %}
+                    <img src="{{ target_user.profile.avatar.url }}" class="ud-card__avatar">
+                {% else %}
+                    <div class="ud-card__avatar-fallback">
+                        {{ target_user.profile.first_name|first|default:"?" }}{{ target_user.profile.last_name|first|default:"" }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="ud-card__name">
+                {{ target_user.profile.last_name }} {{ target_user.profile.first_name }}
+                {% if target_user.profile.second_name %} {{ target_user.profile.second_name }}{% endif %}
+            </div>
+            <div class="ud-card__email">{{ target_user.email }}</div>
+
+            <div class="ud-card__badges">
+                <span class="role-badge role-badge--{{ target_user.role }}">
+                    {% if target_user.role == 'initiator' %}<i class="bi bi-person"></i>{% endif %}
+                    {% if target_user.role == 'approver' %}<i class="bi bi-shield-check"></i>{% endif %}
+                    {% if target_user.role == 'operator' %}<i class="bi bi-gear"></i>{% endif %}
+                    {{ target_user.get_role_display }}
+                </span>
+
+                {% if target_user.is_blocked %}
+                    <span class="status-dot status-dot--blocked">Заблокирован</span>
+                {% elif not target_user.is_active %}
+                    <span class="status-dot status-dot--inactive">Деактивирован</span>
+                {% else %}
+                    <span class="status-dot status-dot--active">Активен</span>
+                {% endif %}
+            </div>
+
+            <div class="ud-info-list">
+                {% if target_user.profile.department %}
+                <div class="ud-info-row">
+                    <i class="bi bi-building"></i>
+                    <span>{{ target_user.profile.department }}</span>
+                </div>
+                {% endif %}
+                <div class="ud-info-row">
+                    <i class="bi bi-calendar3"></i>
+                    <span>С нами с {{ target_user.created_at|date:"d.m.Y" }}</span>
+                </div>
+                <div class="ud-info-row">
+                    <i class="bi bi-hash"></i>
+                    <span>ID {{ target_user.pk }}</span>
+                </div>
+            </div>
+
+            {% if can_edit %}
+            <div class="ud-card__actions">
+                {% if target_user.is_blocked %}
+                <form method="post" action="{% url 'admin_panel_user_ban_toggle' target_user.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-sec w-100" style="color:var(--success);border-color:var(--success)">
+                        <i class="bi bi-unlock"></i> Разблокировать
+                    </button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'admin_panel_user_ban_toggle' target_user.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-sec w-100" style="color:var(--danger);border-color:#FECACA"
+                            onclick="return confirm('Заблокировать {{ target_user.email }}?')">
+                        <i class="bi bi-slash-circle"></i> Заблокировать
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if target_user.is_active %}
+                <form method="post" id="delete-form-{{ target_user.pk }}"
+                      action="{% url 'admin_panel_user_delete' target_user.pk %}">
+                    {% csrf_token %}
+                    <button type="button" class="btn-sec w-100 mt-2"
+                            onclick="confirmDelete({{ target_user.pk }}, '{{ target_user.email|escapejs }}')"
+                            style="color:var(--muted)">
+                        <i class="bi bi-person-x"></i> Деактивировать
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Правая колонка: заявки и согласования ── #}
+    <div class="col-lg-8">
+
+        {% if bookings is not None %}
+        <div class="cbox mb-4">
+            <div class="ud-section-head">
+                <i class="bi bi-calendar2-check"></i>
+                Заявки пользователя
+                <span class="ud-count">{{ bookings|length }}</span>
+            </div>
+
+            {% if bookings %}
+            <div class="table-responsive">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Аудитория</th>
+                            <th>Дата и время</th>
+                            <th>Тип</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr onclick="window.location.href='{% url 'booking_detail' b.pk %}'"
+                            style="cursor:pointer">
+                            <td class="tbl-mono">#{{ b.pk }}</td>
+                            <td>
+                                <div style="font-weight:600">{{ b.room.name }}</div>
+                                <div style="font-size:12px;color:var(--muted)">{{ b.room.building }}, эт. {{ b.room.floor }}</div>
+                            </td>
+                            <td>
+                                <div>{{ b.event_date|date:"d.m.Y" }}</div>
+                                <div style="font-size:12px;color:var(--muted)">{{ b.event_start_time|time:"H:i" }}–{{ b.event_end_time|time:"H:i" }}</div>
+                            </td>
+                            <td style="font-size:12px;color:var(--muted)">{{ b.get_event_type_display }}</td>
+                            <td>
+                                <span class="pill pill--{% if b.status == 'approved' %}approved{% elif b.status == 'rejected' %}rejected{% elif b.status == 'pending' %}pending{% elif b.status == 'canceled' %}draft{% else %}draft{% endif %}">
+                                    {{ b.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="ud-empty">
+                <i class="bi bi-journal-text"></i>
+                <div>Заявок нет</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if approvals is not None %}
+        <div class="cbox mb-4">
+            <div class="ud-section-head">
+                <i class="bi bi-shield-check"></i>
+                История согласований
+                <span class="ud-count">{{ approvals|length }}</span>
+            </div>
+
+            {% if approvals %}
+            <div class="table-responsive">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Заявка</th>
+                            <th>Инициатор</th>
+                            <th>Аудитория / Дата</th>
+                            <th>Решение</th>
+                            <th>Дата решения</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ap in approvals %}
+                        <tr onclick="window.location.href='{% url 'booking_detail' ap.booking.pk %}'"
+                            style="cursor:pointer">
+                            <td class="tbl-mono">#{{ ap.booking.pk }}</td>
+                            <td style="font-size:12px">
+                                {{ ap.booking.initiator.profile.last_name }}
+                                {{ ap.booking.initiator.profile.first_name }}
+                            </td>
+                            <td>
+                                <div style="font-weight:600;font-size:13px">{{ ap.booking.room.name }}</div>
+                                <div style="font-size:12px;color:var(--muted)">{{ ap.booking.event_date|date:"d.m.Y" }}</div>
+                            </td>
+                            <td>
+                                <span class="pill pill--{% if ap.decision == 'approved' %}approved{% elif ap.decision == 'rejected' %}rejected{% else %}processing{% endif %}">
+                                    {{ ap.get_decision_display }}
+                                </span>
+                            </td>
+                            <td style="font-size:12px;color:var(--muted)">
+                                {% if ap.decided_at %}{{ ap.decided_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="ud-empty">
+                <i class="bi bi-shield"></i>
+                <div>Нет согласованных заявок</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if bookings is None and approvals is None %}
+        <div class="cbox">
+            <div class="ud-empty" style="padding:48px">
+                <i class="bi bi-lock" style="font-size:40px"></i>
+                <div style="font-size:15px;font-weight:600">Доступ ограничен</div>
+                <div style="font-size:13px">История заявок недоступна для вашей роли</div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{# ── Модалка редактирования ── #}
+{% if can_edit %}
+<div class="modal-lgu-backdrop" id="modal-edit-{{ target_user.pk }}"
+     onclick="if(event.target===this) closeModal('modal-edit-{{ target_user.pk }}')">
+    <div class="modal-lgu-card" style="max-width:520px">
+        <div class="modal-lgu-head">
+            <div>
+                <div style="font-size:15px;font-weight:700">Редактировать пользователя</div>
+                <div style="font-size:12px;color:var(--muted)">{{ target_user.email }}</div>
+            </div>
+            <button type="button" class="modal-lgu-close"
+                    onclick="closeModal('modal-edit-{{ target_user.pk }}')">×</button>
+        </div>
+        <form method="post" action="{% url 'admin_panel_user_edit' target_user.pk %}"
+              id="edit-form-{{ target_user.pk }}">
+            {% csrf_token %}
+            <div class="modal-lgu-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="fl">Email</label>
+                        <input type="email" name="email" class="fc" value="{{ target_user.email }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fl">Фамилия</label>
+                        <input type="text" name="last_name" class="fc"
+                               value="{{ target_user.profile.last_name|default:'' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fl">Имя</label>
+                        <input type="text" name="first_name" class="fc"
+                               value="{{ target_user.profile.first_name|default:'' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fl">Отчество</label>
+                        <input type="text" name="second_name" class="fc"
+                               value="{{ target_user.profile.second_name|default:'' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fl">Отдел</label>
+                        <input type="text" name="department" class="fc"
+                               value="{{ target_user.profile.department|default:'' }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="fl">Роль</label>
+                        <select name="role" class="fc">
+                            {% for val, lbl in roles %}
+                                <option value="{{ val }}" {% if target_user.role == val %}selected{% endif %}>
+                                    {{ lbl }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-lgu-foot">
+                <button type="button" class="btn-sec"
+                        onclick="closeModal('modal-edit-{{ target_user.pk }}')">Отмена</button>
+                <button type="submit" class="btn-main">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/admin_users.js' %}"></script>
+{% endblock %}

@@ -331,11 +331,17 @@ def booking_confirmation_pdf(request, booking_id):
         raise PermissionDenied
 
     approval = getattr(booking, 'approval', None)
-    if (
-        booking.status != Booking.Status.APPROVED
-        or not approval
-        or approval.decision != Approval.Decision.APPROVED
-    ):
+
+    # Авто-одобренная: status=APPROVED, approval отсутствует
+    # Вручную одобренная: status=APPROVED + approval.decision=APPROVED
+    auto_approved = booking.status == Booking.Status.APPROVED and approval is None
+    manual_approved = (
+            approval is not None
+            and booking.status == Booking.Status.APPROVED
+            and approval.decision == Approval.Decision.APPROVED
+    )
+
+    if not (auto_approved or manual_approved):
         raise PermissionDenied('Подтверждение доступно только для согласованных заявок')
 
     pdf_bytes, filename = BookingConfirmationPdfService.build_pdf(booking, request)

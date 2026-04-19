@@ -4,18 +4,27 @@ from django.dispatch import receiver
 from booking.models import Booking, Comments
 from notifications.service import NotificationService
 
-# TODO Храним старый статус до сохранения
-_old_status_cache = {}
-
 
 @receiver(pre_save, sender=Booking)
 def capture_old_status(sender, instance, **kwargs):
+    """
+    Кэшируем старый статус прямо на инстансе (_pre_status),
+    а не в глобальном словаре.
+
+    Преимущества перед _old_status_cache = {}:
+    - нет утечки памяти при исключении между pre_save и post_save
+    - нет разделяемого состояния между потоками
+    - очевидно откуда берётся значение при отладке
+    """
     if instance.pk:
         try:
-            old = Booking.objects.get(pk=instance.pk)
-            _old_status_cache[instance.pk] = old.status
+            instance._pre_status = Booking.objects.values_list(
+                'status', flat=True
+            ).get(pk=instance.pk)
         except Booking.DoesNotExist:
-            pass
+            instance._pre_status = None
+    else:
+        instance._pre_status = None
 
 
 @receiver(post_save, sender=Booking)
@@ -23,8 +32,12 @@ def on_booking_saved(sender, instance, created, **kwargs):
     if created:
         return
 
-    old_status = _old_status_cache.pop(instance.pk, None)
-    if old_status and old_status != instance.status and instance.status != Booking.Status.PENDING:
+    old_status = getattr(instance, '_pre_status', None)
+    if (
+        old_status
+        and old_status != instance.status
+        and instance.status != Booking.Status.PENDING
+    ):
         NotificationService.booking_status_changed(instance, old_status)
 
 

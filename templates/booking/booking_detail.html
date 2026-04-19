@@ -68,7 +68,7 @@
                     </form>
                 {% endif %}
 
-                {% if booking.status == 'approved' and approval and approval.decision == 'approved' %}
+                {% if booking.status == 'approved' %}
                     <a href="{% url 'booking_confirmation_pdf' booking.id %}" class="btn-sec">
                         <i class="bi bi-file-earmark-pdf"></i> Скачать подтверждение
                     </a>
@@ -151,13 +151,15 @@
                         <div class="bd-line">
                             <div class="bd-label">Согласующий</div>
                             <div class="bd-value">
-                                {% if approval.approver.profile.last_name %}
-                                    {{ approval.approver.profile.last_name }}
-                                    {{ approval.approver.profile.first_name }}
-                                    {% if approval.approver.profile.second_name %}{{ approval.approver.profile.second_name }}{% endif %}
-                                {% else %}
-                                    {{ approval.approver.email }}
-                                {% endif %}
+                                <a href="{% url 'user_detail' approval.approver.pk %}" class="link" style="font-weight:600">
+                                    {% if approval.approver.profile.last_name %}
+                                        {{ approval.approver.profile.last_name }}
+                                        {{ approval.approver.profile.first_name }}
+                                        {% if approval.approver.profile.second_name %}{{ approval.approver.profile.second_name }}{% endif %}
+                                    {% else %}
+                                        {{ approval.approver.email }}
+                                    {% endif %}
+                                </a>
                                 <div class="bd-sub">{{ approval.approver.email }}</div>
                                 {% if approval.approver.profile.department %}
                                     <div class="bd-sub">{{ approval.approver.profile.department }}</div>
@@ -268,12 +270,14 @@
                         <div class="bd-row">
                             <div class="bd-label">Инициатор</div>
                             <div class="bd-value">
-                                {% if booking.initiator.profile.last_name %}
-                                    {{ booking.initiator.profile.last_name }}
-                                    {{ booking.initiator.profile.first_name }}
-                                {% else %}
-                                    {{ booking.initiator.email }}
-                                {% endif %}
+                                <a href="{% url 'user_detail' booking.initiator.pk %}" class="link" style="font-weight:600">
+                                    {% if booking.initiator.profile.last_name %}
+                                        {{ booking.initiator.profile.last_name }}
+                                        {{ booking.initiator.profile.first_name }}
+                                    {% else %}
+                                        {{ booking.initiator.email }}
+                                    {% endif %}
+                                </a>
                             </div>
                             <div class="bd-sub">{{ booking.initiator.email }}</div>
                         </div>
