@@ -83,9 +83,8 @@ def equipment_list(request):
     if filters:
         qs = EquipmentFiltersService.apply_filters(qs, filters)
 
-    now = timezone.now()
-    current_date = now.date()
-    current_time = now.time()
+    current_date = timezone.localdate()
+    current_time = timezone.localtime()
 
     equipment_with_status = []
     for item in qs: #TODO N+1
@@ -124,9 +123,8 @@ def equipment_list(request):
         'filter_room_id': room_id,
         'filter_room_label': selected_room.name if selected_room else '',
         'total': paginator.count,
-        'current_date': current_date.strftime('%d.%m.%Y'),
-        'current_time': current_time.strftime('%H:%M'),
-
+        'current_date': timezone.localdate().strftime('%d.%m.%Y'),
+        'current_time': timezone.localtime().strftime('%H:%M'),
     }
     return render(request, 'equipment/equipment.html', context)
 

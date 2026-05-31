@@ -100,7 +100,7 @@
                 </thead>
                 <tbody>
                 {% for b in recent_bookings %}
-                    <tr>
+                    <tr onclick="location.href='{% url 'booking_detail' b.pk %}'" style="cursor:pointer">
                         <td class="dash-table__muted">{{ b.initiator.email }}</td>
                         <td class="dash-table__strong">{{ b.get_event_type_display }}</td>
                         <td class="dash-table__muted">{{ b.room.name }}</td>

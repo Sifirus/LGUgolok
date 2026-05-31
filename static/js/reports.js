@@ -1058,6 +1058,39 @@ function loadRoomEquipmentTableSelected() {
         });
 }
 
+window.exportReportPDF = function () {
+    var df = byId('date_from').value;
+    var dt = byId('date_to').value;
+
+    if (!df || !dt) {
+        alert('Укажите период');
+        return;
+    }
+
+    if (!window.REPORTS_EXPORT_PDF_URL) {
+        alert('Не задан URL экспорта PDF');
+        return;
+    }
+
+    var params = {
+        date_from: df,
+        date_to: dt,
+        type: state.type,
+        mode: state.mode
+    };
+
+    if (state.mode === 'resource') {
+        if (!state.currentResource) {
+            alert('Выберите ресурс');
+            return;
+        }
+        params.resource_type = state.currentResource.kind;
+        params.resource_id = state.currentResource.id;
+    }
+
+    window.location.href = buildUrl(window.REPORTS_EXPORT_PDF_URL, params);
+};
+
 /* ══════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════ */
@@ -1077,3 +1110,4 @@ document.addEventListener('DOMContentLoaded', function () {
     selectMode('overview');
     loadReport();
 });
+

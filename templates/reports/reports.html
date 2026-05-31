@@ -23,6 +23,9 @@
                     Конкретный ресурс
                 </button>
             </div>
+            <button type="button" class="btn-sec ms-2" onclick="exportReportPDF()">
+                <i class="bi bi-file-earmark-pdf"></i> PDF
+            </button>
         </div>
     </div>
 
@@ -336,6 +339,9 @@
 {% endblock %}
 
 {% block extra_js %}
+    <script>
+    window.REPORTS_EXPORT_PDF_URL = "{% url 'reports_export_pdf' %}";
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="{% static 'js/reports.js' %}"></script>
 {% endblock %}

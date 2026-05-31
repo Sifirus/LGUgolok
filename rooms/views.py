@@ -115,9 +115,8 @@ def rooms_list(request):
     if filters:
         qs = RoomsFiltersService.apply_filters(qs, filters)
 
-    now = timezone.now()
-    current_date = now.date()
-    current_time = now.time()
+    current_date = timezone.localdate()
+    current_time = timezone.localtime()
 
     # TODO Для каждой аудитории проверяем, занята ли она сейчас N+1
     rooms_with_status = []
@@ -252,8 +251,8 @@ def room_edit(request, room_id):
             'room_types': Room.RoomType.choices,
             'room_statuses': Room.RoomStatus.choices,
             'total': qs.count(),
-            'current_date': timezone.now().strftime('%d.%m.%Y'),
-            'current_time': timezone.now().strftime('%H:%M'),
+            'current_date': timezone.localdate().strftime('%d.%m.%Y'),
+            'current_time': timezone.localtime().strftime('%H:%M'),
         })
 
     return redirect('rooms_list')

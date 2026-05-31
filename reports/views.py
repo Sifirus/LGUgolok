@@ -225,3 +225,40 @@ def export_csv(request):
         writer.writerow([item.get(f, '') for f in fields])
 
     return response
+
+from reports.services.reports_pdf_service import ReportsPdfService
+
+
+@login_required(login_url='login')
+@require_role_decorator(roles=['operator', 'approver'])
+def export_pdf(request):
+    date_from, date_to = _get_date_range(request)
+    report_type = request.GET.get('type', 'rooms')
+    mode = request.GET.get('mode', 'overview')
+
+    if mode == 'resource':
+        resource_type = request.GET.get('resource_type', report_type)
+        resource_id = request.GET.get('resource_id')
+        if not resource_id:
+            return JsonResponse({'detail': 'resource_id is required'}, status=400)
+
+        try:
+            resource_id = int(resource_id)
+        except ValueError:
+            return JsonResponse({'detail': 'invalid resource_id'}, status=400)
+
+        data = ResourceReportService.get_report(resource_type, resource_id, date_from, date_to)
+    else:
+        data = OverviewReportService.get_report(report_type, date_from, date_to)
+
+    pdf_bytes, filename = ReportsPdfService.build_pdf(
+        report_type=report_type,
+        mode=mode,
+        data=data,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
