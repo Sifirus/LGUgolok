@@ -143,6 +143,9 @@ class BookingConfirmationPdfService:
         equipment_items = list(booking.equipment.all()) if hasattr(booking, 'equipment') else []
         equipment_text  = ', '.join(str(eq) for eq in equipment_items) if equipment_items else 'Нет'
 
+        signed = booking.signed
+        signed_source = booking.signature_source
+
         group_rows = []
         if booking.group_id:
             group_rows = [
@@ -302,6 +305,55 @@ class BookingConfirmationPdfService:
             ('VALIGN',       (0,0),(-1,-1), 'MIDDLE'),
         ]))
         story.append(qr_table)
+
+        story.append(Paragraph('Реквизиты подписи и печати', section_style))
+
+        if signed:
+            if signed_source == booking.SignatureSource.SYSTEM:
+                signature_data = [
+                    [Paragraph(cls._escape_text('Статус'), cell_label_style),
+                     Paragraph(cls._escape_text('Подписано системой'), cell_value_style)],
+                    [Paragraph(cls._escape_text('Дата подписи'), cell_label_style),
+                     Paragraph(cls._escape_text(cls._format_dt(booking.signed_at)), cell_value_style)],
+                    [Paragraph(cls._escape_text('Печать'), cell_label_style),
+                     Paragraph(cls._escape_text('Место для печати'), cell_value_style)],
+                ]
+            else:
+                signer_name, signer_department = cls._format_person(booking.signed_by)
+                signature_data = [
+                    [Paragraph(cls._escape_text('Статус'), cell_label_style),
+                     Paragraph(cls._escape_text('Документ подписан'), cell_value_style)],
+                    [Paragraph(cls._escape_text('Отметил подписанным'), cell_label_style),
+                     Paragraph(cls._escape_text(signer_name), cell_value_style)],
+                    [Paragraph(cls._escape_text('Отдел'), cell_label_style),
+                     Paragraph(cls._escape_text(signer_department), cell_value_style)],
+                    [Paragraph(cls._escape_text('Дата отметки о подписании'), cell_label_style),
+                     Paragraph(cls._escape_text(cls._format_dt(booking.signed_at)), cell_value_style)],
+                ]
+        else:
+            signature_data = [
+                [Paragraph(cls._escape_text('Подпись'), cell_label_style),
+                 Paragraph(cls._escape_text('________________________'), cell_value_style)],
+                [Paragraph(cls._escape_text('ФИО'), cell_label_style),
+                 Paragraph(cls._escape_text('________________________'), cell_value_style)],
+                [Paragraph(cls._escape_text('Дата'), cell_label_style),
+                 Paragraph(cls._escape_text('________________________'), cell_value_style)],
+                [Paragraph(cls._escape_text('Печать'), cell_label_style),
+                 Paragraph(cls._escape_text(''), cell_value_style)],
+            ]
+
+        signature_table = Table(signature_data, colWidths=[45*mm, 129*mm], hAlign='LEFT')
+        signature_table.setStyle(TableStyle([
+            ('BACKGROUND',  (0,0),(-1,-1), colors.HexColor('#F7F9FC')),
+            ('BOX',         (0,0),(-1,-1), 0.5, colors.HexColor('#D9E1EC')),
+            ('INNERGRID',   (0,0),(-1,-1), 0.35, colors.HexColor('#D9E1EC')),
+            ('LEFTPADDING', (0,0),(-1,-1), 7),
+            ('RIGHTPADDING',(0,0),(-1,-1), 7),
+            ('TOPPADDING',  (0,0),(-1,-1), 6),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 6),
+            ('VALIGN',      (0,0),(-1,-1), 'MIDDLE'),
+        ]))
+        story.append(signature_table)
 
         doc.build(story)
         pdf_bytes = buffer.getvalue()

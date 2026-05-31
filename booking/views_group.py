@@ -228,8 +228,10 @@ def booking_group_cancel(request, group_id):
         raise PermissionDenied
 
     cancelable = group.booking_set.filter(
-        status__in=[Booking.Status.CREATED, Booking.Status.PENDING, Booking.Status.APPROVED]
+        status__in=[Booking.Status.CREATED, Booking.Status.PENDING, Booking.Status.APPROVED],
+        signed=False
     )
+
     n = cancelable.count()
     for b in cancelable:
         b.status = Booking.Status.CANCELED

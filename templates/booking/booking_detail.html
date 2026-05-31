@@ -69,6 +69,23 @@
                 {% endif %}
 
                 {% if booking.status == 'approved' %}
+                    {% if booking.signed %}
+                        {% if booking.signature_source == 'system' %}
+                            <span class="btn-sec">Подписано системой</span>
+                        {% else %}
+                            <span class="btn-sec">Подписана</span>
+                        {% endif %}
+                    {% elif approval and approval.approver_id == request.user.id %}
+                        <form method="post" action="{% url 'booking_mark_signed' booking.id %}" style="margin:0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-sec">
+                                <i class="bi bi-pencil-square"></i> Отметить подписанной
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+
+                {% if booking.status == 'approved' %}
                     <a href="{% url 'booking_confirmation_pdf' booking.id %}" class="btn-sec">
                         <i class="bi bi-file-earmark-pdf"></i> Скачать подтверждение
                     </a>

@@ -24,6 +24,10 @@ class Booking(models.Model):
         CONFERENCE = 'conference', 'Конференция'
         ORGANIZATIONAL_MEETING = 'organizational_meeting', 'Организационное собрание'
 
+    class SignatureSource(models.TextChoices):
+        SYSTEM = 'system', 'система'
+        MANUAL = 'manual', 'вручную'
+
     id = models.AutoField(primary_key=True)
 
     group = models.ForeignKey(
@@ -48,6 +52,21 @@ class Booking(models.Model):
     comment = models.TextField(blank=True, null=True)
 
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.CREATED)
+
+    signed = models.BooleanField(default=False)
+    signed_at = models.DateTimeField(blank=True, null=True)
+    signed_by = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='signed_bookings'
+    )
+    signature_source = models.CharField(
+        max_length=10,
+        choices=SignatureSource.choices,
+        default=SignatureSource.MANUAL
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -85,6 +85,19 @@ def booking_create(request):
                 booking = form.save(commit=False)
                 booking.initiator = request.user
                 booking.status = status
+
+                if status == Booking.Status.APPROVED:
+                    # Авто-одобрение фиксируется как подписанное системой
+                    booking.signed = True
+                    booking.signed_at = timezone.now()
+                    booking.signed_by = None
+                    booking.signature_source = Booking.SignatureSource.SYSTEM
+                else:
+                    booking.signed = False
+                    booking.signed_at = None
+                    booking.signed_by = None
+                    booking.signature_source = Booking.SignatureSource.MANUAL
+
                 booking.save()
                 form.save_m2m()
 
@@ -210,6 +223,9 @@ def booking_can_cancel(user, booking: Booking) -> bool:
     role = getattr(user, 'role', None)
 
     if booking.status in (Booking.Status.CANCELED, Booking.Status.COMPLETED, Booking.Status.REJECTED):
+        return False
+
+    if booking.signed:
         return False
 
     if role == 'operator':
@@ -349,3 +365,54 @@ def booking_confirmation_pdf(request, booking_id):
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+@login_required(login_url='login')
+@require_role_decorator(['approver'])
+def booking_mark_signed(request, booking_id):
+    if request.method != 'POST':
+        return redirect('booking_detail', booking_id=booking_id)
+
+    booking = get_object_or_404(
+        Booking.objects.select_related(
+            'room',
+            'initiator__profile',
+            'approval__approver__profile',
+            'signed_by__profile',
+        ).prefetch_related('equipment'),
+        pk=booking_id
+    )
+
+    if not booking_can_view(request.user, booking):
+        raise PermissionDenied
+
+    if booking.status != Booking.Status.APPROVED:
+        raise PermissionDenied('Подписывать можно только одобренную заявку')
+
+    if booking.signed:
+        messages.info(request, 'Заявка уже подписана')
+        return redirect('booking_detail', booking_id=booking.id)
+
+    approval = getattr(booking, 'approval', None)
+
+    # Для ручного согласования подписывает только назначенный согласующий
+    if approval is not None:
+        if approval.decision != Approval.Decision.APPROVED:
+            raise PermissionDenied('Подписывать можно только одобренную заявку')
+
+        if approval.approver_id != request.user.id:
+            raise PermissionDenied('Подписывать может только назначенный согласующий')
+
+    # Для авто-одобренной заявки подписи вручную нет, она уже подписана системой на этапе создания
+    if approval is None:
+        messages.info(request, 'Заявка уже подписана системой')
+        return redirect('booking_detail', booking_id=booking.id)
+
+    booking.signed = True
+    booking.signed_at = timezone.now()
+    booking.signed_by = request.user
+    booking.signature_source = Booking.SignatureSource.MANUAL
+    booking.save(update_fields=['signed', 'signed_at', 'signed_by', 'signature_source'])
+
+    messages.success(request, 'Заявка помечена как подписанная')
+    return redirect('booking_detail', booking_id=booking.id)

@@ -69,7 +69,7 @@ class ReportsPdfService:
     @staticmethod
     def _add_page_number(canvas, doc):
         canvas.saveState()
-        canvas.setFont("Helvetica", 9)
+        canvas.setFont("DejaVuSans", 9)
         canvas.setFillColor(colors.HexColor("#6B7280"))
         canvas.drawRightString(
             A4[0] - 16 * mm,
@@ -143,6 +143,22 @@ class ReportsPdfService:
         ax.tick_params(axis="x", rotation=45)
         fig.tight_layout()
         return cls._fig_to_image(fig, width=7.2, height=2.6)
+
+    @classmethod
+    def _build_capacity_chart(cls, labels, participants, capacity, title):
+        fig, ax = plt.subplots(figsize=(10, 3.2))
+
+        ax.bar(labels, participants, label="Участники")
+        ax.plot(labels, [capacity] * len(labels), label="Вместимость", color="red")
+
+        ax.set_title(title)
+        ax.set_ylabel("Человек")
+        ax.grid(True, axis="y", alpha=0.25)
+        ax.tick_params(axis="x", rotation=45)
+        ax.legend()
+
+        fig.tight_layout()
+        return cls._fig_to_image(fig, width=7.2, height=2.8)
 
     @classmethod
     def _build_pie_chart(cls, labels, values, title):
@@ -403,6 +419,15 @@ class ReportsPdfService:
                 "Распределение часов заявок по часам дня",
             ))
             story.append(Spacer(1, 4 * mm))
+
+            if mode == "resource" and report_type == "rooms":
+                story.append(cls._build_capacity_chart(
+                    [x['label'] for x in data.get('capacity_compare', [])],
+                    [x['participants'] for x in data.get('capacity_compare', [])],
+                    data.get('resource', {}).get('capacity', 0),
+                    "Загрузка аудитории относительно вместимости",
+                ))
+                story.append(Spacer(1, 4 * mm))
 
             story.append(Paragraph("Детальная занятость", section_style))
             detail_headers = ["Дата", "Начало", "Конец", "Тип", "Участники", "Статус", "Часы", "До начала", "Комментарий"]

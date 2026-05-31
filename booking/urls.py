@@ -7,6 +7,7 @@ urlpatterns = [
     path('bookings/<int:booking_id>/', views.booking_detail, name='booking_detail'),
     path('bookings/<int:booking_id>/cancel/', views.booking_cancel, name='booking_cancel'),
     path('booking/<int:booking_id>/confirmation/', views.booking_confirmation_pdf, name='booking_confirmation_pdf'),
+    path('bookings/<int:booking_id>/sign/', views.booking_mark_signed, name='booking_mark_signed'),
 
 ]
 from booking import views_group
