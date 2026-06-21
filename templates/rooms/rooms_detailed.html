@@ -8,7 +8,6 @@
 
 {% block content %}
 
-    <!-- Хлебные крошки -->
     {% if user.role == 'operator' %}
         <nav style="font-size:13px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:6px">
             <a href="{% url 'rooms_list' %}" style="color:var(--blue)">Аудитории</a>
@@ -17,7 +16,6 @@
         </nav>
     {% endif %}
 
-    <!-- Заголовок -->
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
         <div>
             <h1 style="font-size:22px;font-weight:800;margin-bottom:4px;letter-spacing:-.3px">{{ room.name }}</h1>
@@ -34,10 +32,8 @@
 
     <div class="row g-4">
 
-        <!-- Левая колонка: информация -->
         <div class="col-lg-4">
 
-            <!-- Статус -->
             <div class="cbox mb-3" style="padding:16px 20px">
                 <div style="display:flex;align-items:center;gap:12px">
                     <div class="room-status-icon room-status-icon--{{ room.status }}">
@@ -56,7 +52,6 @@
                 </div>
             </div>
 
-            <!-- Параметры -->
             <div class="cbox mb-3" style="padding:0 20px">
                 <table class="detail-table">
                     <tr>
@@ -92,10 +87,8 @@
 
         </div>
 
-        <!-- Правая колонка: оборудование + заявки -->
         <div class="col-lg-8">
 
-            <!-- Стационарное оборудование -->
             <div class="cbox mb-3" style="overflow:hidden">
                 <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:15px;font-weight:700">
@@ -142,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- Последние заявки -->
             <div class="cbox" style="overflow:hidden">
                 <div style="padding:14px 20px;border-bottom:1px solid var(--border)">
         <span style="font-size:15px;font-weight:700">
@@ -162,7 +154,8 @@
                         </thead>
                         <tbody>
                         {% for b in recent_bookings %}
-                            <tr onclick="window.location.href='{% url 'booking_detail' b.id %}'" style="cursor: pointer;">
+                            <tr onclick="window.location.href='{% url 'booking_detail' b.id %}'"
+                                style="cursor: pointer;">
                                 <td style="font-weight:600">{{ b.get_event_type_display }}</td>
                                 <td style="font-size:13px;color:var(--muted)">
                                     {{ b.initiator.profile.last_name }} {{ b.initiator.profile.first_name|first }}.
@@ -191,12 +184,12 @@
         </div>
     </div>
 
-    <!-- Модалка редактирования -->
     {% if user.role == 'operator' %}
         <div class="modal-lgu-backdrop" id="modal-edit">
             <div class="modal-lgu">
                 <div class="modal-lgu-head">
-                    <span class="modal-lgu-title"><i class="bi bi-pencil-square"></i>Редактировать — {{ room.name }}</span>
+                    <span class="modal-lgu-title"><i
+                            class="bi bi-pencil-square"></i>Редактировать — {{ room.name }}</span>
                     <button class="btn-sec" onclick="closeModal('modal-edit')"><i class="bi bi-x-lg"></i></button>
                 </div>
                 <form method="post" action="{% url 'room_edit' room.pk %}">

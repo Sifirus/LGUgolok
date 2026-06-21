@@ -4,7 +4,6 @@ from booking.models import Booking
 from django.contrib.auth import get_user_model
 
 
-
 class Approval(models.Model):
     class Decision(models.TextChoices):
         APPROVED = 'approved', 'одобрена'
@@ -28,6 +27,3 @@ class Approval(models.Model):
     class Meta:
         verbose_name = 'Согласование заявки'
         verbose_name_plural = 'Согласования заявок'
-
-
-

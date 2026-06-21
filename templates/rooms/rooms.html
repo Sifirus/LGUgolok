@@ -197,7 +197,8 @@
                                         <i class="bi bi-pencil"></i>
                                     </button>
 
-                                    <form method="post" action="{% url 'room_delete' room.id %}" class="rooms-delete-form" id="delete-form-{{ room.id }}">
+                                    <form method="post" action="{% url 'room_delete' room.id %}"
+                                          class="rooms-delete-form" id="delete-form-{{ room.id }}">
                                         {% csrf_token %}
                                         <button type="button"
                                                 class="ic-btn ic-btn--danger"
@@ -231,7 +232,9 @@
                 </div>
                 <div class="rooms-pagination">
                     {% if rooms.has_previous %}
-                        <a class="pg-btn" href="?page={{ rooms.previous_page_number }}&search={{ search }}&type={{ filter_type }}&capacity={{ filter_capacity }}&building={{ filter_building }}&status={{ filter_status }}{% for eq in filter_equipment %}&equipment={{ eq }}{% endfor %}">
+                        <a class="pg-btn"
+                           href="?page={{ rooms.previous_page_number }}&search={{ search }}&type={{ filter_type }}&capacity={{ filter_capacity }}&building={{ filter_building }}&status=
+                                   {{ filter_status }}{% for eq in filter_equipment %}&equipment={{ eq }}{% endfor %}">
                             <i class="bi bi-chevron-left"></i>
                         </a>
                     {% else %}
@@ -241,11 +244,15 @@
                         {% if rooms.number == num %}
                             <button class="pg-btn active">{{ num }}</button>
                         {% elif num >= rooms.number|add:"-2" and num <= rooms.number|add:"2" %}
-                            <a class="pg-btn" href="?page={{ num }}&search={{ search }}&type={{ filter_type }}&capacity={{ filter_capacity }}&building={{ filter_building }}&status={{ filter_status }}{% for eq in filter_equipment %}&equipment={{ eq }}{% endfor %}">{{ num }}</a>
+                            <a class="pg-btn"
+                               href="?page={{ num }}&search={{ search }}&type={{ filter_type }}&capacity={{ filter_capacity }}&building={{ filter_building }}&status=
+                                       {{ filter_status }}{% for eq in filter_equipment %}&equipment={{ eq }}{% endfor %}">{{ num }}</a>
                         {% endif %}
                     {% endfor %}
                     {% if rooms.has_next %}
-                        <a class="pg-btn" href="?page={{ rooms.next_page_number }}&search={{ search }}&type={{ filter_type }}&capacity={{ filter_capacity }}&building={{ filter_building }}&status={{ filter_status }}{% for eq in filter_equipment %}&equipment={{ eq }}{% endfor %}">
+                        <a class="pg-btn"
+                           href="?page={{ rooms.next_page_number }}&search={{ search }}&type={{ filter_type }}&capacity={{ filter_capacity }}&building={{ filter_building }}&status=
+                                   {{ filter_status }}{% for eq in filter_equipment %}&equipment={{ eq }}{% endfor %}">
                             <i class="bi bi-chevron-right"></i>
                         </a>
                     {% else %}
@@ -274,26 +281,37 @@
                     <div class="field-row">
                         <div class="field-group">
                             <label class="fl">Название аудитории <span class="required">*</span></label>
-                            <input type="text" name="name" class="fc {% if add_form.name.errors %}is-invalid{% endif %}" value="{{ add_form.name.value|default:'' }}">
-                            {% for e in add_form.name.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                            <input type="text" name="name" class="fc {% if add_form.name.errors %}is-invalid{% endif %}"
+                                   value="{{ add_form.name.value|default:'' }}">
+                            {% for e in add_form.name.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
                         </div>
                         <div class="field-group">
                             <label class="fl">Корпус <span class="required">*</span></label>
-                            <input type="text" name="building" class="fc {% if add_form.building.errors %}is-invalid{% endif %}" value="{{ add_form.building.value|default:'' }}">
-                            {% for e in add_form.building.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                            <input type="text" name="building"
+                                   class="fc {% if add_form.building.errors %}is-invalid{% endif %}"
+                                   value="{{ add_form.building.value|default:'' }}">
+                            {% for e in add_form.building.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
                         </div>
                     </div>
 
                     <div class="field-row">
                         <div class="field-group">
                             <label class="fl">Этаж <span class="required">*</span></label>
-                            <input type="number" name="floor" class="fc {% if add_form.floor.errors %}is-invalid{% endif %}" value="{{ add_form.floor.value|default:'' }}">
-                            {% for e in add_form.floor.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                            <input type="number" name="floor"
+                                   class="fc {% if add_form.floor.errors %}is-invalid{% endif %}"
+                                   value="{{ add_form.floor.value|default:'' }}">
+                            {% for e in add_form.floor.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
                         </div>
                         <div class="field-group">
                             <label class="fl">Вместимость <span class="required">*</span></label>
-                            <input type="number" name="capacity" class="fc {% if add_form.capacity.errors %}is-invalid{% endif %}" value="{{ add_form.capacity.value|default:'' }}">
-                            {% for e in add_form.capacity.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                            <input type="number" name="capacity"
+                                   class="fc {% if add_form.capacity.errors %}is-invalid{% endif %}"
+                                   value="{{ add_form.capacity.value|default:'' }}">
+                            {% for e in add_form.capacity.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
                         </div>
                     </div>
 
@@ -302,19 +320,23 @@
                             <label class="fl">Тип аудитории <span class="required">*</span></label>
                             <select name="type" class="fc {% if add_form.type.errors %}is-invalid{% endif %}">
                                 {% for val, label in room_types %}
-                                    <option value="{{ val }}" {% if add_form.type.value == val %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ val }}"
+                                            {% if add_form.type.value == val %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
-                            {% for e in add_form.type.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                            {% for e in add_form.type.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
                         </div>
                         <div class="field-group">
                             <label class="fl">Статус <span class="required">*</span></label>
                             <select name="status" class="fc {% if add_form.status.errors %}is-invalid{% endif %}">
                                 {% for val, label in room_statuses %}
-                                    <option value="{{ val }}" {% if add_form.status.value == val %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ val }}"
+                                            {% if add_form.status.value == val %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
-                            {% for e in add_form.status.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                            {% for e in add_form.status.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
                         </div>
                     </div>
                 </div>
@@ -329,7 +351,8 @@
 
     {% for row in rooms %}
         {% with room=row.room %}
-            <div class="modal-lgu-backdrop {% if open_edit_modal and edit_room_id == room.id %}open{% endif %}" id="modal-edit-{{ room.id }}">
+            <div class="modal-lgu-backdrop {% if open_edit_modal and edit_room_id == room.id %}open{% endif %}"
+                 id="modal-edit-{{ room.id }}">
                 <div class="modal-lgu">
                     <div class="modal-lgu-head">
                         <span class="modal-lgu-title">
@@ -347,18 +370,24 @@
                             <div class="field-row">
                                 <div class="field-group">
                                     <label class="fl">Название аудитории <span class="required">*</span></label>
-                                    <input type="text" name="name" class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.name.errors %}is-invalid{% endif %}"
-                                           value="{% if open_edit_modal and edit_room_id == room.id %}{{ edit_form.name.value|default:room.name }}{% else %}{{ room.name }}{% endif %}">
+                                    <input type="text" name="name"
+                                           class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.name.errors %}is-invalid{% endif %}"
+                                           value="
+                                                   {% if open_edit_modal and edit_room_id == room.id %}{{ edit_form.name.value|default:room.name }}{% else %}{{ room.name }}{% endif %}">
                                     {% if open_edit_modal and edit_room_id == room.id %}
-                                        {% for e in edit_form.name.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                                        {% for e in edit_form.name.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
                                     {% endif %}
                                 </div>
                                 <div class="field-group">
                                     <label class="fl">Корпус <span class="required">*</span></label>
-                                    <input type="text" name="building" class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.building.errors %}is-invalid{% endif %}"
-                                           value="{% if open_edit_modal and edit_room_id == room.id %}{{ edit_form.building.value|default:room.building }}{% else %}{{ room.building }}{% endif %}">
+                                    <input type="text" name="building"
+                                           class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.building.errors %}is-invalid{% endif %}"
+                                           value="
+                                                   {% if open_edit_modal and edit_room_id == room.id %}{{ edit_form.building.value|default:room.building }}{% else %}{{ room.building }}{% endif %}">
                                     {% if open_edit_modal and edit_room_id == room.id %}
-                                        {% for e in edit_form.building.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                                        {% for e in edit_form.building.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
                                     {% endif %}
                                 </div>
                             </div>
@@ -366,18 +395,24 @@
                             <div class="field-row">
                                 <div class="field-group">
                                     <label class="fl">Этаж <span class="required">*</span></label>
-                                    <input type="number" name="floor" class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.floor.errors %}is-invalid{% endif %}"
-                                           value="{% if open_edit_modal and edit_room_id == room.id %}{{ edit_form.floor.value|default:room.floor }}{% else %}{{ room.floor }}{% endif %}">
+                                    <input type="number" name="floor"
+                                           class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.floor.errors %}is-invalid{% endif %}"
+                                           value="
+                                                   {% if open_edit_modal and edit_room_id == room.id %}{{ edit_form.floor.value|default:room.floor }}{% else %}{{ room.floor }}{% endif %}">
                                     {% if open_edit_modal and edit_room_id == room.id %}
-                                        {% for e in edit_form.floor.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                                        {% for e in edit_form.floor.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
                                     {% endif %}
                                 </div>
                                 <div class="field-group">
                                     <label class="fl">Вместимость <span class="required">*</span></label>
-                                    <input type="number" name="capacity" class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.capacity.errors %}is-invalid{% endif %}"
-                                           value="{% if open_edit_modal and edit_room_id == room.id %}{{ edit_form.capacity.value|default:room.capacity }}{% else %}{{ room.capacity }}{% endif %}">
+                                    <input type="number" name="capacity"
+                                           class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.capacity.errors %}is-invalid{% endif %}"
+                                           value="
+                                                   {% if open_edit_modal and edit_room_id == room.id %}{{ edit_form.capacity.value|default:room.capacity }}{% else %}{{ room.capacity }}{% endif %}">
                                     {% if open_edit_modal and edit_room_id == room.id %}
-                                        {% for e in edit_form.capacity.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                                        {% for e in edit_form.capacity.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
                                     {% endif %}
                                 </div>
                             </div>
@@ -385,46 +420,52 @@
                             <div class="field-row">
                                 <div class="field-group">
                                     <label class="fl">Тип аудитории <span class="required">*</span></label>
-                                    <select name="type" class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.type.errors %}is-invalid{% endif %}">
+                                    <select name="type"
+                                            class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.type.errors %}is-invalid{% endif %}">
                                         {% for val, label in room_types %}
                                             <option value="{{ val }}"
                                                     {% if open_edit_modal and edit_room_id == room.id %}
-                                                        {% if edit_form.type.value == val %}selected{% endif %}
+                                                    {% if edit_form.type.value == val %}selected{% endif %}
                                                     {% else %}
-                                                        {% if room.type == val %}selected{% endif %}
+                                                    {% if room.type == val %}selected{% endif %}
                                                     {% endif %}>
                                                 {{ label }}
                                             </option>
                                         {% endfor %}
                                     </select>
                                     {% if open_edit_modal and edit_room_id == room.id %}
-                                        {% for e in edit_form.type.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                                        {% for e in edit_form.type.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
                                     {% endif %}
                                 </div>
 
                                 <div class="field-group">
                                     <label class="fl">Статус <span class="required">*</span></label>
-                                    <select name="status" class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.status.errors %}is-invalid{% endif %}">
+                                    <select name="status"
+                                            class="fc {% if open_edit_modal and edit_room_id == room.id and edit_form.status.errors %}is-invalid{% endif %}">
                                         {% for val, label in room_statuses %}
                                             <option value="{{ val }}"
                                                     {% if open_edit_modal and edit_room_id == room.id %}
-                                                        {% if edit_form.status.value == val %}selected{% endif %}
+                                                    {% if edit_form.status.value == val %}selected{% endif %}
                                                     {% else %}
-                                                        {% if room.status == val %}selected{% endif %}
+                                                    {% if room.status == val %}selected{% endif %}
                                                     {% endif %}>
                                                 {{ label }}
                                             </option>
                                         {% endfor %}
                                     </select>
                                     {% if open_edit_modal and edit_room_id == room.id %}
-                                        {% for e in edit_form.status.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                                        {% for e in edit_form.status.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
 
                         <div class="modal-lgu-foot">
-                            <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ room.id }}')">Отмена</button>
+                            <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ room.id }}')">
+                                Отмена
+                            </button>
                             <button type="submit" class="btn-main">Сохранить</button>
                         </div>
                     </form>

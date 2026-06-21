@@ -17,35 +17,35 @@ class BookingFiltersService:
         if search_query:
             for word in search_query.split():
                 q = (
-                    Q(comment__icontains=word) |
-                    Q(group__title__icontains=word) |
-                    Q(group__comment__icontains=word) |
-                    Q(initiator__email__icontains=word) |
-                    Q(initiator__profile__first_name__icontains=word) |
-                    Q(initiator__profile__second_name__icontains=word) |
-                    Q(initiator__profile__last_name__icontains=word) |
-                    Q(room__name__icontains=word) |
-                    Q(room__building__icontains=word) |
-                    Q(room__floor__icontains=word) |
-                    Q(equipment__name__icontains=word) |
-                    Q(equipment__model__icontains=word) |
-                    Q(equipment__inventory_number__icontains=word) |
-                    Q(approval__approver__email__icontains=word) |
-                    Q(approval__approver__profile__first_name__icontains=word) |
-                    Q(approval__approver__profile__second_name__icontains=word) |
-                    Q(approval__approver__profile__last_name__icontains=word)
+                        Q(comment__icontains=word) |
+                        Q(group__title__icontains=word) |
+                        Q(group__comment__icontains=word) |
+                        Q(initiator__email__icontains=word) |
+                        Q(initiator__profile__first_name__icontains=word) |
+                        Q(initiator__profile__second_name__icontains=word) |
+                        Q(initiator__profile__last_name__icontains=word) |
+                        Q(room__name__icontains=word) |
+                        Q(room__building__icontains=word) |
+                        Q(room__floor__icontains=word) |
+                        Q(equipment__name__icontains=word) |
+                        Q(equipment__model__icontains=word) |
+                        Q(equipment__inventory_number__icontains=word) |
+                        Q(approval__approver__email__icontains=word) |
+                        Q(approval__approver__profile__first_name__icontains=word) |
+                        Q(approval__approver__profile__second_name__icontains=word) |
+                        Q(approval__approver__profile__last_name__icontains=word)
                 )
 
                 if word.isdigit():
                     num = int(word)
                     q |= (
-                        Q(id=num) |
-                        Q(room_id=num) |
-                        Q(participants=num) |
-                        Q(initiator__profile__id=num) |
-                        Q(approval__approver__id=num) |
-                        Q(approval__approver__profile__id=num) |
-                        Q(group__id=num)
+                            Q(id=num) |
+                            Q(room_id=num) |
+                            Q(participants=num) |
+                            Q(initiator__profile__id=num) |
+                            Q(approval__approver__id=num) |
+                            Q(approval__approver__profile__id=num) |
+                            Q(group__id=num)
                     )
 
                 queryset = queryset.filter(q)

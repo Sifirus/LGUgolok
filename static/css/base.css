@@ -351,8 +351,6 @@ a {
     }
 }
 
-/* Top Bar */
-
 .topbar {
     position: sticky;
     top: 0;
@@ -640,10 +638,8 @@ a {
     }
 }
 
-/* Modal */
-
 .modal-backdrop,
-.modal-lgu-backdrop {
+.modal-ugolok-backdrop {
     display: none;
     position: fixed;
     inset: 0;
@@ -656,13 +652,13 @@ a {
 }
 
 .modal-backdrop.open,
-.modal-lgu-backdrop.open {
+.modal-ugolok-backdrop.open {
     display: flex;
 }
 
 .modal-card,
-.modal-lgu,
-.modal-lgu-card{
+.modal-ugolok,
+.modal-ugolok-card {
     width: 100%;
     background: var(--surface);
     border-radius: var(--r);
@@ -674,8 +670,8 @@ a {
     overflow: hidden;
 }
 
-.modal-lgu,
-.modal-lgu-card{
+.modal-ugolok,
+.modal-ugolok-card {
     max-width: 560px;
     overflow-y: auto;
 }
@@ -696,7 +692,7 @@ a {
 }
 
 .modal-head,
-.modal-lgu-head {
+.modal-ugolok-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -707,7 +703,7 @@ a {
 }
 
 .modal-title,
-.modal-lgu-title {
+.modal-ugolok-title {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -717,7 +713,7 @@ a {
 }
 
 .modal-close,
-.modal-lgu-close {
+.modal-ugolok-close {
     width: 34px;
     height: 34px;
     border-radius: 10px;
@@ -731,13 +727,13 @@ a {
 }
 
 .modal-close:hover,
-.modal-lgu-close:hover {
+.modal-ugolok-close:hover {
     color: var(--text);
     border-color: var(--blue);
 }
 
 .modal-body,
-.modal-lgu-body {
+.modal-ugolok-body {
     padding: 22px;
     overflow-y: auto;
     min-height: 0;
@@ -745,7 +741,7 @@ a {
 }
 
 .modal-foot,
-.modal-lgu-foot {
+.modal-ugolok-foot {
     padding: 16px 22px 22px;
     border-top: 1px solid var(--border);
     display: flex;

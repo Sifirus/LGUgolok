@@ -6,75 +6,76 @@
 {% endblock %}
 
 {% block content %}
-<div class="pc">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-2">
-        <div>
-            <h1 style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin:0">Согласование заявок</h1>
-            <div class="text-muted small mt-1">
-                Групповые заявки показываются одной карточкой. Внутри доступен список всех подзаявок.
+    <div class="pc">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-2">
+            <div>
+                <h1 style="font-size:20px;font-weight:800;letter-spacing:-.3px;margin:0">Согласование заявок</h1>
+                <div class="text-muted small mt-1">
+                    Групповые заявки показываются одной карточкой. Внутри доступен список всех подзаявок.
+                </div>
             </div>
-        </div>
-        <button class="btn-blue" onclick="loadApprovalList()" style="padding:8px 16px">
-            <i class="bi bi-arrow-repeat"></i> Обновить
-        </button>
-    </div>
-
-    <div id="approval-message" class="mb-3"></div>
-
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="appr-tabs">
-                <button class="appr-tab-btn active" data-tab="pending" onclick="switchTab('pending')">
-                    <i class="bi bi-hourglass-split"></i> Ожидают решения
-                </button>
-                <button class="appr-tab-btn" data-tab="mine" onclick="switchTab('mine')">
-                    <i class="bi bi-person-check"></i> Взяты мной
-                </button>
-            </div>
-
-            <div id="approval-list">
-                <div class="text-muted text-center py-4">Загрузка заявок...</div>
-            </div>
+            <button class="btn-blue" onclick="loadApprovalList()" style="padding:8px 16px">
+                <i class="bi bi-arrow-repeat"></i> Обновить
+            </button>
         </div>
 
-        <div class="col-lg-7">
-            <div class="decision-panel" id="decisionPanel">
-                <div class="text-center py-5 text-muted">
-                    <i class="bi bi-folder2-open" style="font-size:48px;opacity:0.5"></i>
-                    <p class="mt-3 mb-0">Выберите заявку из списка слева,<br>чтобы просмотреть детали и принять решение</p>
+        <div id="approval-message" class="mb-3"></div>
+
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="appr-tabs">
+                    <button class="appr-tab-btn active" data-tab="pending" onclick="switchTab('pending')">
+                        <i class="bi bi-hourglass-split"></i> Ожидают решения
+                    </button>
+                    <button class="appr-tab-btn" data-tab="mine" onclick="switchTab('mine')">
+                        <i class="bi bi-person-check"></i> Взяты мной
+                    </button>
+                </div>
+
+                <div id="approval-list">
+                    <div class="text-muted text-center py-4">Загрузка заявок...</div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="decision-panel" id="decisionPanel">
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-folder2-open" style="font-size:48px;opacity:0.5"></i>
+                        <p class="mt-3 mb-0">Выберите заявку из списка слева,<br>чтобы просмотреть детали и принять
+                            решение</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="modal-lgu-backdrop" id="infoModal" onclick="if(event.target===this) closeModal('infoModal')">
-    <div class="modal-lgu-card" style="max-width: 550px; background: var(--surface)">
-        <div class="modal-lgu-head">
-            <div>
-                <div style="font-size: 15px; font-weight: 700;" id="infoModalTitle">Информация</div>
-                <div style="font-size: 12px; color: var(--muted);" id="infoModalSubtitle"></div>
+    <div class="modal-ugolok-backdrop" id="infoModal" onclick="if(event.target===this) closeModal('infoModal')">
+        <div class="modal-ugolok-card" style="max-width: 550px; background: var(--surface)">
+            <div class="modal-ugolok-head">
+                <div>
+                    <div style="font-size: 15px; font-weight: 700;" id="infoModalTitle">Информация</div>
+                    <div style="font-size: 12px; color: var(--muted);" id="infoModalSubtitle"></div>
+                </div>
+                <button type="button" class="modal-ugolok-close" onclick="closeModal('infoModal')">×</button>
             </div>
-            <button type="button" class="modal-lgu-close" onclick="closeModal('infoModal')">×</button>
-        </div>
 
-        <div class="modal-lgu-body" id="infoModalBody">
-            <div style="padding: 20px; text-align: center; color: var(--muted);">
-                <div class="spinner-border" style="width: 32px; height: 32px; margin-bottom: 12px;"></div>
-                <div>Загрузка...</div>
+            <div class="modal-ugolok-body" id="infoModalBody">
+                <div style="padding: 20px; text-align: center; color: var(--muted);">
+                    <div class="spinner-border" style="width: 32px; height: 32px; margin-bottom: 12px;"></div>
+                    <div>Загрузка...</div>
+                </div>
             </div>
-        </div>
 
-        <div class="modal-lgu-foot">
-            <button type="button" class="btn-sec" onclick="closeModal('infoModal')">
-                <i class="bi bi-x"></i> Закрыть
-            </button>
-            <a href="#" id="infoModalLink" target="_blank" class="btn-main" style="display: none;">
-                <i class="bi bi-box-arrow-up-right"></i> Открыть страницу
-            </a>
+            <div class="modal-ugolok-foot">
+                <button type="button" class="btn-sec" onclick="closeModal('infoModal')">
+                    <i class="bi bi-x"></i> Закрыть
+                </button>
+                <a href="#" id="infoModalLink" target="_blank" class="btn-main" style="display: none;">
+                    <i class="bi bi-box-arrow-up-right"></i> Открыть страницу
+                </a>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}

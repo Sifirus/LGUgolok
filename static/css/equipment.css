@@ -462,7 +462,6 @@
 }
 
 
-
 @media (max-width: 980px) {
     .eq-detail-grid {
         grid-template-columns: 1fr;

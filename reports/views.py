@@ -1,17 +1,19 @@
 import csv
-import io
 from datetime import date, datetime
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 
-from booking.models import Booking
 from core.decorators import require_role_decorator
 from equipment.models import Equipment
-from reports.services.reports_service import OverviewReportService, ResourceReportService, RoomReportService, EquipmentReportService
+from reports.services.reports_service import OverviewReportService, ResourceReportService, RoomReportService, \
+    EquipmentReportService
 from rooms.models import Room
+
+from reports.services.reports_pdf_service import ReportsPdfService
+
+from booking.models import Booking
 
 
 def _get_date_range(request):
@@ -70,14 +72,13 @@ def reports_search(request):
     items = []
 
     if resource_type == 'rooms':
-        # Берём больше из БД, потом фильтруем тип по display-label в Python
         qs = Room.objects.all().order_by('building', 'name')
         if q:
             from django.db.models import Q as _Q
             db_filters = (
                     _Q(name__icontains=q) |
                     _Q(building__icontains=q) |
-                    _Q(type__icontains=q)  # raw key search (обратная совместимость)
+                    _Q(type__icontains=q)
             )
             if q.isdigit():
                 db_filters |= _Q(pk=int(q))
@@ -85,7 +86,6 @@ def reports_search(request):
 
         all_rooms = list(qs[:100])
 
-        # Дополнительно: поиск по display-label типа (например «Лекционная» вместо «lecture_hall»)
         if q:
             q_lower = q.lower()
             extra = [
@@ -120,7 +120,6 @@ def reports_search(request):
 
         all_eq = list(qs[:100])
 
-        # Поиск по display-label типа оборудования
         if q:
             q_lower = q.lower()
             extra = [
@@ -141,8 +140,6 @@ def reports_search(request):
     return JsonResponse({'items': items})
 
 
-# ── reports/views.py — заменить функцию room_equipment_at_datetime целиком ──
-
 @login_required(login_url='login')
 @require_role_decorator(roles=['operator', 'approver'])
 def room_equipment_at_datetime(request, room_id):
@@ -158,15 +155,10 @@ def room_equipment_at_datetime(request, room_id):
     except ValueError:
         return JsonResponse({'detail': 'invalid date or time'}, status=400)
 
-    from booking.models import Booking
-
     room = Room.objects.get(pk=room_id)
 
-    # 1. Оборудование постоянно приписанное к этой аудитории
     permanent_ids = set(room.equipment.values_list('id', flat=True))
 
-    # 2. Переносное оборудование, которое находится здесь через активную заявку
-    #    (заявка на ЭТУ аудиторию, перекрывает указанное время)
     booked_ids = set(
         Equipment.objects.filter(
             bookings__room_id=room_id,
@@ -187,13 +179,13 @@ def room_equipment_at_datetime(request, room_id):
     for eq in Equipment.objects.select_related('room').filter(id__in=all_ids).order_by('name'):
         location = eq.get_current_location(d, t)
         rows.append({
-            'id':               eq.id,
+            'id': eq.id,
             'inventory_number': eq.inventory_number,
-            'name':             eq.name,
-            'model':            eq.model,
-            'status':           eq.get_status_display(),
-            'location_label':   location['label'],
-            'location_type':    location['location_type'],
+            'name': eq.name,
+            'model': eq.model,
+            'status': eq.get_status_display(),
+            'location_label': location['label'],
+            'location_type': location['location_type'],
         })
 
     return JsonResponse({'items': rows})
@@ -207,13 +199,17 @@ def export_csv(request):
 
     if report_type == 'rooms':
         data = RoomReportService.get_overview(date_from, date_to)
-        fields = ['name', 'building', 'floor', 'type', 'status', 'bookings_count', 'canceled_count', 'total_hours', 'load_pct', 'peak_day']
-        headers = ['Аудитория', 'Корпус', 'Этаж', 'Тип', 'Статус', 'Заявок', 'Отмен', 'Часов', 'Загрузка %', 'Пиковый день']
+        fields = ['name', 'building', 'floor', 'type', 'status', 'bookings_count', 'canceled_count', 'total_hours',
+                  'load_pct', 'peak_day']
+        headers = ['Аудитория', 'Корпус', 'Этаж', 'Тип', 'Статус', 'Заявок', 'Отмен', 'Часов', 'Загрузка %',
+                   'Пиковый день']
         filename = f'rooms_report_{date_from}_{date_to}.csv'
     else:
         data = EquipmentReportService.get_overview(date_from, date_to)
-        fields = ['name', 'model', 'inventory_number', 'type', 'status', 'room', 'bookings_count', 'canceled_count', 'total_hours', 'load_pct', 'peak_day']
-        headers = ['Наименование', 'Модель', 'Инв. номер', 'Тип', 'Статус', 'Аудитория', 'Заявок', 'Отмен', 'Часов', 'Загрузка %', 'Пиковый день']
+        fields = ['name', 'model', 'inventory_number', 'type', 'status', 'room', 'bookings_count', 'canceled_count',
+                  'total_hours', 'load_pct', 'peak_day']
+        headers = ['Наименование', 'Модель', 'Инв. номер', 'Тип', 'Статус', 'Аудитория', 'Заявок', 'Отмен', 'Часов',
+                   'Загрузка %', 'Пиковый день']
         filename = f'equipment_report_{date_from}_{date_to}.csv'
 
     response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
@@ -225,8 +221,6 @@ def export_csv(request):
         writer.writerow([item.get(f, '') for f in fields])
 
     return response
-
-from reports.services.reports_pdf_service import ReportsPdfService
 
 
 @login_required(login_url='login')

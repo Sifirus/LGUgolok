@@ -17,17 +17,17 @@
                     <span>#{{ booking.id }}</span>
                 </div>
 
-            {% if booking.group %}
-            <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:13px">
-              <i class="bi bi-collection" style="color:var(--blue)"></i>
-              <span style="color:var(--muted)">Часть серии:</span>
-              <a href="{% url 'booking_group_detail' booking.group.pk %}"
-                 style="color:var(--blue);font-weight:600;text-decoration:none">
-                {{ booking.group.title }}
-                <i class="bi bi-arrow-right" style="font-size:11px"></i>
-              </a>
-            </div>
-            {% endif %}
+                {% if booking.group %}
+                    <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:13px">
+                        <i class="bi bi-collection" style="color:var(--blue)"></i>
+                        <span style="color:var(--muted)">Часть серии:</span>
+                        <a href="{% url 'booking_group_detail' booking.group.pk %}"
+                           style="color:var(--blue);font-weight:600;text-decoration:none">
+                            {{ booking.group.title }}
+                            <i class="bi bi-arrow-right" style="font-size:11px"></i>
+                        </a>
+                    </div>
+                {% endif %}
 
                 <div class="bd-title-row">
                     <h1 class="bd-title">Заявка #{{ booking.id }}</h1>
@@ -48,7 +48,8 @@
                 </div>
 
                 <div class="bd-meta">
-                    Создана {{ booking.created_at|date:"d.m.Y H:i" }} · Обновлена {{ booking.updated_at|date:"d.m.Y H:i" }}
+                    Создана {{ booking.created_at|date:"d.m.Y H:i" }} ·
+                    Обновлена {{ booking.updated_at|date:"d.m.Y H:i" }}
                 </div>
             </div>
 
@@ -61,7 +62,8 @@
                 {% if can_cancel and booking.status != 'canceled' %}
                     <form method="post" action="{% url 'booking_cancel' booking.id %}" style="margin:0">
                         {% csrf_token %}
-                        <button type="submit" class="btn-danger" onclick="return confirm('Вы уверены, что хотите отменить заявку?')">
+                        <button type="submit" class="btn-danger"
+                                onclick="return confirm('Вы уверены, что хотите отменить заявку?')">
                             <i class="bi bi-x-circle"></i>
                             Отменить заявку
                         </button>
@@ -116,7 +118,8 @@
                         </div>
                         <div class="bd-line">
                             <div class="bd-label">Время</div>
-                            <div class="bd-value">{{ booking.event_start_time|time:"H:i" }} - {{ booking.event_end_time|time:"H:i" }}</div>
+                            <div class="bd-value">{{ booking.event_start_time|time:"H:i" }}
+                                - {{ booking.event_end_time|time:"H:i" }}</div>
                         </div>
                         <div class="bd-line">
                             <div class="bd-label">Участников</div>
@@ -137,7 +140,8 @@
                         <div class="bd-line">
                             <div class="bd-label">Аудитория</div>
                             <div class="bd-value">
-                                <a class="link" href="{% url 'room_detail' booking.room.id %}">{{ booking.room.name }}</a>
+                                <a class="link"
+                                   href="{% url 'room_detail' booking.room.id %}">{{ booking.room.name }}</a>
                                 <div class="bd-sub">{{ booking.room.building }}, этаж {{ booking.room.floor }}</div>
                                 <div class="bd-sub">Вместимость: {{ booking.room.capacity }} чел.</div>
                             </div>
@@ -150,7 +154,7 @@
                                     {% for eq in booking.equipment.all %}
                                         <div class="bd-list-item">
                                             <a class="link" href="{% url 'equipment_detail' eq.id %}">{{ eq.name }}</a>
-                                            <span class="bd-list-sub">{{ eq.model }} · Инв. №{{ eq.inventory_number}}</span>
+                                            <span class="bd-list-sub">{{ eq.model }} · Инв. №{{ eq.inventory_number }}</span>
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -162,52 +166,54 @@
                 </section>
 
                 {% if approval %}
-                <section class="bd-section">
-                    <h2 class="bd-section-title">Согласование</h2>
-                    <div class="bd-lines">
-                        <div class="bd-line">
-                            <div class="bd-label">Согласующий</div>
-                            <div class="bd-value">
-                                <a href="{% url 'user_detail' approval.approver.pk %}" class="link" style="font-weight:600">
-                                    {% if approval.approver.profile.last_name %}
-                                        {{ approval.approver.profile.last_name }}
-                                        {{ approval.approver.profile.first_name }}
-                                        {% if approval.approver.profile.second_name %}{{ approval.approver.profile.second_name }}{% endif %}
-                                    {% else %}
-                                        {{ approval.approver.email }}
+                    <section class="bd-section">
+                        <h2 class="bd-section-title">Согласование</h2>
+                        <div class="bd-lines">
+                            <div class="bd-line">
+                                <div class="bd-label">Согласующий</div>
+                                <div class="bd-value">
+                                    <a href="{% url 'user_detail' approval.approver.pk %}" class="link"
+                                       style="font-weight:600">
+                                        {% if approval.approver.profile.last_name %}
+                                            {{ approval.approver.profile.last_name }}
+                                            {{ approval.approver.profile.first_name }}
+                                            {% if approval.approver.profile.second_name %}
+                                                {{ approval.approver.profile.second_name }}{% endif %}
+                                        {% else %}
+                                            {{ approval.approver.email }}
+                                        {% endif %}
+                                    </a>
+                                    <div class="bd-sub">{{ approval.approver.email }}</div>
+                                    {% if approval.approver.profile.department %}
+                                        <div class="bd-sub">{{ approval.approver.profile.department }}</div>
                                     {% endif %}
-                                </a>
-                                <div class="bd-sub">{{ approval.approver.email }}</div>
-                                {% if approval.approver.profile.department %}
-                                    <div class="bd-sub">{{ approval.approver.profile.department }}</div>
-                                {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="bd-line">
+                                <div class="bd-label">Решение</div>
+                                <div class="bd-value">
+                                    {% if approval.decision == 'approved' %}
+                                        <span class="pill pill--approved">{{ approval.get_decision_display }}</span>
+                                    {% elif approval.decision == 'rejected' %}
+                                        <span class="pill pill--rejected">{{ approval.get_decision_display }}</span>
+                                    {% else %}
+                                        <span class="pill pill--pending">{{ approval.get_decision_display }}</span>
+                                    {% endif %}
+                                    {% if approval.decided_at %}
+                                        <div class="bd-sub">Решено {{ approval.decided_at|date:"d.m.Y H:i" }}</div>
+                                    {% else %}
+                                        <div class="bd-sub">Решение еще не принято</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="bd-line">
+                                <div class="bd-label">Дата создания</div>
+                                <div class="bd-value">{{ approval.created_at|date:"d.m.Y H:i" }}</div>
                             </div>
                         </div>
-
-                        <div class="bd-line">
-                            <div class="bd-label">Решение</div>
-                            <div class="bd-value">
-                                {% if approval.decision == 'approved' %}
-                                    <span class="pill pill--approved">{{ approval.get_decision_display }}</span>
-                                {% elif approval.decision == 'rejected' %}
-                                    <span class="pill pill--rejected">{{ approval.get_decision_display }}</span>
-                                {% else %}
-                                    <span class="pill pill--pending">{{ approval.get_decision_display }}</span>
-                                {% endif %}
-                                {% if approval.decided_at %}
-                                    <div class="bd-sub">Решено {{ approval.decided_at|date:"d.m.Y H:i" }}</div>
-                                {% else %}
-                                    <div class="bd-sub">Решение еще не принято</div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="bd-line">
-                            <div class="bd-label">Дата создания</div>
-                            <div class="bd-value">{{ approval.created_at|date:"d.m.Y H:i" }}</div>
-                        </div>
-                    </div>
-                </section>
+                    </section>
                 {% endif %}
 
                 <section class="bd-section">
@@ -225,7 +231,8 @@
                                             {% if c.author.profile.last_name %}
                                                 {{ c.author.profile.last_name }}
                                                 {{ c.author.profile.first_name }}
-                                                {% if c.author.profile.second_name %}{{ c.author.profile.second_name }}{% endif %}
+                                                {% if c.author.profile.second_name %}
+                                                    {{ c.author.profile.second_name }}{% endif %}
                                             {% else %}
                                                 {{ c.author.email }}
                                             {% endif %}
@@ -287,7 +294,8 @@
                         <div class="bd-row">
                             <div class="bd-label">Инициатор</div>
                             <div class="bd-value">
-                                <a href="{% url 'user_detail' booking.initiator.pk %}" class="link" style="font-weight:600">
+                                <a href="{% url 'user_detail' booking.initiator.pk %}" class="link"
+                                   style="font-weight:600">
                                     {% if booking.initiator.profile.last_name %}
                                         {{ booking.initiator.profile.last_name }}
                                         {{ booking.initiator.profile.first_name }}

@@ -140,7 +140,7 @@ function renderCal() {
     if (!grid || !title) return;
 
     const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
     title.textContent = MONTHS[GS.calMonth] + ' ' + GS.calYear;
 
     const first = new Date(GS.calYear, GS.calMonth, 1);
@@ -198,7 +198,7 @@ function initCal() {
     renderCal();
 }
 
-window.calPrev = function() {
+window.calPrev = function () {
     if (GS.calMonth === 0) {
         GS.calMonth = 11;
         GS.calYear--;
@@ -208,7 +208,7 @@ window.calPrev = function() {
     renderCal();
 };
 
-window.calNext = function() {
+window.calNext = function () {
     if (GS.calMonth === 11) {
         GS.calMonth = 0;
         GS.calYear++;
@@ -282,8 +282,8 @@ function renderSlots() {
 
     <select class="bg-slot-fc" onchange="updateSlotField(${i},'eventType',this.value)">
       ${eventOptions.map(([v, l]) =>
-          `<option value="${v}" ${slot.eventType === v ? 'selected' : ''}>${l}</option>`
-      ).join('')}
+            `<option value="${v}" ${slot.eventType === v ? 'selected' : ''}>${l}</option>`
+        ).join('')}
     </select>
 
     <input type="number" class="bg-slot-fc" min="1" value="${slot.participants}"
@@ -318,7 +318,7 @@ function renderSlots() {
     }).join('');
 }
 
-window.updateSlotField = function(i, field, value) {
+window.updateSlotField = function (i, field, value) {
     const slot = GS.slots[i];
     if (!slot) return;
 
@@ -333,14 +333,14 @@ window.updateSlotField = function(i, field, value) {
     }
 };
 
-window.removeSlot = function(i) {
+window.removeSlot = function (i) {
     GS.slots.splice(i, 1);
     renderCal();
     renderSlots();
     resetRooms();
 };
 
-window.checkRooms = function() {
+window.checkRooms = function () {
     if (GS.slots.length === 0) {
         alert('Выберите хотя бы одну дату');
         return;
@@ -378,32 +378,32 @@ window.checkRooms = function() {
         },
         body: JSON.stringify(payload),
     })
-    .then(r => r.json())
-    .then(data => {
-        GS.roomsMatrix = data.rooms || [];
-        GS.equipMatrix = data.equipment || [];
+        .then(r => r.json())
+        .then(data => {
+            GS.roomsMatrix = data.rooms || [];
+            GS.equipMatrix = data.equipment || [];
 
-        if (loading) loading.style.display = 'none';
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Обновить';
-        }
+            if (loading) loading.style.display = 'none';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Обновить';
+            }
 
-        renderRoomsList();
-        renderSlots();
-        section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    })
-    .catch(() => {
-        if (loading) loading.style.display = 'none';
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-building"></i> Проверить аудитории';
-        }
-        alert('Ошибка загрузки');
-    });
+            renderRoomsList();
+            renderSlots();
+            section?.scrollIntoView({behavior: 'smooth', block: 'start'});
+        })
+        .catch(() => {
+            if (loading) loading.style.display = 'none';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-building"></i> Проверить аудитории';
+            }
+            alert('Ошибка загрузки');
+        });
 };
 
-window.setRoomTypeFilter = function(key) {
+window.setRoomTypeFilter = function (key) {
     GS.roomTypeFilter = (GS.roomTypeFilter === key) ? '' : key;
     renderRoomsList();
 };
@@ -424,7 +424,9 @@ function renderRoomsList() {
     const allDates = GS.slots.map(s => s.date);
 
     const typeMap = new Map();
-    GS.roomsMatrix.forEach(r => { if (r.type_key) typeMap.set(r.type_key, r.type); });
+    GS.roomsMatrix.forEach(r => {
+        if (r.type_key) typeMap.set(r.type_key, r.type);
+    });
     const types = [...typeMap.entries()];
 
     const filterBar = types.length > 1 ? `
@@ -477,7 +479,7 @@ function renderRoomsList() {
         : '<div style="padding:14px;text-align:center;color:var(--muted)">Нет аудиторий этого типа</div>');
 }
 
-window.selectPrimary = function(roomId) {
+window.selectPrimary = function (roomId) {
     GS.primaryRoomId = roomId;
     GS.conflictOverrides = {};
 
@@ -541,7 +543,7 @@ function renderConflictResolve(primaryRoom) {
                 <i class="bi bi-info-circle"></i>
             </button>
         </div>`;
-              }).join('')
+            }).join('')
             : `<div style="font-size:12px;color:var(--muted);padding:6px 0">Нет свободных аудиторий</div>`;
 
         return `
@@ -566,7 +568,7 @@ function renderConflictResolve(primaryRoom) {
 </div>`;
 }
 
-window.setConflictOverride = function(date, roomId) {
+window.setConflictOverride = function (date, roomId) {
     if (roomId) {
         GS.conflictOverrides[date] = roomId;
     } else {
@@ -598,7 +600,7 @@ function checkAllResolved() {
         syncAllSlotsEquipment();
         submitSection?.classList.add('visible');
         renderSummary();
-        submitSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        submitSection?.scrollIntoView({behavior: 'smooth', block: 'start'});
     } else {
         document.getElementById('bg-equip-section')?.classList.remove('visible');
         submitSection?.classList.remove('visible');
@@ -637,7 +639,7 @@ function renderSummary() {
     }).join('');
 }
 
-window.submitGroup = function() {
+window.submitGroup = function () {
     const title = (document.getElementById('group-title')?.value || '').trim();
     const comment = (document.getElementById('group-comment')?.value || '').trim();
     const dfFrom = document.getElementById('date-from')?.value;
@@ -654,9 +656,8 @@ window.submitGroup = function() {
 
     const now = new Date();
     const todayStr = toISO(now);
-    const currentTimeStr = now.toTimeString().slice(0, 5); // HH:MM
+    const currentTimeStr = now.toTimeString().slice(0, 5);
 
-    // Проверка даты начала периода
     if (dfFrom < todayStr) {
         alert('Дата начала серии не может быть в прошлом');
         return;
@@ -666,30 +667,25 @@ window.submitGroup = function() {
         return;
     }
 
-    // Проверка каждого слота на прошедшее время
     for (const slot of GS.slots) {
         const slotDateTime = new Date(`${slot.date}T${slot.start}`);
         const nowDateTime = new Date();
 
-        // Если дата слота в прошлом
         if (slot.date < todayStr) {
             alert(`Дата ${formatDateRu(slot.date)} уже прошла. Удалите этот день или измените дату.`);
             return;
         }
 
-        // Если дата слота сегодня и время начала уже прошло
         if (slot.date === todayStr && slot.start < currentTimeStr) {
             alert(`Время начала ${slot.start} на ${formatDateRu(slot.date)} уже прошло. Измените время начала.`);
             return;
         }
 
-        // Проверка что время окончания позже времени начала
         if (slot.end <= slot.start) {
             alert(`На ${formatDateRu(slot.date)} время окончания (${slot.end}) должно быть позже времени начала (${slot.start})`);
             return;
         }
 
-        // Проверка что дата слота входит в период серии
         if (slot.date < dfFrom || slot.date > dfTo) {
             alert(`Дата ${formatDateRu(slot.date)} выходит за пределы периода серии (${formatDateRu(dfFrom)} – ${formatDateRu(dfTo)})`);
             return;
@@ -733,34 +729,30 @@ window.submitGroup = function() {
             })),
         }),
     })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok) {
-            window.location.href = '/bookings/group/' + data.group_id + '/';
-        } else {
-            alert(data.error || 'Ошибка');
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                window.location.href = '/bookings/group/' + data.group_id + '/';
+            } else {
+                alert(data.error || 'Ошибка');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-check-circle"></i> Создать заявки';
+                }
+            }
+        })
+        .catch(() => {
+            alert('Ошибка соединения');
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-check-circle"></i> Создать заявки';
             }
-        }
-    })
-    .catch(() => {
-        alert('Ошибка соединения');
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-check-circle"></i> Создать заявки';
-        }
-    });
+        });
 };
 
-// ==================== ОБОРУДОВАНИЕ ====================
-
 function finalEquipForSlot(slot) {
-    // Комбинируем: индивидуальное (из модалки) + глобальное (которое свободно)
     const result = new Set(slot._individualEquipment || []);
 
-    // Добавляем глобальное оборудование, которое свободно в эту дату
     for (const eqId of GS.globalEquipment) {
         const eq = GS.equipMatrix.find(e => e.id === eqId);
         if (eq && eq.free && eq.free.includes(slot.date)) {
@@ -782,7 +774,7 @@ function showEquipBlock() {
     if (!section) return;
     section.classList.add('visible');
     renderEquipList();
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    section.scrollIntoView({behavior: 'smooth', block: 'start'});
 }
 
 function renderEquipList() {
@@ -813,11 +805,11 @@ function renderEquipList() {
             const hasIndividual = slot?._individualEquipment?.includes(eq.id);
 
             const cls = hasIndividual ? 'bg-chip bg-chip-specific'
-                      : isFree ? 'bg-chip bg-chip-free'
-                      : 'bg-chip bg-chip-conflict';
+                : isFree ? 'bg-chip bg-chip-free'
+                    : 'bg-chip bg-chip-conflict';
 
             const title = hasIndividual ? 'Выбрано индивидуально'
-                        : isFree ? 'Свободно' : 'Занято — не добавится';
+                : isFree ? 'Свободно' : 'Занято — не добавится';
 
             return `<span class="${cls}" title="${title}">${fmtShort(d)}</span>`;
         }).join('');
@@ -845,7 +837,7 @@ function renderEquipList() {
     }).join('');
 }
 
-window.toggleGlobalEquip = function(eqId) {
+window.toggleGlobalEquip = function (eqId) {
     if (GS.globalEquipment.has(eqId)) {
         GS.globalEquipment.delete(eqId);
     } else {
@@ -854,7 +846,6 @@ window.toggleGlobalEquip = function(eqId) {
 
     updateEquipCount();
 
-    // Применяем глобальное оборудование КО ВСЕМ слотам, ДОБАВЛЯЯ к индивидуальному
     GS.slots.forEach(slot => {
         slot.equipmentIds = finalEquipForSlot(slot);
     });
@@ -867,7 +858,7 @@ window.toggleGlobalEquip = function(eqId) {
     }
 };
 
-window.filterEquip = function(value) {
+window.filterEquip = function (value) {
     GS._equipSearchQuery = value;
     renderEquipList();
 };
@@ -879,23 +870,20 @@ function updateEquipCount() {
     el.textContent = n ? `${n} выбрано` : '';
 }
 
-// ==================== МОДАЛЬНОЕ ОКНО ОБОРУДОВАНИЯ ====================
-
 let equipmentDebounceTimer = null;
 
-window.debounceEquipmentSearchGroup = function() {
+window.debounceEquipmentSearchGroup = function () {
     clearTimeout(equipmentDebounceTimer);
     equipmentDebounceTimer = setTimeout(loadEquipmentModal, 300);
 };
 
-window.openEquipmentModal = function(slotIdx) {
+window.openEquipmentModal = function (slotIdx) {
     const slot = GS.slots[slotIdx];
     if (!slot) return;
 
     GS.equipmentModal.slotIndex = slotIdx;
     GS.equipmentModal.items = [];
 
-    // Инициализируем временную выборку ТОЛЬКО индивидуальным оборудованием слота
     GS.equipmentModal.tempSelection = new Set(slot._individualEquipment || []);
 
     const input = document.getElementById('id_equipment_search_query_group');
@@ -991,7 +979,7 @@ function renderEquipmentModal() {
     }).join('');
 }
 
-window.toggleEquipInModal = function(id) {
+window.toggleEquipInModal = function (id) {
     const sel = GS.equipmentModal.tempSelection;
     if (sel.has(id)) {
         sel.delete(id);
@@ -1001,12 +989,10 @@ window.toggleEquipInModal = function(id) {
     renderEquipmentModal();
 };
 
-window.applyEquipmentSelection = function() {
+window.applyEquipmentSelection = function () {
     const slot = GS.slots[GS.equipmentModal.slotIndex];
     if (slot) {
-        // Сохраняем индивидуальный выбор
         slot._individualEquipment = [...GS.equipmentModal.tempSelection];
-        // Обновляем полный список (индивидуальное + глобальное)
         slot.equipmentIds = finalEquipForSlot(slot);
     }
     closeModal('eq-modal');
@@ -1017,8 +1003,6 @@ window.applyEquipmentSelection = function() {
         renderSummary();
     }
 };
-
-// ==================== СТИЛИ ====================
 
 (function injectEquipStyles() {
     if (document.getElementById('bg-equip-inline-styles')) return;
@@ -1047,9 +1031,7 @@ window.applyEquipmentSelection = function() {
     document.head.appendChild(s);
 })();
 
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const dfEl = document.getElementById('date-from');
     const dtEl = document.getElementById('date-to');
 

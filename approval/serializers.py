@@ -4,30 +4,28 @@ from booking.models import Booking
 
 
 class EquipmentBriefSerializer(serializers.Serializer):
-    """Минимальный сериализатор оборудования — id + name для JS-кнопок info."""
-    id   = serializers.IntegerField()
+    id = serializers.IntegerField()
     name = serializers.SerializerMethodField()
 
     def get_name(self, obj):
-        return str(obj)   # вызывает Equipment.__str__: «Тип Название Модель»
+        return str(obj)
 
 
 class BookingApprovalDetailItemSerializer(serializers.ModelSerializer):
     initiator_first_name = serializers.CharField(source='initiator.profile.first_name', read_only=True)
-    initiator_last_name  = serializers.CharField(source='initiator.profile.last_name',  read_only=True)
-    department           = serializers.CharField(source='initiator.profile.department', read_only=True)
-    event_type           = serializers.CharField(source='get_event_type_display',       read_only=True)
-    status_display       = serializers.CharField(source='get_status_display',           read_only=True)
-    room_name            = serializers.CharField(source='room.name',                    read_only=True)
-    room_building        = serializers.CharField(source='room.building',                read_only=True)
-    room_floor           = serializers.CharField(source='room.floor',                   read_only=True)
-    room_capacity        = serializers.IntegerField(source='room.capacity',             read_only=True)
+    initiator_last_name = serializers.CharField(source='initiator.profile.last_name', read_only=True)
+    department = serializers.CharField(source='initiator.profile.department', read_only=True)
+    event_type = serializers.CharField(source='get_event_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    room_name = serializers.CharField(source='room.name', read_only=True)
+    room_building = serializers.CharField(source='room.building', read_only=True)
+    room_floor = serializers.CharField(source='room.floor', read_only=True)
+    room_capacity = serializers.IntegerField(source='room.capacity', read_only=True)
 
-    # ← объекты {id, name} вместо строк — нужны для кнопок ⓘ и ссылок
-    equipment_list       = EquipmentBriefSerializer(many=True, source='equipment', read_only=True)
+    equipment_list = EquipmentBriefSerializer(many=True, source='equipment', read_only=True)
 
-    approval_decision    = serializers.SerializerMethodField()
-    approval_decided_at  = serializers.SerializerMethodField()
+    approval_decision = serializers.SerializerMethodField()
+    approval_decided_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -66,27 +64,26 @@ class BookingApprovalDetailItemSerializer(serializers.ModelSerializer):
 
 class BookingApprovalDetailSerializer(serializers.ModelSerializer):
     initiator_first_name = serializers.CharField(source='initiator.profile.first_name', read_only=True)
-    initiator_last_name  = serializers.CharField(source='initiator.profile.last_name',  read_only=True)
-    department           = serializers.CharField(source='initiator.profile.department', read_only=True)
-    event_type           = serializers.CharField(source='get_event_type_display',       read_only=True)
-    room_name            = serializers.CharField(source='room.name',                    read_only=True)
-    room_building        = serializers.CharField(source='room.building',                read_only=True)
-    room_floor           = serializers.CharField(source='room.floor',                   read_only=True)
-    room_capacity        = serializers.IntegerField(source='room.capacity',             read_only=True)
-    status_display       = serializers.CharField(source='get_status_display',           read_only=True)
+    initiator_last_name = serializers.CharField(source='initiator.profile.last_name', read_only=True)
+    department = serializers.CharField(source='initiator.profile.department', read_only=True)
+    event_type = serializers.CharField(source='get_event_type_display', read_only=True)
+    room_name = serializers.CharField(source='room.name', read_only=True)
+    room_building = serializers.CharField(source='room.building', read_only=True)
+    room_floor = serializers.CharField(source='room.floor', read_only=True)
+    room_capacity = serializers.IntegerField(source='room.capacity', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
 
-    # ← объекты {id, name}
-    equipment_list       = EquipmentBriefSerializer(many=True, source='equipment', read_only=True)
+    equipment_list = EquipmentBriefSerializer(many=True, source='equipment', read_only=True)
 
-    scope               = serializers.SerializerMethodField()
-    group_id            = serializers.SerializerMethodField()
-    group_title         = serializers.SerializerMethodField()
-    group_comment       = serializers.SerializerMethodField()
-    group_date_from     = serializers.SerializerMethodField()
-    group_date_to       = serializers.SerializerMethodField()
-    group_total_count   = serializers.SerializerMethodField()
+    scope = serializers.SerializerMethodField()
+    group_id = serializers.SerializerMethodField()
+    group_title = serializers.SerializerMethodField()
+    group_comment = serializers.SerializerMethodField()
+    group_date_from = serializers.SerializerMethodField()
+    group_date_to = serializers.SerializerMethodField()
+    group_total_count = serializers.SerializerMethodField()
     group_pending_count = serializers.SerializerMethodField()
-    group_bookings      = serializers.SerializerMethodField()
+    group_bookings = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking

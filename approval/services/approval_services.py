@@ -23,10 +23,7 @@ class ApprovalEngine:
         if participants >= MASS_THRESHOLD:
             return Booking.Status.CREATED
 
-        # Неэффективное использование вместимости:
-        # если участников * 1.5 < вместимости — аудитория явно избыточна
         if room.capacity and participants * 1.5 < room.capacity:
             return Booking.Status.CREATED
 
         return Booking.Status.APPROVED
-

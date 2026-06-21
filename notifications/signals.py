@@ -7,15 +7,6 @@ from notifications.service import NotificationService
 
 @receiver(pre_save, sender=Booking)
 def capture_old_status(sender, instance, **kwargs):
-    """
-    Кэшируем старый статус прямо на инстансе (_pre_status),
-    а не в глобальном словаре.
-
-    Преимущества перед _old_status_cache = {}:
-    - нет утечки памяти при исключении между pre_save и post_save
-    - нет разделяемого состояния между потоками
-    - очевидно откуда берётся значение при отладке
-    """
     if instance.pk:
         try:
             instance._pre_status = Booking.objects.values_list(

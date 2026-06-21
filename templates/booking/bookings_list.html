@@ -39,7 +39,8 @@
             <label class="bk-filter-label">Принадлежность к группе</label>
             <select name="booking_scope" class="fc">
                 {% for val, label in booking_scope_choices %}
-                    <option value="{{ val }}" {% if filter_booking_scope == val %}selected{% endif %}>{{ label }}</option>
+                    <option value="{{ val }}"
+                            {% if filter_booking_scope == val %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -241,7 +242,8 @@
                 <span class="pager-i">Показано {{ bookings.start_index }}–{{ bookings.end_index }} из {{ total }}</span>
                 <div class="pagination-buttons">
                     {% if bookings.has_previous %}
-                        <a href="?page={{ bookings.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                        <a href="?page=
+                                {{ bookings.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
                            class="pg-btn">
                             <i class="bi bi-chevron-left"></i>
                         </a>
@@ -259,7 +261,8 @@
                     {% endfor %}
 
                     {% if bookings.has_next %}
-                        <a href="?page={{ bookings.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                        <a href="?page=
+                                {{ bookings.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
                            class="pg-btn">
                             <i class="bi bi-chevron-right"></i>
                         </a>

@@ -15,7 +15,7 @@ class NotificationService:
         )
 
     @classmethod
-    def booking_status_changed(cls, booking, old_status): #TODO ???
+    def booking_status_changed(cls, booking, old_status):
         status = booking.status
         STATUS_META = {
             'pending':   ('На согласовании', 'Заявка #{pk} отправлена на согласование'),

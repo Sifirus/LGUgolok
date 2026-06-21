@@ -233,16 +233,15 @@
         {% endif %}
     </div>
 
-    <!-- Модалка добавления -->
-    <div class="modal-lgu-backdrop {% if open_add_modal %}open{% endif %}" id="modal-add">
-        <div class="modal-lgu">
-            <div class="modal-lgu-head">
-                <span class="modal-lgu-title"><i class="bi bi-person-plus"></i>Новый пользователь</span>
+    <div class="modal-ugolok-backdrop {% if open_add_modal %}open{% endif %}" id="modal-add">
+        <div class="modal-ugolok">
+            <div class="modal-ugolok-head">
+                <span class="modal-ugolok-title"><i class="bi bi-person-plus"></i>Новый пользователь</span>
                 <button class="btn-sec" onclick="closeModal('modal-add')"><i class="bi bi-x-lg"></i></button>
             </div>
             <form method="post" action="{% url 'admin_panel_users_add' %}">
                 {% csrf_token %}
-                <div class="modal-lgu-body">
+                <div class="modal-ugolok-body">
                     <div class="field-row">
                         <div class="field-group">
                             <label class="fl">Фамилия <span class="required">*</span></label>
@@ -297,7 +296,7 @@
                         Временный пароль будет сгенерирован автоматически и отправлен на email.
                     </div>
                 </div>
-                <div class="modal-lgu-foot">
+                <div class="modal-ugolok-foot">
                     <button type="button" class="btn-sec" onclick="closeModal('modal-add')">Отмена</button>
                     <button type="submit" class="btn-main">Создать</button>
                 </div>
@@ -306,17 +305,17 @@
     </div>
 
     {% for u in users %}
-        <div class="modal-lgu-backdrop {% if open_edit_modal and edit_user_id == u.id %}open{% endif %}"
+        <div class="modal-ugolok-backdrop {% if open_edit_modal and edit_user_id == u.id %}open{% endif %}"
              id="modal-edit-{{ u.id }}">
-            <div class="modal-lgu">
-                <div class="modal-lgu-head">
-                    <span class="modal-lgu-title"><i class="bi bi-pencil-square"></i>Редактировать пользователя</span>
+            <div class="modal-ugolok">
+                <div class="modal-ugolok-head">
+                    <span class="modal-ugolok-title"><i class="bi bi-pencil-square"></i>Редактировать пользователя</span>
                     <button class="btn-sec" onclick="closeModal('modal-edit-{{ u.id }}')"><i class="bi bi-x-lg"></i>
                     </button>
                 </div>
                 <form method="post" action="{% url 'admin_panel_user_edit' u.id %}">
                     {% csrf_token %}
-                    <div class="modal-lgu-body">
+                    <div class="modal-ugolok-body">
                         <div class="field-row">
                             <div class="field-group">
                                 <label class="fl">Фамилия <span class="required">*</span></label>
@@ -370,7 +369,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="modal-lgu-foot">
+                    <div class="modal-ugolok-foot">
                         <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ u.id }}')">Отмена
                         </button>
                         <button type="submit" class="btn-main">Сохранить</button>

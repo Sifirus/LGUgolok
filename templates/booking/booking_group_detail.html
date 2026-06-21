@@ -9,118 +9,113 @@
 
 {% block content %}
 
-{% if messages %}
-  {% for m in messages %}
-    <div class="alert alert-{{ m.tags }}">{{ m }}</div>
-  {% endfor %}
-{% endif %}
+    {% if messages %}
+        {% for m in messages %}
+            <div class="alert alert-{{ m.tags }}">{{ m }}</div>
+        {% endfor %}
+    {% endif %}
 
-<div class="bd-page">
+    <div class="bd-page">
 
-  {# ── Шапка ── #}
-  <div class="bd-top">
-    <div>
-      <div class="bd-breadcrumb">
-        <a href="{% url 'booking_list' %}">Заявки</a>
-        <i class="bi bi-chevron-right"></i>
-        <span>Серия #{{ group.pk }}</span>
-      </div>
-      <div class="bd-title-row">
-        <h1 class="bd-title" style="font-size:22px">{{ group.title }}</h1>
-        <span class="pill pill--processing">Серия</span>
-      </div>
-      <div class="bd-meta">
-        {{ group.date_from|date:"d.m.Y" }} — {{ group.date_to|date:"d.m.Y" }} ·
-        {{ group.total_count }} заявок ·
-        {{ group.approval_required_count }} требуют согласования
-      </div>
-    </div>
+        <div class="bd-top">
+            <div>
+                <div class="bd-breadcrumb">
+                    <a href="{% url 'booking_list' %}">Заявки</a>
+                    <i class="bi bi-chevron-right"></i>
+                    <span>Серия #{{ group.pk }}</span>
+                </div>
+                <div class="bd-title-row">
+                    <h1 class="bd-title" style="font-size:22px">{{ group.title }}</h1>
+                    <span class="pill pill--processing">Серия</span>
+                </div>
+                <div class="bd-meta">
+                    {{ group.date_from|date:"d.m.Y" }} — {{ group.date_to|date:"d.m.Y" }} ·
+                    {{ group.total_count }} заявок ·
+                    {{ group.approval_required_count }} требуют согласования
+                </div>
+            </div>
 
-    <div class="bd-actions">
-      <a href="{% url 'booking_list' %}" class="btn-sec">
-        <i class="bi bi-arrow-left"></i>Назад
-      </a>
-      {% if can_cancel %}
-        <form method="post" action="{% url 'booking_group_cancel' group.pk %}" style="margin:0">
-          {% csrf_token %}
-          <button type="submit" class="btn-danger"
-                  onclick="return confirm('Отменить все активные заявки серии?')">
-            <i class="bi bi-slash-circle"></i>Отменить серию
-          </button>
-        </form>
-      {% endif %}
-    </div>
-  </div>
+            <div class="bd-actions">
+                <a href="{% url 'booking_list' %}" class="btn-sec">
+                    <i class="bi bi-arrow-left"></i>Назад
+                </a>
+                {% if can_cancel %}
+                    <form method="post" action="{% url 'booking_group_cancel' group.pk %}" style="margin:0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-danger"
+                                onclick="return confirm('Отменить все активные заявки серии?')">
+                            <i class="bi bi-slash-circle"></i>Отменить серию
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
 
-  {# ── Описание ── #}
-  {% if group.comment %}
-    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 16px;font-size:14px;color:var(--muted)">
-      <i class="bi bi-chat-left-text" style="margin-right:6px"></i>{{ group.comment }}
-    </div>
-  {% endif %}
+        {% if group.comment %}
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 16px;font-size:14px;color:var(--muted)">
+                <i class="bi bi-chat-left-text" style="margin-right:6px"></i>{{ group.comment }}
+            </div>
+        {% endif %}
 
-  {# ── Таблица заявок ── #}
-  <div class="bd-section" style="padding:0;overflow:hidden">
+        <div class="bd-section" style="padding:0;overflow:hidden">
 
-    {# Заголовок #}
-    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:15px;font-weight:700">Заявки серии</span>
-      <span style="font-size:12px;color:var(--muted)">Нажмите на строку для перехода</span>
-    </div>
+            <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:15px;font-weight:700">Заявки серии</span>
+                <span style="font-size:12px;color:var(--muted)">Нажмите на строку для перехода</span>
+            </div>
 
-    {# Шапка таблицы #}
-    <div style="display:grid;grid-template-columns:80px 1fr 90px 120px 120px 90px;gap:10px;padding:8px 20px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)">
-      <span>Дата</span>
-      <span>Аудитория</span>
-      <span>Время</span>
-      <span>Тип</span>
-      <span>Участников</span>
-      <span>Статус</span>
-    </div>
+            <div style="display:grid;grid-template-columns:80px 1fr 90px 120px 120px 90px;gap:10px;padding:8px 20px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)">
+                <span>Дата</span>
+                <span>Аудитория</span>
+                <span>Время</span>
+                <span>Тип</span>
+                <span>Участников</span>
+                <span>Статус</span>
+            </div>
 
-    {% for b in bookings %}
-    <a href="{% url 'booking_detail' b.pk %}"
-       style="display:grid;grid-template-columns:80px 1fr 90px 120px 120px 90px;gap:10px;padding:11px 20px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;transition:background .12s;align-items:center"
-       onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+            {% for b in bookings %}
+                <a href="{% url 'booking_detail' b.pk %}"
+                   style="display:grid;grid-template-columns:80px 1fr 90px 120px 120px 90px;gap:10px;padding:11px 20px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;transition:background .12s;align-items:center"
+                   onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
 
-      <span style="font-weight:600;font-size:13px">{{ b.event_date|date:"d.m.Y" }}</span>
+                    <span style="font-weight:600;font-size:13px">{{ b.event_date|date:"d.m.Y" }}</span>
 
-      <span>
+                    <span>
         <span style="font-weight:600;font-size:13px">{{ b.room.name }}</span>
         <span style="display:block;font-size:11px;color:var(--muted)">{{ b.room.building }}, эт. {{ b.room.floor }}</span>
       </span>
 
-      <span style="font-size:13px;color:var(--muted)">
+                    <span style="font-size:13px;color:var(--muted)">
         {{ b.event_start_time|time:"H:i" }}–{{ b.event_end_time|time:"H:i" }}
       </span>
 
-      <span style="font-size:12px;color:var(--muted)">{{ b.get_event_type_display }}</span>
+                    <span style="font-size:12px;color:var(--muted)">{{ b.get_event_type_display }}</span>
 
-      <span style="font-size:13px">{{ b.participants }} чел.</span>
+                    <span style="font-size:13px">{{ b.participants }} чел.</span>
 
-      <span>
+                    <span>
         {% if b.status == 'approved' %}
-          <span class="pill pill--approved">{{ b.get_status_display }}</span>
+            <span class="pill pill--approved">{{ b.get_status_display }}</span>
         {% elif b.status == 'pending' %}
-          <span class="pill pill--pending">{{ b.get_status_display }}</span>
+            <span class="pill pill--pending">{{ b.get_status_display }}</span>
         {% elif b.status == 'rejected' %}
-          <span class="pill pill--rejected">{{ b.get_status_display }}</span>
+            <span class="pill pill--rejected">{{ b.get_status_display }}</span>
         {% elif b.status == 'completed' %}
-          <span class="pill pill--done">{{ b.get_status_display }}</span>
+            <span class="pill pill--done">{{ b.get_status_display }}</span>
         {% elif b.status == 'canceled' %}
-          <span class="pill pill--rejected">{{ b.get_status_display }}</span>
+            <span class="pill pill--rejected">{{ b.get_status_display }}</span>
         {% else %}
-          <span class="pill pill--draft">{{ b.get_status_display }}</span>
+            <span class="pill pill--draft">{{ b.get_status_display }}</span>
         {% endif %}
       </span>
 
-    </a>
-    {% empty %}
-      <div style="padding:24px;text-align:center;color:var(--muted)">Нет заявок</div>
-    {% endfor %}
+                </a>
+            {% empty %}
+                <div style="padding:24px;text-align:center;color:var(--muted)">Нет заявок</div>
+            {% endfor %}
 
-  </div>
+        </div>
 
-</div>
+    </div>
 
 {% endblock %}

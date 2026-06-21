@@ -154,7 +154,6 @@
         </div>
     </div>
 
-    {# ═══ Аудитории ═══ #}
     <div id="bg-rooms-section">
         <div class="bg-panel">
             <div class="bg-panel-head">
@@ -171,7 +170,6 @@
         </div>
     </div>
 
-    {# ═══ Оборудование (появляется после выбора аудитории) ═══ #}
     <div id="bg-equip-section">
         <div class="bg-panel">
 
@@ -184,7 +182,6 @@
       </span>
             </div>
 
-            {# Поиск — используем те же классы .sw/.si что и в модалке оборудования #}
             <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg)">
                 <div class="sw">
                     <i class="bi bi-search si"></i>
@@ -196,7 +193,6 @@
                 </div>
             </div>
 
-            {# Список оборудования — та же структура что у аудиторий #}
             <div id="bg-equip-list" style="overflow-y: scroll; max-height: 100vh">
                 <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">
                     Загрузка...
@@ -206,7 +202,6 @@
         </div>
     </div>
 
-    {# ═══ Итог ═══ #}
     <div id="bg-submit-section">
         <div class="bg-panel">
             <div class="bg-panel-head"><i class="bi bi-check2-all"></i>Итог серии</div>
@@ -226,7 +221,6 @@
         </div>
     </div>
 
-    {# Модалка оборудования на 1 день #}
     <div class="modal-lgu-backdrop" id="eq-modal" onclick="if(event.target===this) closeModal('eq-modal')">
         <div class="modal-lgu-card modal-eq-card">
             <div class="modal-lgu-head">

@@ -312,7 +312,6 @@
     font-size: 14px;
 }
 
-/* Анимация загрузки */
 @keyframes spin {
     to { transform: rotate(360deg); }
 }

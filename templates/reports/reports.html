@@ -83,7 +83,6 @@
         </div>
     </div>
 
-    {# KPI карточки #}
     <div class="row g-3 mb-4" id="metrics-row">
         <div class="col-6 col-xl-3">
             <div class="rep-kpi">
@@ -123,10 +122,8 @@
         </div>
     </div>
 
-    {# ══ OVERVIEW BLOCK ══ #}
     <div id="overview-block">
 
-        {# Тренд + Пирог #}
         <div class="row g-3 mb-4">
             <div class="col-lg-7">
                 <div class="rep-card rep-card--pad">
@@ -143,7 +140,6 @@
             </div>
         </div>
 
-        {# Тепловая карта #}
         <div class="row g-3 mb-4">
             <div class="col-12">
                 <div class="rep-card rep-card--pad">
@@ -154,7 +150,6 @@
             </div>
         </div>
 
-        {# Распределение по часам дня (паrabola) — полная ширина #}
         <div class="row g-3 mb-4">
             <div class="col-12">
                 <div class="rep-card rep-card--pad">
@@ -165,14 +160,12 @@
             </div>
         </div>
 
-        {# Таблица ресурсов — полная ширина #}
         <div class="row g-3 mb-4">
             <div class="col-12">
                 <div class="rep-card" id="overview-table-card">
                     <div class="rep-card__table-head">
                         <span class="rep-card__title">Список всех ресурсов</span>
                     </div>
-                    {# Фильтры вставляются сюда через JS #}
                     <div id="overview-filter-wrap"></div>
                     <div class="table-responsive">
                         <table class="rep-table">
@@ -195,10 +188,8 @@
         </div>
     </div>
 
-    {# ══ RESOURCE BLOCK ══ #}
     <div id="resource-block" style="display:none">
 
-        {# Заголовок ресурса #}
         <div class="rep-card rep-card--pad mb-4">
             <div class="resource-head">
                 <div>
@@ -218,7 +209,6 @@
             </div>
         </div>
 
-        {# Тренд + Пирог #}
         <div class="row g-3 mb-4">
             <div class="col-lg-7">
                 <div class="rep-card rep-card--pad">
@@ -235,7 +225,6 @@
             </div>
         </div>
 
-        {# Тепловая карта #}
         <div class="row g-3 mb-4">
             <div class="col-12">
                 <div class="rep-card rep-card--pad">
@@ -248,7 +237,6 @@
             </div>
         </div>
 
-        {# Участники vs вместимость (только аудитории) #}
         <div class="row g-3 mb-4" id="resourceCapacityCol">
             <div class="col-12">
                 <div class="rep-card rep-card--pad">
@@ -260,7 +248,6 @@
             </div>
         </div>
 
-        {# Распределение по часам дня #}
         <div class="row g-3 mb-4">
             <div class="col-12">
                 <div class="rep-card rep-card--pad">
@@ -271,14 +258,12 @@
             </div>
         </div>
 
-        {# Таблица заявок — с фильтрами и пагинацией #}
         <div class="row g-3 mb-4">
             <div class="col-12">
                 <div class="rep-card">
                     <div class="rep-card__table-head">
                         <span class="rep-card__title">Детальная занятость</span>
                     </div>
-                    {# Фильтры вставляются через JS #}
                     <div id="detail-filter-wrap"></div>
                     <div class="table-responsive">
                         <table class="rep-table">
@@ -300,7 +285,6 @@
             </div>
         </div>
 
-        {# Оборудование на дату/время (только для аудиторий) #}
         <div class="row g-3" id="roomEquipmentBlock" style="display:none">
             <div class="col-12">
                 <div class="rep-card">
@@ -335,12 +319,12 @@
             </div>
         </div>
 
-    </div>{# /resource-block #}
+    </div>
 {% endblock %}
 
 {% block extra_js %}
     <script>
-    window.REPORTS_EXPORT_PDF_URL = "{% url 'reports_export_pdf' %}";
+        window.REPORTS_EXPORT_PDF_URL = "{% url 'reports_export_pdf' %}";
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="{% static 'js/reports.js' %}"></script>

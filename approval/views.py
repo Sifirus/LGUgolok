@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
@@ -19,6 +17,8 @@ from booking.models import Booking, BookingGroup, Comments
 from approval.models import Approval
 from approval.serializers import BookingApprovalDetailSerializer
 from users.models import User
+
+from collections import defaultdict
 
 
 @login_required(login_url='login')
@@ -59,11 +59,11 @@ class ApproverLookupAPIView(APIView):
 
         if q:
             filters = (
-                Q(email__icontains=q) |
-                Q(profile__first_name__icontains=q) |
-                Q(profile__second_name__icontains=q) |
-                Q(profile__last_name__icontains=q) |
-                Q(profile__department__icontains=q)
+                    Q(email__icontains=q) |
+                    Q(profile__first_name__icontains=q) |
+                    Q(profile__second_name__icontains=q) |
+                    Q(profile__last_name__icontains=q) |
+                    Q(profile__department__icontains=q)
             )
             if q.isdigit():
                 filters |= Q(pk=int(q))
@@ -159,7 +159,6 @@ class ApprovalPendingListAPIView(APIView):
                 'group_comment': group.comment,
                 'group_date_from': group.date_from,
                 'group_date_to': group.date_to,
-                # ← используем свойства модели (работают из prefetch без доп. запросов)
                 'group_total_count': group.total_count,
                 'group_pending_count': group.approval_required_count,
                 'initiator_first_name': _safe_profile_value(group.initiator, 'first_name'),
@@ -287,23 +286,12 @@ class ApprovalDecisionAPIView(APIView):
 
     @transaction.atomic
     def post(self, request, pk):
-        """
-        Принять решение по заявке.
 
-        POST body:
-          decision  : 'approved' | 'rejected'
-          comment   : str  (обязателен при rejected)
-          scope     : 'all' | 'single'  (default 'all')
-                      'all'    — решение применяется ко всем ожидающим в группе
-                      'single' — решение применяется только к этой конкретной заявке
-
-        pk — всегда id конкретной Booking (не группы).
-        """
         booking = Booking.objects.select_for_update().select_related('group').get(pk=pk)
 
         decision = request.data.get('decision')
         comment_text = (request.data.get('comment') or '').strip()
-        scope = request.data.get('scope', 'all')  # 'all' | 'single'
+        scope = request.data.get('scope', 'all')
 
         if decision not in ['approved', 'rejected']:
             return Response({'detail': 'Неверное решение'}, status=status.HTTP_400_BAD_REQUEST)
@@ -312,10 +300,8 @@ class ApprovalDecisionAPIView(APIView):
             return Response({'detail': 'Введите причину отклонения'}, status=status.HTTP_400_BAD_REQUEST)
 
         if scope == 'single' or not booking.group_id:
-            # Решаем только эту одну заявку
             target_bookings = [booking]
         else:
-            # scope == 'all': все ожидающие в группе
             target_bookings = list(
                 Booking.objects.select_for_update().filter(
                     group_id=booking.group_id,
@@ -327,7 +313,6 @@ class ApprovalDecisionAPIView(APIView):
 
         target_ids = [b.id for b in target_bookings]
 
-        # Проверить что текущий пользователь держит блокировку на все цели
         own_locks = set(
             Approval.objects.filter(
                 booking_id__in=target_ids,
@@ -336,14 +321,11 @@ class ApprovalDecisionAPIView(APIView):
             ).values_list('booking_id', flat=True)
         )
 
-        # Разрешаем принять решение по заявкам где есть наша блокировка
-        # или по booking pk если вызван со scope=single (повторная проверка)
         if not own_locks:
             raise PermissionDenied('Эта заявка не назначена вам для согласования')
 
         new_status = Booking.Status.APPROVED if decision == 'approved' else Booking.Status.REJECTED
 
-        # Записать комментарий к первой затронутой заявке
         if comment_text:
             first = target_bookings[0]
             Comments.objects.create(
@@ -352,12 +334,9 @@ class ApprovalDecisionAPIView(APIView):
                 text=comment_text,
             )
 
-        # Обновить статус + approval только для заблокированных нами заявок
         locked_targets = [b for b in target_bookings if b.id in own_locks]
 
         for b in locked_targets:
-            # Используем .save() а не .update() — чтобы сработали сигналы
-            # pre_save/post_save и отправились уведомления
             b.status = new_status
             b.save(update_fields=['status', 'updated_at'])
 
@@ -369,7 +348,6 @@ class ApprovalDecisionAPIView(APIView):
             approval.decision = new_status
             approval.save(update_fields=['approver', 'decision', 'decided_at'])
 
-        # Посчитать сколько ещё ожидает в группе (если групповая)
         remaining = 0
         if booking.group_id:
             remaining = Booking.objects.filter(
@@ -416,16 +394,7 @@ class ApprovalDetailCancelAPIView(APIView):
         return Response({'detail': 'Блокировка снята, заявка возвращена в список ожидания'}, status=status.HTTP_200_OK)
 
 
-from collections import defaultdict
-
-
 class MyLockedApprovalsAPIView(APIView):
-    """
-    GET /api/approval/my-locked/
-    Возвращает заявки, которые текущий согласующий взял в работу (IN_PROCESS).
-    Не меняет состояние. Используется вкладкой «Взяты мной».
-    Сортировка: старые сначала (чтобы не забыть).
-    """
     permission_classes = [IsApprover]
 
     def get(self, request):
@@ -441,7 +410,7 @@ class MyLockedApprovalsAPIView(APIView):
                 'booking__group',
                 'booking__group__initiator__profile',
             )
-            .order_by('created_at')   # самые старые первые
+            .order_by('created_at')
         )
 
         seen_groups = set()
@@ -457,7 +426,6 @@ class MyLockedApprovalsAPIView(APIView):
 
                 group = b.group
 
-                # Сколько заявок этой группы у меня в работе
                 my_locked_count = Approval.objects.filter(
                     booking__group_id=b.group_id,
                     approver=request.user,
@@ -465,33 +433,33 @@ class MyLockedApprovalsAPIView(APIView):
                 ).count()
 
                 results.append({
-                    'id':                  b.id,
-                    'scope':               'group',
-                    'group_id':            group.id,
-                    'group_title':         group.title,
-                    'group_date_from':     group.date_from,
-                    'group_date_to':       group.date_to,
-                    'group_total_count':   group.total_count,
+                    'id': b.id,
+                    'scope': 'group',
+                    'group_id': group.id,
+                    'group_title': group.title,
+                    'group_date_from': group.date_from,
+                    'group_date_to': group.date_to,
+                    'group_total_count': group.total_count,
                     'group_pending_count': my_locked_count,
                     'initiator_first_name': _safe_profile_value(group.initiator, 'first_name'),
-                    'initiator_last_name':  _safe_profile_value(group.initiator, 'last_name'),
-                    'initiator_name':       _safe_full_name(group.initiator),
-                    'locked_at':           approval.created_at,
+                    'initiator_last_name': _safe_profile_value(group.initiator, 'last_name'),
+                    'initiator_name': _safe_full_name(group.initiator),
+                    'locked_at': approval.created_at,
                 })
             else:
                 results.append({
-                    'id':                  b.id,
-                    'scope':               'booking',
-                    'event_type':          b.get_event_type_display(),
-                    'event_date':          b.event_date,
-                    'event_start_time':    b.event_start_time,
-                    'event_end_time':      b.event_end_time,
-                    'room_name':           b.room.name,
-                    'participants':        b.participants,
+                    'id': b.id,
+                    'scope': 'booking',
+                    'event_type': b.get_event_type_display(),
+                    'event_date': b.event_date,
+                    'event_start_time': b.event_start_time,
+                    'event_end_time': b.event_end_time,
+                    'room_name': b.room.name,
+                    'participants': b.participants,
                     'initiator_first_name': _safe_profile_value(b.initiator, 'first_name'),
-                    'initiator_last_name':  _safe_profile_value(b.initiator, 'last_name'),
-                    'initiator_name':       _safe_full_name(b.initiator),
-                    'locked_at':           approval.created_at,
+                    'initiator_last_name': _safe_profile_value(b.initiator, 'last_name'),
+                    'initiator_name': _safe_full_name(b.initiator),
+                    'locked_at': approval.created_at,
                 })
 
         return Response(results)

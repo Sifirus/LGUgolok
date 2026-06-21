@@ -30,22 +30,7 @@ class Equipment(models.Model):
         return f'{self.get_type_display()} {self.name} {self.model}'
 
     def get_current_location(self, on_date, at_time):
-        """
-        Возвращает местонахождение оборудования на указанные дату и время.
 
-        Возвращает словарь:
-          {
-            'location_type': 'booking' | 'home' | 'storage',
-            'room':    Room instance or None,
-            'booking': Booking instance or None,
-            'label':   str — человекочитаемое описание
-          }
-
-        Логика:
-          1. Если есть активная заявка на эти дату/время → в аудитории заявки
-          2. Иначе если оборудование стационарное и привязано к room → дома
-          3. Иначе → на складе / местоположение не определено
-        """
         from booking.models import Booking
 
         active = (

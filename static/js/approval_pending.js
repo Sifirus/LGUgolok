@@ -50,11 +50,11 @@
         return `
 <div class="info-equipment-list">
   ${(list || []).map(e => {
-        const id = e && typeof e === 'object' ? e.id : null;
-        const name = e && typeof e === 'object' ? e.name : e;
+            const id = e && typeof e === 'object' ? e.id : null;
+            const name = e && typeof e === 'object' ? e.name : e;
 
-        if (id) {
-            return `
+            if (id) {
+                return `
 <span class="equip-chip-wrap">
   <a class="info-equipment-tag"
      href="/equipment/${id}/"
@@ -72,10 +72,10 @@
     <i class="bi bi-info-circle"></i>
   </button>
 </span>`;
-        }
+            }
 
-        return `<span class="info-equipment-tag"><i class="bi bi-laptop"></i><span>${escH(name)}</span></span>`;
-    }).join('')}
+            return `<span class="info-equipment-tag"><i class="bi bi-laptop"></i><span>${escH(name)}</span></span>`;
+        }).join('')}
 </div>`;
     }
 
@@ -164,10 +164,10 @@
     </div>
     <div class="mt-2 small text-muted">
       ${item.room_building || item.room_floor || item.room_capacity ? escH([
-        item.room_building ? `корп. ${item.room_building}` : '',
-        item.room_floor ? `эт. ${item.room_floor}` : '',
-        item.room_capacity ? `${item.room_capacity} мест` : ''
-      ].filter(Boolean).join(', ')) : ''}
+            item.room_building ? `корп. ${item.room_building}` : '',
+            item.room_floor ? `эт. ${item.room_floor}` : '',
+            item.room_capacity ? `${item.room_capacity} мест` : ''
+        ].filter(Boolean).join(', ')) : ''}
     </div>
     ${item.equipment_list && item.equipment_list.length ? `<div class="mt-2">${renderEquipmentTags(item.equipment_list)}</div>` : ''}
   </div>
@@ -376,7 +376,7 @@ ${globalActions}`;
 
             const panel = document.getElementById('decisionPanel');
             panel.innerHTML = renderDetailPanel(data);
-            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            panel.scrollIntoView({behavior: 'smooth', block: 'start'});
         } catch {
             showMessage('Ошибка загрузки деталей', 'error');
         }
@@ -398,7 +398,7 @@ ${globalActions}`;
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 },
-                body: JSON.stringify({ decision, comment, scope: 'all' }),
+                body: JSON.stringify({decision, comment, scope: 'all'}),
             });
             const data = await resp.json();
 
@@ -419,7 +419,7 @@ ${globalActions}`;
         }
     }
 
-    window.submitApprovalSingle = async function(bookingId, decision, comment) {
+    window.submitApprovalSingle = async function (bookingId, decision, comment) {
         const c = comment || (document.getElementById(`comment-single-${bookingId}`)?.value || '').trim();
 
         if (decision === 'rejected' && !c) {
@@ -434,7 +434,7 @@ ${globalActions}`;
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 },
-                body: JSON.stringify({ decision, comment: c, scope: 'single' }),
+                body: JSON.stringify({decision, comment: c, scope: 'single'}),
             });
             const data = await resp.json();
 
@@ -461,7 +461,7 @@ ${globalActions}`;
         }
     };
 
-    window.promptRejectSingle = function(bookingId) {
+    window.promptRejectSingle = function (bookingId) {
         const card = document.getElementById(`subbooking-${bookingId}`);
         if (!card) return;
         if (card.querySelector('.reject-inline')) return;
@@ -488,7 +488,7 @@ ${globalActions}`;
         try {
             const resp = await fetch(`/api/approval/${S.currentBookingId}/cancel`, {
                 method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                headers: {'X-CSRFToken': getCookie('csrftoken')},
             });
             const data = await resp.json();
             if (!resp.ok) {
@@ -517,7 +517,7 @@ ${globalActions}`;
             if (resp.ok) {
                 const list = Array.isArray(data) ? data : [];
                 el.innerHTML = list.length
-                    ? list.map(item => renderCard({ ...item, _isMyTab: true })).join('')
+                    ? list.map(item => renderCard({...item, _isMyTab: true})).join('')
                     : '<div class="text-muted text-center py-4">Нет взятых заявок</div>';
             } else {
                 showMessage(data.detail || 'Ошибка загрузки', 'error');
@@ -527,7 +527,7 @@ ${globalActions}`;
         }
     }
 
-    window.switchTab = function(tab) {
+    window.switchTab = function (tab) {
         S.activeTab = tab;
         localStorage.setItem('appr_tab', tab);
 
@@ -548,7 +548,7 @@ ${globalActions}`;
     window.submitApproval = submitApproval;
     window.cancelBooking = cancelBooking;
 
-    document.addEventListener('DOMContentLoaded', async function() {
+    document.addEventListener('DOMContentLoaded', async function () {
         document.querySelectorAll('.appr-tab-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.tab === S.activeTab);
         });
@@ -562,7 +562,8 @@ ${globalActions}`;
         if (S.currentBookingId) {
             try {
                 await selectBooking(S.currentBookingId);
-            } catch {}
+            } catch {
+            }
         }
     });
 })();

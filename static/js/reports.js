@@ -1,8 +1,5 @@
 'use strict';
 
-/* ══════════════════════════════════════════════════════════
-   UTILS
-══════════════════════════════════════════════════════════ */
 function byId(id) {
     return document.getElementById(id);
 }
@@ -17,7 +14,6 @@ function escapeJs(v) {
         .replace(/"/g, '\\"').replace(/\n/g, ' ').replace(/\r/g, ' ');
 }
 
-/** ISO (yyyy-mm-dd) → дд.мм.гг */
 function fmtDate(iso) {
     if (!iso) return '';
     var p = String(iso).split('-');
@@ -48,9 +44,6 @@ function loadClass(val, bad, warn, ok) {
     return 'rep-pill--muted';
 }
 
-/* ══════════════════════════════════════════════════════════
-   STATE
-══════════════════════════════════════════════════════════ */
 var state = {
     type: 'rooms',
     mode: 'overview',
@@ -75,9 +68,6 @@ var state = {
     detailFilter: {search: '', status: '', dateFrom: '', dateTo: '', eventType: ''},
 };
 
-/* ══════════════════════════════════════════════════════════
-   BROWSER BACK BUTTON
-══════════════════════════════════════════════════════════ */
 function _pushHistory() {
     if (state._skipPush) return;
     history.pushState({
@@ -123,9 +113,6 @@ window.addEventListener('popstate', function (e) {
     state._skipPush = false;
 });
 
-/* ══════════════════════════════════════════════════════════
-   TYPE / MODE SELECTION
-══════════════════════════════════════════════════════════ */
 function selectType(type) {
     state.type = type;
     byId('card-rooms').classList.toggle('sel', type === 'rooms');
@@ -183,9 +170,6 @@ function setPreset(preset) {
     loadReport();
 }
 
-/* ══════════════════════════════════════════════════════════
-   DATA LOADING
-══════════════════════════════════════════════════════════ */
 function loadReport() {
     var df = byId('date_from').value;
     var dt = byId('date_to').value;
@@ -241,9 +225,6 @@ function loadResourceReport(df, dt, resource) {
         .catch(renderResourceError);
 }
 
-/* ══════════════════════════════════════════════════════════
-   LOADING / ERROR / EMPTY STATES
-══════════════════════════════════════════════════════════ */
 function setLoadingOverview() {
     byId('overviewTblBody').innerHTML = _emptyRow(7, 'Загрузка...', 'bi-hourglass-split');
     byId('overviewHeatmap').innerHTML = _emptyDiv('Загрузка...', 'bi-hourglass-split');
@@ -279,9 +260,6 @@ function _emptyDiv(text, icon) {
     return '<div class="rep-empty"><i class="bi ' + icon + '"></i><div>' + escapeHtml(text) + '</div></div>';
 }
 
-/* ══════════════════════════════════════════════════════════
-   OVERVIEW RENDERING
-══════════════════════════════════════════════════════════ */
 function renderOverview(data) {
     byId('m-hours').textContent = (data.total_hours ?? 0) + ' ч';
     byId('m-avg').textContent = (data.avg_load ?? 0) + '%';
@@ -309,7 +287,6 @@ function renderOverview(data) {
     renderHeatmap('overviewHeatmap', data.heatmap_days || [], data.heatmap_hours || [], data.heatmap || []);
 }
 
-/* ── Overview filter bar ── */
 function _buildOverviewFilterBar() {
     var seen = {}, types = [];
     state.allOverviewItems.forEach(function (item) {
@@ -422,9 +399,6 @@ window.goOverviewPage = function (p) {
     renderOverviewTablePaged();
 };
 
-/* ══════════════════════════════════════════════════════════
-   RESOURCE RENDERING
-══════════════════════════════════════════════════════════ */
 function renderResource(data) {
     var resource = data.resource || {};
     var summary = data.summary || {};
@@ -438,7 +412,6 @@ function renderResource(data) {
         : [resource.inventory_number, resource.room, resource.type].filter(Boolean).join(' | ');
     byId('resourceSubtitle').textContent = subtitle;
 
-    // Ссылка на страницу ресурса
     var linkEl = byId('resourcePageLink');
     if (linkEl) {
         linkEl.href = resource.kind === 'rooms'
@@ -473,7 +446,6 @@ function renderResource(data) {
     renderHeatmap('resourceHeatmap', data.heatmap_days || [], data.heatmap_hours || [], data.heatmap || []);
 }
 
-/* ── Detail filter bar ── */
 function _buildDetailFilterBar() {
     var seenSt = {}, statuses = [];
     var seenEt = {}, eventTypes = [];
@@ -606,9 +578,6 @@ window.goDetailPage = function (p) {
     renderDetailTablePaged();
 };
 
-/* ══════════════════════════════════════════════════════════
-   PAGINATION
-══════════════════════════════════════════════════════════ */
 function _buildPager(current, total, fn) {
     if (total <= 1) return '';
     var html = '<div class="pager"><span class="pager-i">Страница ' + current + ' из ' + total + '</span>' +
@@ -630,9 +599,6 @@ function _buildPager(current, total, fn) {
     return html + '</div></div>';
 }
 
-/* ══════════════════════════════════════════════════════════
-   CHARTS
-══════════════════════════════════════════════════════════ */
 function _pieConfig(data) {
     var hoursVals = data.pie_hours_values || data.pie_values || [];
     var countsVals = data.pie_counts_values || [];
@@ -747,13 +713,11 @@ function renderResourceCharts(data) {
             return fmtDate(parts[0]) + (parts[1] ? ' ' + parts[1] : '');
         });
 
-        // Растягиваем canvas по ширине для многих точек — скролл обеспечивает HTML
         var canvas = byId('resourceCapacityChart');
         var wrapEl = canvas.parentNode;
         var minWidth = Math.max(wrapEl.offsetWidth || 600, capData.length * 40);
         canvas.width = minWidth;
         canvas.style.width = minWidth + 'px';
-        // Высота пропорционально количеству точек, но не меньше 300px
         var dynHeight = Math.max(300, Math.min(500, capData.length * 6));
         canvas.height = dynHeight;
         canvas.style.height = dynHeight + 'px';
@@ -775,7 +739,7 @@ function renderResourceCharts(data) {
                         data: capData.map(function (x) {
                             return x.capacity;
                         }),
-                        type: 'line',          // линия поверх столбцов — всегда видна
+                        type: 'line',
                         borderWidth: 2,
                         pointRadius: 0,
                         tension: 0,
@@ -835,9 +799,6 @@ function destroyCharts() {
     Object.keys(state.charts).forEach(destroyChart);
 }
 
-/* ══════════════════════════════════════════════════════════
-   HEATMAP
-══════════════════════════════════════════════════════════ */
 function renderHeatmap(containerId, days, hours, matrix) {
     var container = byId(containerId);
     if (!container) return;
@@ -854,14 +815,12 @@ function renderHeatmap(containerId, days, hours, matrix) {
     });
     if (!max) max = 1;
 
-    // Инфо-строка остается вне скролла
     var infoHtml = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">' +
         '<i class="bi bi-info-circle"></i> ' +
         'Значение — средний % времени, когда ресурс занят в данный день недели и час. ' +
         '<strong>100%</strong> = занят каждый такой день периода весь час. ' +
         '</div>';
 
-    // Сама сетка внутри скролл-контейнера
     var gridHtml = '<div class="heatmap-scroll-container">' +
         '<div class="heatmap-grid">' +
         '<div class="heatmap-head"></div>';
@@ -884,9 +843,6 @@ function renderHeatmap(containerId, days, hours, matrix) {
     container.innerHTML = infoHtml + gridHtml;
 }
 
-/* ══════════════════════════════════════════════════════════
-   EXPORT (client-side CSV)
-══════════════════════════════════════════════════════════ */
 function _downloadCSV(rows, filename) {
     var blob = new Blob(['\uFEFF' + rows.join('\n')], {type: 'text/csv;charset=utf-8'});
     var url = URL.createObjectURL(blob);
@@ -942,9 +898,6 @@ window.exportDetailCSV = function () {
     _downloadCSV(rows, name.replace(/[\s\/]/g, '_') + '_' + df + '_' + dt + '.csv');
 };
 
-/* ══════════════════════════════════════════════════════════
-   SEARCH
-══════════════════════════════════════════════════════════ */
 function searchResources() {
     var q = (byId('resourceSearchInput').value || '').trim();
     clearTimeout(state.searchTimer);
@@ -1022,9 +975,6 @@ function clearResource(skipLoad) {
     if (!skipLoad && state.mode === 'resource') renderEmptyResourceState();
 }
 
-/* ══════════════════════════════════════════════════════════
-   ROOM EQUIPMENT TABLE
-══════════════════════════════════════════════════════════ */
 function loadRoomEquipmentTableSelected() {
     if (!state.currentResource || state.currentResource.kind !== 'rooms') return;
     var dateVal = byId('room_equipment_date').value;
@@ -1091,9 +1041,6 @@ window.exportReportPDF = function () {
     window.location.href = buildUrl(window.REPORTS_EXPORT_PDF_URL, params);
 };
 
-/* ══════════════════════════════════════════════════════════
-   INIT
-══════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function () {
     byId('resourceSearchInput').addEventListener('input', searchResources);
     byId('resourceSearchInput').addEventListener('focus', function () {
@@ -1104,7 +1051,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (panel && !panel.contains(e.target)) clearSearchResults();
     });
 
-    // Записать начальное состояние в history (чтобы первый popstate работал корректно)
     history.replaceState({mode: 'overview', type: 'rooms', resource: null}, '');
 
     selectMode('overview');

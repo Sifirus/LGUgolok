@@ -118,7 +118,6 @@ def rooms_list(request):
     current_date = timezone.localdate()
     current_time = timezone.localtime()
 
-    # TODO Для каждой аудитории проверяем, занята ли она сейчас N+1
     rooms_with_status = []
     for room in qs:
         try:
@@ -179,7 +178,7 @@ def room_add(request):
 
         qs = Room.objects.all().order_by('building', 'floor', 'name')
         rooms_data = []
-        for room in qs: #TODO ???
+        for room in qs:
             rooms_data.append({'room': room, 'is_available': True})
 
         rooms = Paginator(rooms_data, 10).get_page(1)
@@ -236,7 +235,7 @@ def room_edit(request, room_id):
         qs = Room.objects.all().order_by('building', 'floor', 'name')
         rooms_data = []
 
-        for r in qs: #TODO ??? Логика определения доступности (заглушка или вызов сервиса)
+        for r in qs:
             rooms_data.append({'room': r, 'is_available': True})
 
         paginator = Paginator(rooms_data, 10)

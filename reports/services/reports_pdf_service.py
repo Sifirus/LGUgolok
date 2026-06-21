@@ -1,5 +1,4 @@
 from io import BytesIO
-from datetime import date
 
 import matplotlib
 matplotlib.use("Agg")
@@ -7,7 +6,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
 
-from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4
@@ -23,9 +21,6 @@ from reportlab.platypus import (
     TableStyle,
     Image,
 )
-
-from reports.services.reports_service import RoomReportService, EquipmentReportService
-
 
 class ReportsPdfService:
     FONT_REGULAR = "DejaVuSans"

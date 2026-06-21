@@ -54,7 +54,7 @@
                     <label class="form-label">Электронная почта</label>
                     <div class="position-relative">
                         <i class="bi bi-person input-icon"></i>
-                        {% render_field form.username class="form-control" placeholder="your@lgu.ru" %}
+                        {% render_field form.username class="form-control" placeholder="your@mail.ru" %}
                     </div>
                     {% for error in form.username.errors %}
                         <div class="text-danger mt-1" style="font-size:12px">{{ error }}</div>
@@ -67,7 +67,6 @@
                         <i class="bi bi-lock input-icon"></i>
                         {% render_field form.password class="form-control" id="id_password" placeholder="••••••••" %}
 
-                        <!-- глаз -->
                         <button type="button" class="pw-toggle" onclick="togglePw('id_password', this)">
                             <i class="bi bi-eye"></i>
                         </button>
@@ -90,7 +89,7 @@
 
             <p class="text-center mt-0 mb-0" style="font-size:13px;color:var(--muted)">
                 Нет учётной записи?
-                <a href="mailto:lgu@support.ru" class="login-link">Обратитесь к администратору</a>
+                <a href="mailto:some@support.ru" class="login-link">Обратитесь к администратору</a>
             </p>
 
         </div>

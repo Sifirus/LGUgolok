@@ -1,5 +1,5 @@
 function normalizeText(value) {
-    return String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase(); //TODO мусор
+    return String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 function getCookie(name) {
@@ -74,8 +74,6 @@ document.addEventListener('click', (event) => {
     }
 });
 
-// ===== Универсальные функции для модальных окон =====
-
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
@@ -93,16 +91,14 @@ function closeModal(modalId) {
 }
 
 function closeAllModals() {
-    // Поддерживаем оба типа модальных окон
-    const modals = document.querySelectorAll('.modal-backdrop.open, .modal-lgu-backdrop.open');
+    const modals = document.querySelectorAll('.modal-backdrop.open, .modal-ugolok-backdrop.open');
     modals.forEach(modal => {
         modal.classList.remove('open');
     });
     document.body.style.overflow = '';
 }
 
-// Глобальное закрытие по Escape
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
         closeAllModals();
     }

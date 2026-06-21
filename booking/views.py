@@ -11,14 +11,13 @@ from rooms.models import Room
 from approval.services.approval_services import ApprovalEngine
 
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch, Count
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-
+from django.http import HttpResponse
+from django.core.exceptions import PermissionDenied
 from booking.forms import BookingCommentForm
-from booking.models import Booking, Comments, BookingGroup
-
+from booking.models import Booking, Comments
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 
@@ -76,7 +75,6 @@ def booking_create(request):
                 if is_conflict:
                     return render(request, 'booking/create_booking.html', context)
 
-                # TODO ApprovalEngine
                 status = ApprovalEngine.get_status(
                     cleaned_data['room'], cleaned_data['equipment'], cleaned_data['event_type'],
                     cleaned_data['participants']
@@ -87,7 +85,6 @@ def booking_create(request):
                 booking.status = status
 
                 if status == Booking.Status.APPROVED:
-                    # Авто-одобрение фиксируется как подписанное системой
                     booking.signed = True
                     booking.signed_at = timezone.now()
                     booking.signed_by = None
@@ -193,6 +190,7 @@ def booking_list(request):
         'query_string': query_params.urlencode(),
     }
     return render(request, 'booking/bookings_list.html', context)
+
 
 def booking_can_view(user, booking: Booking) -> bool:
     role = getattr(user, 'role', None)
@@ -327,10 +325,6 @@ def booking_cancel(request, booking_id):
     return redirect('booking_detail', booking_id=booking.id)
 
 
-from django.http import HttpResponse
-from django.core.exceptions import PermissionDenied
-
-
 @login_required(login_url='login')
 def booking_confirmation_pdf(request, booking_id):
     booking = get_object_or_404(
@@ -348,8 +342,6 @@ def booking_confirmation_pdf(request, booking_id):
 
     approval = getattr(booking, 'approval', None)
 
-    # Авто-одобренная: status=APPROVED, approval отсутствует
-    # Вручную одобренная: status=APPROVED + approval.decision=APPROVED
     auto_approved = booking.status == Booking.Status.APPROVED and approval is None
     manual_approved = (
             approval is not None
@@ -395,7 +387,6 @@ def booking_mark_signed(request, booking_id):
 
     approval = getattr(booking, 'approval', None)
 
-    # Для ручного согласования подписывает только назначенный согласующий
     if approval is not None:
         if approval.decision != Approval.Decision.APPROVED:
             raise PermissionDenied('Подписывать можно только одобренную заявку')
@@ -403,7 +394,6 @@ def booking_mark_signed(request, booking_id):
         if approval.approver_id != request.user.id:
             raise PermissionDenied('Подписывать может только назначенный согласующий')
 
-    # Для авто-одобренной заявки подписи вручную нет, она уже подписана системой на этапе создания
     if approval is None:
         messages.info(request, 'Заявка уже подписана системой')
         return redirect('booking_detail', booking_id=booking.id)

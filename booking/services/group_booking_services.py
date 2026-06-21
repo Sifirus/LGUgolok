@@ -1,7 +1,3 @@
-"""
-booking/services/group_booking_services.py — полная замена
-Добавляет атомарные транзакции и select_for_update при создании группы.
-"""
 from datetime import date, time
 
 from django.db import transaction
@@ -11,12 +7,11 @@ from equipment.services.equipment_service import AvailableEquipmentService
 from rooms.models import Room
 from equipment.models import Equipment
 
+from booking.models import Booking, BookingGroup
+from approval.services.approval_services import ApprovalEngine
+
 
 class GroupConflictService:
-    """
-    Для набора слотов (дата+время+participants) возвращает матрицу доступности
-    всех активных аудиторий и переносного оборудования.
-    """
 
     @staticmethod
     def check(slots: list[dict]) -> dict:
@@ -31,9 +26,9 @@ class GroupConflictService:
             for slot in slots:
                 try:
                     participants = int(slot.get('participants', 0) or 0)
-                    slot_date  = slot['date']
+                    slot_date = slot['date']
                     slot_start = slot['start']
-                    slot_end   = slot['end']
+                    slot_end = slot['end']
 
                     if room.capacity is not None and participants > room.capacity:
                         conflicts.append(slot_date.isoformat())
@@ -48,15 +43,15 @@ class GroupConflictService:
                     free.append(slot['date'].isoformat())
 
             rooms_result.append({
-                'id':             room.pk,
-                'name':           room.name,
-                'building':       room.building,
-                'floor':          room.floor,
-                'capacity':       room.capacity,
-                'type_key':       room.type,
-                'type':           room.get_type_display(),
-                'free':           free,
-                'conflicts':      conflicts,
+                'id': room.pk,
+                'name': room.name,
+                'building': room.building,
+                'floor': room.floor,
+                'capacity': room.capacity,
+                'type_key': room.type,
+                'type': room.get_type_display(),
+                'free': free,
+                'conflicts': conflicts,
                 'conflict_count': len(conflicts),
             })
 
@@ -76,14 +71,14 @@ class GroupConflictService:
                     free.append(slot['date'].isoformat())
 
             equip_result.append({
-                'id':             eq.pk,
-                'name':           eq.name,
-                'model':          eq.model,
-                'type':           eq.get_type_display(),
-                'type_key':       eq.type,       # ← ключ типа для фильтрации
-                'inventory':      eq.inventory_number,
-                'free':           free,
-                'conflicts':      conflicts,
+                'id': eq.pk,
+                'name': eq.name,
+                'model': eq.model,
+                'type': eq.get_type_display(),
+                'type_key': eq.type,
+                'inventory': eq.inventory_number,
+                'free': free,
+                'conflicts': conflicts,
                 'conflict_count': len(conflicts),
             })
 
@@ -93,27 +88,17 @@ class GroupConflictService:
 
 
 class GroupCreateService:
-    """
-    Создаёт BookingGroup и все подзаявки.
-    Защита от race condition: select_for_update на каждую аудиторию/оборудование
-    по образу одиночного бронирования.
-    Каждая подзаявка проходит ApprovalEngine независимо — часть может быть
-    APPROVED сразу, часть остаться в CREATED (требует согласования).
-    """
 
     @staticmethod
     def create(
-        initiator,
-        title: str,
-        comment: str,
-        date_from: date,
-        date_to: date,
-        slots: list[dict],
+            initiator,
+            title: str,
+            comment: str,
+            date_from: date,
+            date_to: date,
+            slots: list[dict],
     ):
-        from booking.models import Booking, BookingGroup
-        from approval.services.approval_services import ApprovalEngine
 
-        # ── Базовая валидация ─────────────────────────────────────────
         if date_from < date.today():
             raise ValueError('Дата серии не может быть в прошлом')
         if date_to < date_from:
@@ -129,14 +114,11 @@ class GroupCreateService:
                     f"Дата слота {slot['date'].isoformat()} вне периода серии"
                 )
 
-        # ── Всё в одной атомарной транзакции ─────────────────────────
         with transaction.atomic():
 
-            # Предварительно загрузить все нужные аудитории и оборудование
-            room_ids  = {int(s['room_id']) for s in slots}
-            eq_ids    = {int(i) for s in slots for i in s.get('equipment_ids', [])}
+            room_ids = {int(s['room_id']) for s in slots}
+            eq_ids = {int(i) for s in slots for i in s.get('equipment_ids', [])}
 
-            # Блокируем все аудитории и единицы оборудования одним запросом
             locked_rooms = {
                 r.pk: r
                 for r in Room.objects.select_for_update().filter(pk__in=room_ids)
@@ -146,13 +128,12 @@ class GroupCreateService:
                 for e in Equipment.objects.select_for_update().filter(pk__in=eq_ids)
             }
 
-            # ── Проверка конфликтов по каждому слоту ─────────────────
             conflict_messages = []
             slot_data = []
 
             for slot in slots:
-                room_id   = int(slot['room_id'])
-                room      = locked_rooms.get(room_id)
+                room_id = int(slot['room_id'])
+                room = locked_rooms.get(room_id)
                 if not room:
                     raise ValueError(f"Аудитория #{room_id} не найдена")
 
@@ -165,7 +146,6 @@ class GroupCreateService:
                     )
                     continue
 
-                # Проверить доступность аудитории
                 available_room = AvailableRoomsService.get_available_rooms(
                     Room.objects.filter(pk=room.pk),
                     slot['date'], slot['start'], slot['end'],
@@ -176,10 +156,9 @@ class GroupCreateService:
                     )
                     continue
 
-                # Проверить доступность оборудования
                 slot_eq_ids = [int(i) for i in slot.get('equipment_ids', [])]
                 unavailable_eq = []
-                final_eq_ids   = []
+                final_eq_ids = []
 
                 for eid in slot_eq_ids:
                     eq = locked_equip.get(eid)
@@ -199,16 +178,15 @@ class GroupCreateService:
                         f"{slot['date'].isoformat()}: оборудование занято: "
                         f"{', '.join(unavailable_eq)} — исключено из заявки"
                     )
-                    # Не прерываем — создаём без недоступного оборудования
 
                 slot_data.append({
-                    'date':          slot['date'],
-                    'start':         slot['start'],
-                    'end':           slot['end'],
-                    'event_type':    slot.get('event_type', 'lecture'),
-                    'participants':  participants,
-                    'comment':       slot.get('comment', '') or comment,
-                    'room':          room,
+                    'date': slot['date'],
+                    'start': slot['start'],
+                    'end': slot['end'],
+                    'event_type': slot.get('event_type', 'lecture'),
+                    'participants': participants,
+                    'comment': slot.get('comment', '') or comment,
+                    'room': room,
                     'equipment_ids': final_eq_ids,
                 })
 
@@ -217,8 +195,6 @@ class GroupCreateService:
                     'Все слоты имеют конфликты: ' + '; '.join(conflict_messages)
                 )
 
-            # ── Создать группу и подзаявки ────────────────────────────
-            # Каждый слот проходит ApprovalEngine независимо
             group = BookingGroup.objects.create(
                 initiator=initiator,
                 title=title,
@@ -248,7 +224,5 @@ class GroupCreateService:
                 if sd['equipment_ids']:
                     booking.equipment.set(sd['equipment_ids'])
 
-        # conflict_messages не бросаем как ошибку — они информационные
-        # При необходимости можно вернуть их через атрибут
         group._conflict_warnings = conflict_messages
         return group

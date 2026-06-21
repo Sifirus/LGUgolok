@@ -87,7 +87,7 @@ def equipment_list(request):
     current_time = timezone.localtime()
 
     equipment_with_status = []
-    for item in qs: #TODO N+1
+    for item in qs:
         try:
             available_equipment = AvailableEquipmentService.get_available_equipment(
                 Equipment.objects.filter(pk=item.pk),
@@ -149,7 +149,7 @@ def equipment_add(request):
             return redirect('equipment_list')
 
         qs = Equipment.objects.select_related('room').all().order_by('type', 'name', 'inventory_number')
-        equipment_data = [{'equipment': item, 'is_available': True} for item in qs] #TODO ???
+        equipment_data = [{'equipment': item, 'is_available': True} for item in qs]
         page = Paginator(equipment_data, 10).get_page(1)
 
         return render(request, 'equipment/equipment.html', {
@@ -166,7 +166,6 @@ def equipment_add(request):
 
 @login_required(login_url='login')
 def equipment_detail(request, equipment_id):
-    from rooms.models import Room
     equip = get_object_or_404(Equipment.objects.select_related('room'), pk=equipment_id)
     recent_bookings = equip.bookings.select_related(
         'initiator', 'room'
@@ -205,18 +204,16 @@ def equipment_edit(request, equipment_id):
             item.save()
 
             messages.success(request, f'Оборудование "{item.name}" успешно обновлено')
-            #TODO перевод на страницу
             return redirect(request.META.get('HTTP_REFERER', 'equipment_list'))
 
         qs = Equipment.objects.select_related('room').all().order_by('type', 'name', 'inventory_number')
 
-        #TODO ??? Используем твой метод определения доступности (как в equipment_list)
         now = timezone.now()
         equipment_with_status = []
         for row in qs:
             equipment_with_status.append({
                 'equipment': row,
-                'is_available': True  # Или вызови здесь AvailableEquipmentService, если критично
+                'is_available': True
             })
 
         paginator = Paginator(equipment_with_status, 10)

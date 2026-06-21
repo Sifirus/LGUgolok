@@ -212,10 +212,8 @@ function renderRooms(data) {
     const participants = parseInt(document.getElementById('id_participants')?.value || '0', 10);
 
     data.sort((a, b) => {
-        // Выбранная аудитория всегда первая
         if (a.id === selectedId) return -1;
         if (b.id === selectedId) return 1;
-        // Затем сортировка по ближайшей вместимости к числу участников
         if (participants > 0 && a.capacity != null && b.capacity != null) {
             return Math.abs(a.capacity - participants) - Math.abs(b.capacity - participants);
         }

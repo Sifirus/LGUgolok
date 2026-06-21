@@ -5,31 +5,31 @@
 {% block nav_menu %}{% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-center" style="min-height:calc(100vh - 80px)">
-    <div class="text-center p-4" style="max-width:420px">
+    <div class="d-flex align-items-center justify-content-center" style="min-height:calc(100vh - 80px)">
+        <div class="text-center p-4" style="max-width:420px">
 
-        <div class="d-flex align-items-center justify-content-center mb-3"
-             style="width:72px;height:72px;border-radius:18px;background:var(--danger-bg);color:var(--danger);font-size:34px;margin:0 auto">
-            <i class="bi bi-shield-exclamation"></i>
+            <div class="d-flex align-items-center justify-content-center mb-3"
+                 style="width:72px;height:72px;border-radius:18px;background:var(--danger-bg);color:var(--danger);font-size:34px;margin:0 auto">
+                <i class="bi bi-shield-exclamation"></i>
+            </div>
+
+            <div class="fw-bold mb-1" style="font-size:96px;color:var(--border);letter-spacing:-4px;line-height:1">
+                403
+            </div>
+
+            <div class="fw-bold mb-2" style="font-size:22px">
+                Нет доступа
+            </div>
+
+            <div class="text-muted mb-4" style="font-size:14px;line-height:1.6">
+                У вас нет прав для просмотра этой страницы.<br>
+                Обратитесь к администратору, если считаете это ошибкой.
+            </div>
+
+            <a href="{% url 'index' %}" class="btn-main">
+                <i class="bi bi-house-door"></i>На главную
+            </a>
+
         </div>
-
-        <div class="fw-bold mb-1" style="font-size:96px;color:var(--border);letter-spacing:-4px;line-height:1">
-            403
-        </div>
-
-        <div class="fw-bold mb-2" style="font-size:22px">
-            Нет доступа
-        </div>
-
-        <div class="text-muted mb-4" style="font-size:14px;line-height:1.6">
-            У вас нет прав для просмотра этой страницы.<br>
-            Обратитесь к администратору, если считаете это ошибкой.
-        </div>
-
-        <a href="{% url 'index' %}" class="btn-main">
-            <i class="bi bi-house-door"></i>На главную
-        </a>
-
     </div>
-</div>
 {% endblock %}

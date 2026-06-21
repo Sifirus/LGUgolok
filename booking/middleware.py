@@ -17,7 +17,6 @@ class AutoCompleteBookingMiddleware:
         current_datetime = timezone.now()
         current_time = current_datetime.time()
         current_date = current_datetime.date()
-        #TODO notif
         bookings_to_complete = Booking.objects.filter(
             status=Booking.Status.APPROVED
         ).filter(

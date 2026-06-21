@@ -11,7 +11,8 @@
 
 {% block content %}
     <div class="container d-flex align-items-center justify-content-center">
-        <div class="auth-box p-4" style="max-width: 800px; background: var(--surface); border-radius: var(--r); box-shadow: var(--sh)">
+        <div class="auth-box p-4"
+             style="max-width: 800px; background: var(--surface); border-radius: var(--r); box-shadow: var(--sh)">
 
             <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.4px; color: var(--text); line-height: 1.1;">
                 Личный кабинет
@@ -29,7 +30,6 @@
                 {% endfor %}
             {% endif %}
 
-            <!-- Аватар и имя -->
             <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom"
                  style="border-color: var(--border) !important;">
                 {% if profile.avatar %}
@@ -48,7 +48,6 @@
                 </div>
             </div>
 
-            <!-- Форма профиля -->
             <form method="post" enctype="multipart/form-data" class="mb-4">
                 {% csrf_token %}
 
@@ -131,7 +130,6 @@
 
             <div class="divider my-4"></div>
 
-            <!-- Форма email -->
             <form method="post" class="mb-4">
                 {% csrf_token %}
 
@@ -154,7 +152,6 @@
 
             <div class="divider my-4"></div>
 
-            <!-- Форма пароля -->
             <form method="post">
                 {% csrf_token %}
 
@@ -208,7 +205,6 @@
                 </button>
             </form>
 
-            <!-- Подпись как на логине -->
             <div class="divider my-4"></div>
             <p class="text-center mt-0 mb-0" style="font-size:13px;color:var(--muted)">
                 <a href="{% url 'password_reset' %}" class="login-link">Забыли пароль?</a>

@@ -1,6 +1,3 @@
-"""
-booking/views_group.py
-"""
 import json
 from datetime import date, time as dt_time, datetime
 
@@ -14,8 +11,6 @@ from django.views.decorators.http import require_POST
 from booking.models import Booking, BookingGroup
 from booking.services.group_booking_services import GroupConflictService, GroupCreateService
 from core.decorators import require_role_decorator
-from equipment.models import Equipment
-from rooms.models import Room
 
 
 @require_role_decorator(roles=['initiator'])
@@ -29,7 +24,6 @@ def booking_group_create(request):
 @require_role_decorator(roles=['initiator'])
 @login_required(login_url='login')
 def booking_group_conflicts(request):
-    """AJAX POST: проверить конфликты для переданных слотов."""
     if request.method != 'POST':
         return JsonResponse({'error': 'POST only'}, status=405)
 
@@ -60,27 +54,10 @@ def booking_group_conflicts(request):
     data = GroupConflictService.check(slots)
     return JsonResponse(data)
 
-import json
-from datetime import date, time as dt_time
-
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
-
-from booking.models import Booking, BookingGroup
-from booking.services.group_booking_services import GroupConflictService, GroupCreateService
-from core.decorators import require_role_decorator
-from equipment.models import Equipment
-from rooms.models import Room
-
 
 @require_role_decorator(roles=['initiator'])
 @login_required(login_url='login')
 def booking_group_submit(request):
-    """AJAX POST: создать группу."""
     if request.method != 'POST':
         return JsonResponse({'error': 'POST only'}, status=405)
 
@@ -121,14 +98,12 @@ def booking_group_submit(request):
             start = dt_time.fromisoformat(s['start'])
             end = dt_time.fromisoformat(s['end'])
 
-            # Проверка что дата не в прошлом
             if slot_date < today:
                 return JsonResponse(
                     {'error': f'Дата {slot_date.isoformat()} уже прошла'},
                     status=400
                 )
 
-            # Проверка что время не в прошлом для сегодняшней даты
             if slot_date == today and start <= now:
                 return JsonResponse(
                     {'error': f'Время начала {start} на сегодня уже прошло'},
@@ -200,7 +175,6 @@ def booking_group_detail(request, group_id):
 
     bookings = group.booking_set.order_by('event_date', 'event_start_time')
 
-    # Заявки которые можно отменить
     cancelable_statuses = [
         Booking.Status.CREATED,
         Booking.Status.PENDING,
@@ -208,7 +182,7 @@ def booking_group_detail(request, group_id):
     ]
     can_cancel = (
             role in ['operator', 'initiator']
-            and group.approval_required_count > 0  # хоть что-то активное есть
+            and group.approval_required_count > 0
             and bookings.filter(status__in=cancelable_statuses).exists()
     )
 
