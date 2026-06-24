@@ -221,16 +221,16 @@
         </div>
     </div>
 
-    <div class="modal-lgu-backdrop" id="eq-modal" onclick="if(event.target===this) closeModal('eq-modal')">
-        <div class="modal-lgu-card modal-eq-card">
-            <div class="modal-lgu-head">
+    <div class="modal-ugolok-backdrop" id="eq-modal" onclick="if(event.target===this) closeModal('eq-modal')">
+        <div class="modal-ugolok-card modal-eq-card">
+            <div class="modal-ugolok-head">
                 <div>
                     <div style="font-size:14px;font-weight:700">Выбор оборудования</div>
                     <div style="font-size:12px;color:var(--muted)">Дата: <span id="eq-modal-title"></span></div>
                 </div>
-                <button type="button" class="modal-lgu-close" onclick="closeModal('eq-modal')">×</button>
+                <button type="button" class="modal-ugolok-close" onclick="closeModal('eq-modal')">×</button>
             </div>
-            <div class="modal-lgu-body">
+            <div class="modal-ugolok-body">
                 <div class="sw mb-3" style="max-width:340px">
                     <i class="bi bi-search si"></i>
                     <input type="text" id="id_equipment_search_query_group" class="fc"
@@ -239,31 +239,31 @@
                 </div>
                 <div id="equipment-list-group"></div>
             </div>
-            <div class="modal-lgu-foot">
+            <div class="modal-ugolok-foot">
                 <button type="button" class="btn-sec" onclick="closeModal('eq-modal')">Закрыть</button>
                 <button type="button" class="btn-main" onclick="applyEquipmentSelection()">Применить</button>
             </div>
         </div>
     </div>
 
-    <div class="modal-lgu-backdrop" id="infoModal" onclick="if(event.target===this) closeModal('infoModal')">
-        <div class="modal-lgu-card" style="max-width: 550px;">
-            <div class="modal-lgu-head">
+    <div class="modal-ugolok-backdrop" id="infoModal" onclick="if(event.target===this) closeModal('infoModal')">
+        <div class="modal-ugolok-card" style="max-width: 550px;">
+            <div class="modal-ugolok-head">
                 <div>
                     <div style="font-size: 15px; font-weight: 700;" id="infoModalTitle">Информация</div>
                     <div style="font-size: 12px; color: var(--muted);" id="infoModalSubtitle"></div>
                 </div>
-                <button type="button" class="modal-lgu-close" onclick="closeModal('infoModal')">×</button>
+                <button type="button" class="modal-ugolok-close" onclick="closeModal('infoModal')">×</button>
             </div>
 
-            <div class="modal-lgu-body" id="infoModalBody">
+            <div class="modal-ugolok-body" id="infoModalBody">
                 <div style="padding: 20px; text-align: center; color: var(--muted);">
                     <div class="spinner-border" style="width: 32px; height: 32px; margin-bottom: 12px;"></div>
                     <div>Загрузка...</div>
                 </div>
             </div>
 
-            <div class="modal-lgu-foot">
+            <div class="modal-ugolok-foot">
                 <button type="button" class="btn-sec" onclick="closeModal('infoModal')">
                     <i class="bi bi-x"></i> Закрыть
                 </button>

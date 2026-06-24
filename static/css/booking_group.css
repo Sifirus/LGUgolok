@@ -457,7 +457,7 @@
     flex-shrink: 0;
 }
 
-.modal-lgu-backdrop {
+.modal-ugolok-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(22, 28, 45, .58);
@@ -468,11 +468,11 @@
     z-index: 1050;
 }
 
-.modal-lgu-backdrop.open {
+.modal-ugolok-backdrop.open {
     display: flex;
 }
 
-.modal-lgu-card {
+.modal-ugolok-card {
     width: min(760px, 96vw);
     max-height: min(84vh, 900px);
     background: var(--surface);
@@ -487,8 +487,8 @@
     width: min(820px, 96vw);
 }
 
-.modal-lgu-head,
-.modal-lgu-foot {
+.modal-ugolok-head,
+.modal-ugolok-foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -498,18 +498,18 @@
     background: var(--bg);
 }
 
-.modal-lgu-foot {
+.modal-ugolok-foot {
     border-top: 1px solid var(--border);
     border-bottom: 0;
     justify-content: flex-end;
 }
 
-.modal-lgu-body {
+.modal-ugolok-body {
     padding: 16px;
     overflow: auto;
 }
 
-.modal-lgu-close {
+.modal-ugolok-close {
     border: 0;
     background: none;
     font-size: 22px;

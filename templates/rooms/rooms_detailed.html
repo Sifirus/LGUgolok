@@ -185,10 +185,10 @@
     </div>
 
     {% if user.role == 'operator' %}
-        <div class="modal-lgu-backdrop" id="modal-edit">
-            <div class="modal-lgu">
-                <div class="modal-lgu-head">
-                    <span class="modal-lgu-title"><i
+        <div class="modal-ugolok-backdrop" id="modal-edit">
+            <div class="modal-ugolok">
+                <div class="modal-ugolok-head">
+                    <span class="modal-ugolok-title"><i
                             class="bi bi-pencil-square"></i>Редактировать — {{ room.name }}</span>
                     <button class="btn-sec" onclick="closeModal('modal-edit')"><i class="bi bi-x-lg"></i></button>
                 </div>
@@ -196,7 +196,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="_action" value="edit">
                     <input type="hidden" name="room_id" value="{{ room.id }}">
-                    <div class="modal-lgu-body">
+                    <div class="modal-ugolok-body">
                         <div class="field-row">
                             <div class="field-group">
                                 <label class="fl">Название *</label>
@@ -238,7 +238,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="modal-lgu-foot">
+                    <div class="modal-ugolok-foot">
                         <button type="button" class="btn-sec" onclick="closeModal('modal-edit')">Отмена</button>
                         <button type="submit" class="btn-main"><i class="bi bi-check-lg"></i>Сохранить</button>
                     </div>

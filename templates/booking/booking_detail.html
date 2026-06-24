@@ -72,15 +72,12 @@
 
                 {% if booking.status == 'approved' %}
                     {% if booking.signed %}
-                        {% if booking.signature_source == 'system' %}
-                            <span class="btn-sec">Подписано системой</span>
-                        {% else %}
-                            <span class="btn-sec">Подписана</span>
-                        {% endif %}
-                    {% elif approval and approval.approver_id == request.user.id %}
+                        <span class="btn-sec">Подписана</span>
+                    {% elif can_sign %}
                         <form method="post" action="{% url 'booking_mark_signed' booking.id %}" style="margin:0">
                             {% csrf_token %}
-                            <button type="submit" class="btn-sec">
+                            <button type="submit" class="btn-sec"
+                                    onclick="return confirm('Вы уверены, что хотите отметить заявку #{{ booking.id }} как подписанную?')">
                                 <i class="bi bi-pencil-square"></i> Отметить подписанной
                             </button>
                         </form>
@@ -236,11 +233,14 @@
                                             {% else %}
                                                 {{ c.author.email }}
                                             {% endif %}
-                                            {% if c.author.id == booking.initiator.id %}
-                                                <span class="comment-role-badge">Инициатор</span>
+                                            {% if c.author.role == 'initiator' %}
+                                                <span class="pill pill--processing">Инициатор</span>
                                             {% endif %}
-                                            {% if approval and c.author.id == approval.approver.id %}
-                                                <span class="comment-role-badge approver">Согласующий</span>
+                                            {% if c.author.role == 'approver' %}
+                                                <span class="pill pill--approved">Согласующий</span>
+                                            {% endif %}
+                                            {% if c.author.role == 'operator' %}
+                                                <span class="pill pill--pending">Оператор</span>
                                             {% endif %}
                                         </div>
                                         <div class="bd-comment-meta">

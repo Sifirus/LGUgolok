@@ -162,8 +162,7 @@
                                             data-status="{{ item.status }}"
                                             data-is-stationary="{% if item.is_stationary %}1{% else %}0{% endif %}"
                                             data-room-id="{{ item.room.id|default:'' }}"
-                                            data-room-label="
-                                                    {% if item.room %}{{ item.room.id }} · {{ item.room.name }} · {{ item.room.building }}, этаж {{ item.room.floor }}{% endif %}">
+                                            data-room-label="{% if item.room %}{{ item.room.id }} · {{ item.room.name }} · {{ item.room.building }}, этаж {{ item.room.floor }}{% endif %}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <form method="post" action="{% url 'equipment_delete' item.id %}"
@@ -265,8 +264,7 @@
                             <label class="fl">Тип <span class="required">*</span></label>
                             <select name="type" class="fc {% if add_form.type.errors %}is-invalid{% endif %}">
                                 {% for val, label in equipment_types %}
-                                    <option value="{{ val }}"
-                                            {% if add_form.type.value == val %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ val }}" {% if add_form.type.value == val %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
                             {% for e in add_form.type.errors %}
@@ -327,9 +325,9 @@
         {% with item=row.equipment %}
             <div class="modal-ugolok-backdrop {% if open_edit_modal and edit_equipment_id == item.id %}open{% endif %}"
                  id="modal-edit-{{ item.id }}">
-                <div class="modal-lgu">
-                    <div class="modal-lgu-head">
-                        <span class="modal-lgu-title"><i
+                <div class="modal-ugolok">
+                    <div class="modal-ugolok-head">
+                        <span class="modal-ugolok-title"><i
                                 class="bi bi-pencil-square"></i>Редактирование оборудования</span>
                         <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ item.id }}')"><i
                                 class="bi bi-x-lg"></i></button>
@@ -337,14 +335,13 @@
 
                     <form method="post" action="{% url 'equipment_edit' item.id %}">
                         {% csrf_token %}
-                        <div class="modal-lgu-body">
+                        <div class="modal-ugolok-body">
                             <div class="field-row">
                                 <div class="field-group">
                                     <label class="fl">Инвентарный номер <span class="required">*</span></label>
                                     <input type="text" name="inventory_number"
                                            class="fc {% if open_edit_modal and edit_equipment_id == item.id and edit_form.inventory_number.errors %}is-invalid{% endif %}"
-                                           value="
-                                                   {% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.inventory_number.value|default:item.inventory_number }}{% else %}{{ item.inventory_number }}{% endif %}">
+                                           value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.inventory_number.value|default:item.inventory_number }}{% else %}{{ item.inventory_number }}{% endif %}">
                                     {% if open_edit_modal and edit_equipment_id == item.id %}
                                         {% for e in edit_form.inventory_number.errors %}
                                             <div class="field-error">{{ e }}</div>{% endfor %}
@@ -354,8 +351,7 @@
                                     <label class="fl">Название <span class="required">*</span></label>
                                     <input type="text" name="name"
                                            class="fc {% if open_edit_modal and edit_equipment_id == item.id and edit_form.name.errors %}is-invalid{% endif %}"
-                                           value="
-                                                   {% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.name.value|default:item.name }}{% else %}{{ item.name }}{% endif %}">
+                                           value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.name.value|default:item.name }}{% else %}{{ item.name }}{% endif %}">
                                     {% if open_edit_modal and edit_equipment_id == item.id %}
                                         {% for e in edit_form.name.errors %}
                                             <div class="field-error">{{ e }}</div>{% endfor %}
@@ -368,8 +364,7 @@
                                     <label class="fl">Модель <span class="required">*</span></label>
                                     <input type="text" name="model"
                                            class="fc {% if open_edit_modal and edit_equipment_id == item.id and edit_form.model.errors %}is-invalid{% endif %}"
-                                           value="
-                                                   {% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.model.value|default:item.model }}{% else %}{{ item.model }}{% endif %}">
+                                           value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.model.value|default:item.model }}{% else %}{{ item.model }}{% endif %}">
                                     {% if open_edit_modal and edit_equipment_id == item.id %}
                                         {% for e in edit_form.model.errors %}
                                             <div class="field-error">{{ e }}</div>{% endfor %}
@@ -435,14 +430,12 @@
                                     <div class="room-lookup__control">
                                         <input type="text" name="room_query" class="fc room-lookup__input"
                                                placeholder="ID или название комнаты"
-                                               value="
-                                                       {% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.room_query.value|default:'' }}{% else %}{% if item.room %}{{ item.room.id }} · {{ item.room.name }} · {{ item.room.building }}, этаж {{ item.room.floor }}{% endif %}{% endif %}"
+                                               value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.room_query.value|default:'' }}{% else %}{% if item.room %}{{ item.room.id }} · {{ item.room.name }} · {{ item.room.building }}, этаж {{ item.room.floor }}{% endif %}{% endif %}"
                                                autocomplete="off">
                                         <button type="button" class="room-lookup__clear" data-room-clear
                                                 title="Очистить"><i class="bi bi-x-lg"></i></button>
                                     </div>
-                                    <input type="hidden" name="room_id" data-room-id value="
-                                            {% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.room_id.value|default:'' }}{% else %}{{ item.room.id|default:'' }}{% endif %}">
+                                    <input type="hidden" name="room_id" data-room-id value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.room_id.value|default:'' }}{% else %}{{ item.room.id|default:'' }}{% endif %}">
                                     <div class="room-lookup__menu" data-room-menu></div>
                                 </div>
                                 {% if open_edit_modal and edit_equipment_id == item.id %}
@@ -452,7 +445,7 @@
                             </div>
                         </div>
 
-                        <div class="modal-lgu-foot">
+                        <div class="modal-ugolok-foot">
                             <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ item.id }}')">
                                 Отмена
                             </button>

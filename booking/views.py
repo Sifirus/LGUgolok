@@ -85,10 +85,10 @@ def booking_create(request):
                 booking.status = status
 
                 if status == Booking.Status.APPROVED:
-                    booking.signed = True
-                    booking.signed_at = timezone.now()
+                    booking.signed = False
+                    booking.signed_at = None
                     booking.signed_by = None
-                    booking.signature_source = Booking.SignatureSource.SYSTEM
+                    booking.signature_source = Booking.SignatureSource.MANUAL
                 else:
                     booking.signed = False
                     booking.signed_at = None
@@ -192,7 +192,7 @@ def booking_list(request):
     return render(request, 'booking/bookings_list.html', context)
 
 
-def booking_can_view(user, booking: Booking) -> bool:
+def booking_can_view(user, booking: Booking):
     role = getattr(user, 'role', None)
 
     if role in ['operator', 'approver']:
@@ -204,21 +204,30 @@ def booking_can_view(user, booking: Booking) -> bool:
     return False
 
 
-def booking_can_comment(user, booking: Booking) -> bool:
+def booking_can_comment(user, booking: Booking):
     role = getattr(user, 'role', None)
-    has_approval = hasattr(booking, 'approval')
+    has_approval = hasattr(booking, 'approval') and booking.approval is not None
+
+    if role == 'operator':
+        return True
 
     if role == 'initiator' and booking.initiator_id == user.id:
         return True
 
-    if role == 'approver' and has_approval and booking.approval.approver_id == user.id:
-        return True
+    if role == 'approver':
+        if not has_approval:
+            return True
+        if booking.approval.approver_id == user.id:
+            return True
 
     return False
 
 
-def booking_can_cancel(user, booking: Booking) -> bool:
+def booking_can_cancel(user, booking: Booking):
     role = getattr(user, 'role', None)
+
+    if role == 'operator':
+        return booking.status not in (Booking.Status.CANCELED, Booking.Status.COMPLETED, Booking.Status.REJECTED)
 
     if booking.status in (Booking.Status.CANCELED, Booking.Status.COMPLETED, Booking.Status.REJECTED):
         return False
@@ -232,6 +241,19 @@ def booking_can_cancel(user, booking: Booking) -> bool:
     if role == 'initiator' and booking.initiator_id == user.id:
         return True
 
+    return False
+
+def booking_can_sign(user, booking: Booking):
+    if booking.status != Booking.Status.APPROVED or booking.signed:
+        return False
+    role = getattr(user, 'role', None)
+    if user.is_superuser or role == 'operator':
+        return True
+    has_approval = hasattr(booking, 'approval') and booking.approval is not None
+    if has_approval and booking.approval.approver_id == user.id:
+        return True
+    if not has_approval and role == 'approver':
+        return True
     return False
 
 
@@ -262,6 +284,7 @@ def booking_detail(request, booking_id):
     comment_form = BookingCommentForm()
     can_comment = booking_can_comment(request.user, booking)
     can_cancel = booking_can_cancel(request.user, booking)
+    can_sign = booking_can_sign(request.user, booking)
 
     if request.method == 'POST':
         action = request.POST.get('action', 'comment')
@@ -291,6 +314,7 @@ def booking_detail(request, booking_id):
         'comment_form': comment_form,
         'can_comment': can_comment,
         'can_cancel': can_cancel,
+        'can_sign': can_sign,
         'is_initiator': request.user.id == booking.initiator_id,
         'approval': approval,
         'is_approver': bool(approval and approval.approver_id == request.user.id),
@@ -360,7 +384,6 @@ def booking_confirmation_pdf(request, booking_id):
 
 
 @login_required(login_url='login')
-@require_role_decorator(['approver'])
 def booking_mark_signed(request, booking_id):
     if request.method != 'POST':
         return redirect('booking_detail', booking_id=booking_id)
@@ -378,25 +401,8 @@ def booking_mark_signed(request, booking_id):
     if not booking_can_view(request.user, booking):
         raise PermissionDenied
 
-    if booking.status != Booking.Status.APPROVED:
-        raise PermissionDenied('Подписывать можно только одобренную заявку')
-
-    if booking.signed:
-        messages.info(request, 'Заявка уже подписана')
-        return redirect('booking_detail', booking_id=booking.id)
-
-    approval = getattr(booking, 'approval', None)
-
-    if approval is not None:
-        if approval.decision != Approval.Decision.APPROVED:
-            raise PermissionDenied('Подписывать можно только одобренную заявку')
-
-        if approval.approver_id != request.user.id:
-            raise PermissionDenied('Подписывать может только назначенный согласующий')
-
-    if approval is None:
-        messages.info(request, 'Заявка уже подписана системой')
-        return redirect('booking_detail', booking_id=booking.id)
+    if not booking_can_sign(request.user, booking):
+        raise PermissionDenied('У вас нет прав отметить эту заявку подписанной')
 
     booking.signed = True
     booking.signed_at = timezone.now()
