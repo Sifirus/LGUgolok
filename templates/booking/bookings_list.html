@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Уголок - {{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/booking.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="bk-page-header">
+        <div>
+            <div class="bk-page-title">{{ page_title }}</div>
+            <p class="bk-page-subtitle">Всего: {{ total }} - Дата: {{ current_date }} - Время: {{ current_time }}</p>
+        </div>
+    </div>
+
+    <form method="get" class="bk-filter-bar">
+        <div class="bk-filter-group bk-filter-group--search">
+            <label class="bk-filter-label">Поиск</label>
+            <div class="bk-input-wrap">
+                <i class="bi bi-search bk-input-icon"></i>
+                <input type="text" name="search" value="{{ search }}" class="fc bk-search"
+                       placeholder="ID, комментарий, комната, оборудование, инициатор...">
+            </div>
+        </div>
+
+        <div class="bk-filter-group">
+            <label class="bk-filter-label">Тип заявки</label>
+            <select name="event_type" class="fc">
+                <option value="">Все</option>
+                {% for val, label in event_types %}
+                    <option value="{{ val }}" {% if filter_event_type == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="bk-filter-group">
+            <label class="bk-filter-label">Принадлежность к группе</label>
+            <select name="booking_scope" class="fc">
+                {% for val, label in booking_scope_choices %}
+                    <option value="{{ val }}"
+                            {% if filter_booking_scope == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="bk-filter-group">
+            <label class="bk-filter-label">Статус</label>
+            <select name="status" class="fc">
+                <option value="">Все</option>
+                {% for val, label in statuses %}
+                    <option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="bk-filter-group">
+            <label class="bk-filter-label">Дата от</label>
+            <input type="date" name="date_from" value="{{ filter_date_from }}" class="fc">
+        </div>
+
+        <div class="bk-filter-group">
+            <label class="bk-filter-label">Дата до</label>
+            <input type="date" name="date_to" value="{{ filter_date_to }}" class="fc">
+        </div>
+
+        <div class="bk-filter-group bk-filter-group--wide">
+            <label class="bk-filter-label">Комната</label>
+            <div class="lookup" data-lookup data-url="{% url 'room_lookup_api' %}">
+                <div class="lookup-control">
+                    <input type="text" class="fc lookup-input" name="room_query"
+                           placeholder="ID или название комнаты"
+                           value="{{ filter_room_label }}" autocomplete="off">
+                    <button type="button" class="lookup-clear" data-clear title="Очистить">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <input type="hidden" name="room_id" data-id value="{{ filter_room_id }}">
+                <div class="lookup-menu" data-menu></div>
+            </div>
+        </div>
+
+        <div class="bk-filter-group bk-filter-group--wide">
+            <label class="bk-filter-label">Согласующий</label>
+            <div class="lookup" data-lookup data-url="{% url 'approver_lookup_api' %}">
+                <div class="lookup-control">
+                    <input type="text" class="fc lookup-input" name="approver_query"
+                           placeholder="ID, email или имя"
+                           value="{{ filter_approver_label }}" autocomplete="off">
+                    <button type="button" class="lookup-clear" data-clear title="Очистить">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <input type="hidden" name="approver_id" data-id value="{{ filter_approver_id }}">
+                <div class="lookup-menu" data-menu></div>
+            </div>
+        </div>
+
+        <div class="bk-filter-group">
+            <label class="bk-filter-label">Решение</label>
+            <select name="approval_decision" class="fc">
+                <option value="">Все</option>
+                {% for val, label in approval_choices %}
+                    <option value="{{ val }}"
+                            {% if filter_approval_decision == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="bk-filter-actions">
+            <button type="submit" class="btn-blue"><i class="bi bi-funnel"></i>Фильтр</button>
+            <a href="{% url 'booking_list' %}" class="btn-sec"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+
+    <div class="bk-card">
+        <div class="table-responsive">
+            <table class="bk-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Серия</th>
+                    {% if user.role != 'initiator' %}
+                        <th>Инициатор</th>
+                    {% endif %}
+                    <th>Комната</th>
+                    <th>Дата и время</th>
+                    <th>Тип</th>
+                    <th>Статус</th>
+                    <th>Согласование</th>
+                    <th>Оборудование</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for booking in bookings %}
+                    <tr onclick="window.location.href='{% url 'booking_detail' booking.id %}'" style="cursor: pointer;">
+                        <td class="bk-mono">#{{ booking.id }}</td>
+
+                        <td>
+                            {% if booking.group %}
+                                <div class="bk-title">{{ booking.group.title }}</div>
+                                <div class="bk-sub">Групповая заявка #{{ booking.group.id }}</div>
+                            {% else %}
+                                <span class="bk-muted">Нет</span>
+                            {% endif %}
+                        </td>
+
+                        {% if user.role != 'initiator' %}
+                            <td>
+                                <div class="bk-title">
+                                    {{ booking.initiator.profile.last_name }} {{ booking.initiator.profile.first_name }}
+                                    {% if booking.initiator.profile.second_name %}
+                                        {{ booking.initiator.profile.second_name }}
+                                    {% endif %}
+                                </div>
+                                <div class="bk-sub">{{ booking.initiator.email }}</div>
+                                {% if booking.initiator.profile.department %}
+                                    <div class="bk-sub">{{ booking.initiator.profile.department }}</div>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+
+                        <td>
+                            <div class="bk-title">{{ booking.room.name }}</div>
+                            <div class="bk-sub">{{ booking.room.building }}, этаж {{ booking.room.floor }}</div>
+                        </td>
+
+                        <td>
+                            <div class="bk-title">{{ booking.event_date|date:"d.m.Y" }}</div>
+                            <div class="bk-sub">{{ booking.event_start_time|time:"H:i" }}
+                                - {{ booking.event_end_time|time:"H:i" }}</div>
+                        </td>
+
+                        <td>
+                            <span class="bk-chip">{{ booking.get_event_type_display }}</span>
+                        </td>
+
+                        <td>
+                            {% if booking.status == 'approved' %}
+                                <span class="bk-status bk-status--ok">{{ booking.get_status_display }}</span>
+                            {% elif booking.status == 'rejected' %}
+                                <span class="bk-status bk-status--bad">{{ booking.get_status_display }}</span>
+                            {% elif booking.status == 'pending' %}
+                                <span class="bk-status bk-status--warn">{{ booking.get_status_display }}</span>
+                            {% else %}
+                                <span class="bk-status bk-status--muted">{{ booking.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if booking.approval %}
+                                <div class="bk-title">
+                                    {{ booking.approval.approver.profile.last_name }}
+                                    {{ booking.approval.approver.profile.first_name }}
+                                    {% if booking.approval.approver.profile.second_name %}
+                                        {{ booking.approval.approver.profile.second_name }}
+                                    {% endif %}
+                                </div>
+                                <div class="bk-sub">
+                                    {{ booking.approval.get_decision_display }}
+                                    {% if booking.approval.decided_at %}
+                                        · {{ booking.approval.decided_at|date:"d.m.Y H:i" }}
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <span class="bk-muted">Нет записи</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if booking.equipment_count %}
+                                <div class="bk-equipment">
+                                    {% for eq in booking.equipment.all|slice:":2" %}
+                                        <span class="bk-eq">{{ eq.name }}</span>
+                                    {% endfor %}
+                                    {% if booking.equipment_count > 2 %}
+                                        <span class="bk-eq bk-eq--more">+{{ booking.equipment_count|add:"-2" }}</span>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <span class="bk-muted">Нет</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="{% if user.role != 'initiator' %}9{% else %}8{% endif %}">
+                            <div class="empty-state">
+                                <i class="bi bi-journal-text"></i>
+                                <p>Заявки не найдены</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if bookings.has_other_pages %}
+            <div class="pager">
+                <span class="pager-i">Показано {{ bookings.start_index }}–{{ bookings.end_index }} из {{ total }}</span>
+                <div class="pagination-buttons">
+                    {% if bookings.has_previous %}
+                        <a href="?page=
+                                {{ bookings.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                           class="pg-btn">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    {% else %}
+                        <button class="pg-btn" disabled><i class="bi bi-chevron-left"></i></button>
+                    {% endif %}
+
+                    {% for num in bookings.paginator.page_range %}
+                        {% if bookings.number == num %}
+                            <button class="pg-btn active">{{ num }}</button>
+                        {% elif num >= bookings.number|add:"-2" and num <= bookings.number|add:"2" %}
+                            <a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}"
+                               class="pg-btn">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if bookings.has_next %}
+                        <a href="?page=
+                                {{ bookings.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                           class="pg-btn">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    {% else %}
+                        <button class="pg-btn" disabled><i class="bi bi-chevron-right"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/booking.js' %}"></script>
+{% endblock %}

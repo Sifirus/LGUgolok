@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Уголок - Отчёты{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/reports.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="rep-page-header">
+        <div>
+            <div class="rep-page-title">Отчёты</div>
+            <p class="rep-page-subtitle">Аналитика использования ресурсов и детализация по одному объекту</p>
+        </div>
+
+        <div class="rep-page-actions">
+            <div class="rep-mode-switch">
+                <button type="button" class="rep-mode-btn sel" id="mode-overview" onclick="selectMode('overview')">Все
+                    ресурсы
+                </button>
+                <button type="button" class="rep-mode-btn" id="mode-resource" onclick="selectMode('resource')">
+                    Конкретный ресурс
+                </button>
+            </div>
+            <button type="button" class="btn-sec ms-2" onclick="exportReportPDF()">
+                <i class="bi bi-file-earmark-pdf"></i> PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-sm-6">
+            <div class="rep-type-card sel" id="card-rooms" onclick="selectType('rooms')">
+                <div class="rep-type-card__icon"><i class="bi bi-building"></i></div>
+                <div class="rep-type-card__name">Аудитории</div>
+                <div class="rep-type-card__desc">Загрузка, пики, вместимость, отмены, heatmap</div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="rep-type-card" id="card-equipment" onclick="selectType('equipment')">
+                <div class="rep-type-card__icon"><i class="bi bi-laptop"></i></div>
+                <div class="rep-type-card__name">Оборудование</div>
+                <div class="rep-type-card__desc">Использование, распределение по типам, почасовая занятость</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="rep-search-panel" id="resourceSearchPanel" style="display:none">
+        <div class="rep-search-head">
+            <div>
+                <div class="rep-search-title">Выбор ресурса</div>
+                <div class="rep-search-subtitle">Введите название, инвентарный номер, корпус, тип или модель</div>
+            </div>
+            <div class="rep-selected-chip" id="selectedResourceChip" style="display:none"></div>
+        </div>
+        <div class="rep-search-box">
+            <input type="text" id="resourceSearchInput" class="fc" placeholder="Поиск ресурса">
+            <div class="rep-search-results" id="resourceSearchResults" style="display:none"></div>
+        </div>
+    </div>
+
+    <div class="rep-filter-bar">
+        <div class="rep-filter-group">
+            <label class="rep-filter-label">Период от</label>
+            <input type="date" id="date_from" class="fc" value="{{ date_from }}">
+        </div>
+        <div class="rep-filter-group">
+            <label class="rep-filter-label">Период до</label>
+            <input type="date" id="date_to" class="fc" value="{{ date_to }}">
+        </div>
+        <div class="rep-filter-actions">
+            <button type="button" class="btn-blue" onclick="loadReport()">
+                <i class="bi bi-bar-chart-line"></i>Сформировать
+            </button>
+            <button type="button" class="btn-sec" onclick="setPreset('month')">Месяц</button>
+            <button type="button" class="btn-sec" onclick="setPreset('quarter')">Квартал</button>
+            <button type="button" class="btn-sec" onclick="setPreset('year')">Год</button>
+            <button type="button" class="btn-sec" onclick="clearResource()" id="btn-clear-resource"
+                    style="display:none">
+                Сбросить объект
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4" id="metrics-row">
+        <div class="col-6 col-xl-3">
+            <div class="rep-kpi">
+                <div class="rep-kpi__icon"><i class="bi bi-clock"></i></div>
+                <div>
+                    <div class="rep-kpi__value" id="m-hours">—</div>
+                    <div class="rep-kpi__label" id="m-hours-lbl">Часов занятости</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="rep-kpi">
+                <div class="rep-kpi__icon"><i class="bi bi-graph-up"></i></div>
+                <div>
+                    <div class="rep-kpi__value" id="m-avg">—</div>
+                    <div class="rep-kpi__label" id="m-avg-lbl">Средняя загрузка</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="rep-kpi">
+                <div class="rep-kpi__icon"><i class="bi bi-calendar2-event"></i></div>
+                <div>
+                    <div class="rep-kpi__value" id="m-bookings">—</div>
+                    <div class="rep-kpi__label" id="m-bookings-lbl">Заявок за период</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="rep-kpi">
+                <div class="rep-kpi__icon"><i class="bi bi-exclamation-triangle"></i></div>
+                <div>
+                    <div class="rep-kpi__value" id="m-special">—</div>
+                    <div class="rep-kpi__label" id="m-special-lbl">Отменённых заявок</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="overview-block">
+
+        <div class="row g-3 mb-4">
+            <div class="col-lg-7">
+                <div class="rep-card rep-card--pad">
+                    <div class="rep-card__head"><span class="rep-card__title">Тренд загрузки по дням</span></div>
+                    <canvas id="overviewTrendChart" height="140"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="rep-card rep-card--pad">
+                    <div class="rep-card__head"><span class="rep-card__title">Распределение по типам мероприятий</span>
+                    </div>
+                    <canvas id="overviewPieChart" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="rep-card rep-card--pad">
+                    <div class="rep-card__head"><span class="rep-card__title">Тепловая карта — день недели × час</span>
+                    </div>
+                    <div id="overviewHeatmap"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="rep-card rep-card--pad">
+                    <div class="rep-card__head"><span
+                            class="rep-card__title">Распределение часов заявок по часам дня</span></div>
+                    <canvas id="overviewSecondaryChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="rep-card" id="overview-table-card">
+                    <div class="rep-card__table-head">
+                        <span class="rep-card__title">Список всех ресурсов</span>
+                    </div>
+                    <div id="overview-filter-wrap"></div>
+                    <div class="table-responsive">
+                        <table class="rep-table">
+                            <thead id="overviewTblHead"></thead>
+                            <tbody id="overviewTblBody">
+                            <tr>
+                                <td colspan="7">
+                                    <div class="rep-empty rep-empty--table">
+                                        <i class="bi bi-inboxes"></i>
+                                        <div>Выберите период и нажмите «Сформировать»</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="overview-pagination" style="padding:0 16px"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="resource-block" style="display:none">
+
+        <div class="rep-card rep-card--pad mb-4">
+            <div class="resource-head">
+                <div>
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                        <div class="resource-title" id="resourceTitle">Ресурс не выбран</div>
+                        <a href="#" id="resourcePageLink"
+                           style="display:none;font-size:13px;color:var(--blue);text-decoration:none;font-weight:600">
+                            <i class="bi bi-box-arrow-up-right"></i> Открыть страницу ресурса
+                        </a>
+                    </div>
+                    <div class="resource-subtitle" id="resourceSubtitle">Выберите объект через поиск сверху</div>
+                </div>
+                <div class="resource-badges">
+                    <span class="rep-chip" id="resourceStatusChip">Статус</span>
+                    <span class="rep-chip" id="resourceMetaChip">Метаданные</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-lg-7">
+                <div class="rep-card rep-card--pad">
+                    <div class="rep-card__head"><span class="rep-card__title">Почасовая занятость по дням</span></div>
+                    <canvas id="resourceTrendChart" height="140"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="rep-card rep-card--pad">
+                    <div class="rep-card__head"><span class="rep-card__title">Распределение по типам мероприятий</span>
+                    </div>
+                    <canvas id="resourcePieChart" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="rep-card rep-card--pad">
+                    <div class="rep-card__head"><span class="rep-card__title">Тепловая карта — день недели × час</span>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <div id="resourceHeatmap"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4" id="resourceCapacityCol">
+            <div class="col-12">
+                <div class="rep-card rep-card--pad">
+                    <div class="rep-card__head"><span class="rep-card__title">Участники и вместимость</span></div>
+                    <div style="overflow-x:auto">
+                        <canvas id="resourceCapacityChart" height="300" style="display:block"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="rep-card rep-card--pad">
+                    <div class="rep-card__head"><span
+                            class="rep-card__title">Распределение часов заявок по часам дня</span></div>
+                    <canvas id="resourceSecondaryChart" height="110"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="rep-card">
+                    <div class="rep-card__table-head">
+                        <span class="rep-card__title">Детальная занятость</span>
+                    </div>
+                    <div id="detail-filter-wrap"></div>
+                    <div class="table-responsive">
+                        <table class="rep-table">
+                            <thead id="resourceTblHead"></thead>
+                            <tbody id="resourceTblBody">
+                            <tr>
+                                <td colspan="8">
+                                    <div class="rep-empty rep-empty--table">
+                                        <i class="bi bi-inboxes"></i>
+                                        <div>Нет данных</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="detail-pagination" style="padding:0 16px"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3" id="roomEquipmentBlock" style="display:none">
+            <div class="col-12">
+                <div class="rep-card">
+                    <div class="rep-card__table-head">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <span class="rep-card__title">Техника в аудитории на дату и время</span>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <input type="date" id="room_equipment_date" class="fc" value="{{ date_to }}">
+                                <input type="time" id="room_equipment_time" class="fc" value="12:00">
+                                <button type="button" class="btn-sec" onclick="loadRoomEquipmentTableSelected()">
+                                    Показать
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="rep-table">
+                            <thead id="roomEquipmentHead"></thead>
+                            <tbody id="roomEquipmentBody">
+                            <tr>
+                                <td colspan="5">
+                                    <div class="rep-empty rep-empty--table">
+                                        <i class="bi bi-inboxes"></i>
+                                        <div>Укажите дату и время — строки кликабельны → страница оборудования</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        window.REPORTS_EXPORT_PDF_URL = "{% url 'reports_export_pdf' %}";
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/reports.js' %}"></script>
+{% endblock %}

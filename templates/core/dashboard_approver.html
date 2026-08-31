@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Уголок - Главная{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+    <div class="dash-page-header">
+        <div>
+            <h1 class="dash-page-title">Добрый день, {{ request.user.profile.first_name }}</h1>
+            <p class="dash-page-subtitle">Панель согласующего</p>
+        </div>
+        <div class="dash-page-actions">
+            <a href="{% url 'approval' %}" class="btn-main">
+                <i class="bi bi-check2-circle"></i>К согласованию
+                {% if pending_count %}
+                    <span style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 7px;font-size:12px">{{ pending_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 dash-kpi-grid">
+        <div class="col-6 col-md-6">
+            <div class="dash-kpi">
+                <div class="dash-kpi__icon dash-kpi__icon--warn">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div class="dash-kpi__body">
+                    <div class="dash-kpi__value">{{ pending_count }}</div>
+                    <div class="dash-kpi__label">Ожидают решения</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-6">
+            <div class="dash-kpi">
+                <div class="dash-kpi__icon dash-kpi__icon--success">
+                    <i class="bi bi-check2-all"></i>
+                </div>
+                <div class="dash-kpi__body">
+                    <div class="dash-kpi__value">{{ decided_count }}</div>
+                    <div class="dash-kpi__label">Рассмотрено вами</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-card">
+        <div class="dash-card__head">
+            <span class="dash-card__title">Очередь на согласование</span>
+            <a href="{% url 'approval' %}" class="dash-card__link">Все →</a>
+        </div>
+
+        <div class="dash-table-responsive">
+            <table class="dash-table">
+                <thead>
+                <tr>
+                    <th>Инициатор</th>
+                    <th>Мероприятие</th>
+                    <th>Аудитория</th>
+                    <th>Дата</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for b in pending_list %}
+                    <tr onclick="location.href='{% url 'approval' %}'" style="cursor:pointer">
+                        <td>
+                            <div class="dash-table__strong">{{ b.initiator.profile.last_name }} {{ b.initiator.profile.first_name|first }}.</div>
+                            <div class="dash-table__muted">{{ b.initiator.email }}</div>
+                        </td>
+                        <td>{{ b.get_event_type_display }}</td>
+                        <td class="dash-table__muted">{{ b.room.name }}</td>
+                        <td class="dash-table__muted">{{ b.event_date|date:"d.m.Y" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">
+                            <div class="dash-empty">
+                                <i class="bi bi-check2-all"></i>
+                                <div>Нет заявок, ожидающих согласования</div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}

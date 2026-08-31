@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Уголок - Главная{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+    <div class="dash-page-header">
+        <div>
+            <h1 class="dash-page-title">Добрый день, {{ request.user.profile.first_name }}</h1>
+            <p class="dash-page-subtitle">Панель оператора</p>
+        </div>
+    </div>
+
+    <div class="row g-3 dash-kpi-grid">
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'admin_panel_users' %}" class="dash-kpi dash-kpi--link">
+                <div class="dash-kpi__icon dash-kpi__icon--blue">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="dash-kpi__body">
+                    <div class="dash-kpi__value">{{ users_total }}</div>
+                    <div class="dash-kpi__label">Пользователи</div>
+                    {% if users_blocked %}
+                        <div class="dash-summary" style="color:var(--danger);margin-top:4px">
+                            <i class="bi bi-x-circle"></i> {{ users_blocked }} заблокировано
+                        </div>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'rooms_list' %}" class="dash-kpi dash-kpi--link">
+                <div class="dash-kpi__icon dash-kpi__icon--success">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div class="dash-kpi__body">
+                    <div class="dash-kpi__value">{{ rooms_active }}</div>
+                    <div class="dash-kpi__label">Аудитории</div>
+                    <div class="dash-summary">из {{ rooms_total }} активных</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'equipment_list' %}" class="dash-kpi dash-kpi--link">
+                <div class="dash-kpi__icon dash-kpi__icon--orange">
+                    <i class="bi bi-laptop"></i>
+                </div>
+                <div class="dash-kpi__body">
+                    <div class="dash-kpi__value">{{ equip_total }}</div>
+                    <div class="dash-kpi__label">Оборудование</div>
+                    {% if equip_maintenance %}
+                        <div class="dash-summary" style="color:var(--warn);margin-top:4px">
+                            <i class="bi bi-tools"></i> {{ equip_maintenance }} на обслуживании
+                        </div>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'reports' %}" class="dash-kpi dash-kpi--link">
+                <div class="dash-kpi__icon dash-kpi__icon--info">
+                    <i class="bi bi-bar-chart-line"></i>
+                </div>
+                <div class="dash-kpi__body">
+                    <div class="dash-kpi__value">{{ bookings_month }}</div>
+                    <div class="dash-kpi__label">Заявок за месяц</div>
+                    {% if bookings_pending %}
+                        <div class="dash-summary" style="color:var(--warn);margin-top:4px">
+                            <i class="bi bi-hourglass-split"></i> {{ bookings_pending }} на согласовании
+                        </div>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="dash-card">
+        <div class="dash-card__head">
+            <span class="dash-card__title">Последние заявки в системе</span>
+            <a href="{% url 'booking_list' %}" class="dash-card__link">Все заявки →</a>
+        </div>
+
+        <div class="dash-table-responsive">
+            <table class="dash-table">
+                <thead>
+                <tr>
+                    <th>Инициатор</th>
+                    <th>Мероприятие</th>
+                    <th>Аудитория</th>
+                    <th>Дата</th>
+                    <th>Статус</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for b in recent_bookings %}
+                    <tr onclick="location.href='{% url 'booking_detail' b.pk %}'" style="cursor:pointer">
+                        <td class="dash-table__muted">{{ b.initiator.email }}</td>
+                        <td class="dash-table__strong">{{ b.get_event_type_display }}</td>
+                        <td class="dash-table__muted">{{ b.room.name }}</td>
+                        <td class="dash-table__muted">{{ b.event_date|date:"d.m.Y" }}</td>
+                        <td>
+                            {% if b.status == 'pending' %}
+                                <span class="dash-pill dash-pill--pending">На согласовании</span>
+                            {% elif b.status == 'approved' %}
+                                <span class="dash-pill dash-pill--approved">Одобрена</span>
+                            {% elif b.status == 'rejected' %}
+                                <span class="dash-pill dash-pill--rejected">Отклонена</span>
+                            {% elif b.status == 'completed' %}
+                                <span class="dash-pill dash-pill--done">Завершена</span>
+                            {% else %}
+                                <span class="dash-pill dash-pill--draft">{{ b.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="dash-empty">
+                                <i class="bi bi-inboxes"></i>
+                                <div>Заявок нет</div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}

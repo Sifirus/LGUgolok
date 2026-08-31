@@ -1,0 +1,115 @@
+.auth-box {
+    width: 100%;
+    max-width: 390px;
+}
+
+.auth-box .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.auth-box .position-relative {
+    position: relative;
+}
+
+.auth-box .form-control {
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 40px 10px 40px;
+    color: var(--text);
+    background: #fff;
+}
+
+.auth-box .form-control:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(30, 75, 163, .09);
+}
+
+.auth-box .form-control::placeholder {
+    color: #B8BDD0;
+}
+
+.auth-box .input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #AAB0C3;
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.auth-box .pw-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #AAB0C3;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.auth-box .pw-toggle:hover {
+    color: var(--blue);
+}
+
+.btn-login {
+    background: linear-gradient(135deg, var(--orange), var(--orange-dk));
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 11px;
+    width: 100%;
+    color: #fff;
+    transition: transform .15s, box-shadow .15s;
+}
+
+.btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(232, 117, 26, .35);
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.login-link {
+    color: var(--blue);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.login-link:hover {
+    text-decoration: underline;
+}
+
+.alert {
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.5;
+}

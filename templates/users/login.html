@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block title %}Уголок - Вход{% endblock %}
+{% block nav_menu %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container d-flex align-items-center justify-content-center min-vh-100">
+        <div class="auth-box">
+
+            <h1 style="font-size:26px;font-weight:700;letter-spacing:-.3px;margin-bottom:5px">
+                Добро пожаловать
+            </h1>
+            <p style="color:var(--muted);font-size:14px" class="mb-4">
+                Войдите в систему управления аудиторным фондом
+            </p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} d-flex align-items-center gap-2 py-2 mb-3">
+                        {% if message.tags == "success" %}
+                            <i class="bi bi-check-circle"></i>
+                        {% endif %}
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                {% with err=form.non_field_errors|first %}
+                    {% if 'заблок' in err|lower %}
+                        <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-3">
+                            <i class="bi bi-x-circle"></i>
+                            <span>{{ err }}</span>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            <span>{{ err }}</span>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">Электронная почта</label>
+                    <div class="position-relative">
+                        <i class="bi bi-person input-icon"></i>
+                        {% render_field form.username class="form-control" placeholder="your@mail.ru" %}
+                    </div>
+                    {% for error in form.username.errors %}
+                        <div class="text-danger mt-1" style="font-size:12px">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Пароль</label>
+                    <div class="position-relative">
+                        <i class="bi bi-lock input-icon"></i>
+                        {% render_field form.password class="form-control" id="id_password" placeholder="••••••••" %}
+
+                        <button type="button" class="pw-toggle" onclick="togglePw('id_password', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    {% for error in form.password.errors %}
+                        <div class="text-danger mt-1" style="font-size:12px">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+                    <div></div>
+                    <a href="{% url 'password_reset' %}" class="login-link" style="font-size:13px">
+                        Забыли пароль?
+                    </a>
+                </div>
+
+                <button type="submit" class="btn-login">Войти в систему</button>
+                <div class="divider my-3">или</div>
+            </form>
+
+            <p class="text-center mt-0 mb-0" style="font-size:13px;color:var(--muted)">
+                Нет учётной записи?
+                <a href="mailto:some@support.ru" class="login-link">Обратитесь к администратору</a>
+            </p>
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/auth.js' %}"></script>
+{% endblock %}

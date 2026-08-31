@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Уголок - Пользователи{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin_users.css' %}">
+{% endblock %}
+
+{% block content %}
+
+    {% if open_add_modal %}<span id="open-add-modal-flag" hidden></span>{% endif %}
+    {% if open_edit_modal %}<span id="open-edit-modal-flag" hidden data-user-id="{{ edit_user_id }}"></span>{% endif %}
+
+    <div class="page-header">
+        <div>
+            <div class="page-header-title">Пользователи</div>
+            <p class="page-header-sub">Всего: {{ total }}</p>
+        </div>
+        <button class="btn-main" onclick="openModal('modal-add')">
+            <i class="bi bi-person-plus"></i>Добавить пользователя
+        </button>
+    </div>
+
+    <form method="get" class="filter-bar">
+        <div class="filter-group">
+            <label class="fl">Поиск</label>
+            <div style="position:relative">
+                <i class="bi bi-search"
+                   style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none"></i>
+                <input type="text" name="search" value="{{ search }}"
+                       class="fc" style="padding-left:32px;min-width:220px"
+                       placeholder="Email или имя...">
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label class="fl">Роль</label>
+            <select name="role" class="fc">
+                <option value="">Все роли</option>
+                {% for val, label in roles %}
+                    <option value="{{ val }}"
+                            {% if filter_role == val %}selected{% endif %}>{{ label|capfirst }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label class="fl">Статус</label>
+            <select name="status" class="fc">
+                <option value="">Все</option>
+                <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Активны</option>
+                <option value="blocked" {% if filter_status == 'blocked' %}selected{% endif %}>Заблокированы</option>
+                <option value="inactive" {% if filter_status == 'inactive' %}selected{% endif %}>Деактивированы</option>
+            </select>
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn-blue"><i class="bi bi-funnel"></i>Фильтр</button>
+            <a href="{% url 'admin_panel_users' %}" class="btn-sec"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="cbox">
+        <div class="table-responsive">
+            <table class="tbl">
+                <thead>
+                <tr>
+                    <th style="width:46px"></th>
+                    <th>Пользователь</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Последний вход</th>
+                    <th>Статус</th>
+                    <th style="width:130px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for u in users %}
+                    <tr style="cursor:pointer" onclick="window.location.href='{% url 'user_detail' u.pk %}'">
+                        <td>
+                            <div class="user-avatar">
+                                {% if u.profile.avatar %}
+                                    <img src="{{ u.profile.avatar.url }}" alt="">
+                                {% else %}
+                                    {{ u.profile.first_name|first|upper|default:"?" }}{{ u.profile.last_name|first|upper|default:"?" }}
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <td>
+                            <div style="font-weight:600;font-size:14px">
+                                {{ u.profile.last_name }} {{ u.profile.first_name|first }}.
+                                {% if u.profile.second_name %} {{ u.profile.second_name|first }}.{% endif %}
+                            </div>
+                            {% if u.profile.department %}
+                                <div style="font-size:12px;color:var(--muted)">{{ u.profile.department }}</div>
+                            {% endif %}
+                        </td>
+
+                        <td style="font-size:13px;color:var(--muted)">{{ u.email }}</td>
+
+                        <td>
+                            <span class="role-badge role-badge--{{ u.role }}">
+                                {% if u.role == 'initiator' %}<i class="bi bi-person"></i>{% endif %}
+                                {% if u.role == 'approver' %}<i class="bi bi-check2-circle"></i>{% endif %}
+                                {% if u.role == 'operator' %}<i class="bi bi-shield-check"></i>{% endif %}
+                                {{ u.get_role_display|capfirst }}
+                            </span>
+                        </td>
+
+                        <td style="font-size:13px;color:var(--muted)">
+                            {{ u.last_login|date:"d.m.Y H:i"|default:"—" }}
+                        </td>
+
+                        <td>
+                            {% if not u.is_active %}
+                                <span class="status-dot status-dot--inactive">Деактивирован</span>
+                            {% elif u.is_blocked %}
+                                <span class="status-dot status-dot--blocked">Заблокирован</span>
+                            {% else %}
+                                <span class="status-dot status-dot--active">Активен</span>
+                            {% endif %}
+                        </td>
+
+                        <td onclick="event.stopPropagation()">
+                            <div class="action-buttons">
+                                <button class="ic-btn" title="Редактировать"
+                                        onclick="openEditModal(
+                                                {{ u.id }},
+                                                '{{ u.email }}',
+                                                '{{ u.profile.first_name }}',
+                                                '{{ u.profile.last_name }}',
+                                                '{{ u.profile.second_name|default:'' }}',
+                                                '{{ u.profile.department|default:'' }}',
+                                                '{{ u.role }}'
+                                                )">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <form method="post" action="{% url 'admin_panel_user_ban_toggle' u.id %}"
+                                      style="margin:0">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="ic-btn {% if u.is_blocked %}ic-btn--unlock{% else %}ic-btn--lock{% endif %}"
+                                            title="{% if u.is_blocked %}Разблокировать{% else %}Заблокировать{% endif %}">
+                                        <i class="bi bi-{% if u.is_blocked %}unlock{% else %}lock{% endif %}"></i>
+                                    </button>
+                                </form>
+
+                                {% if u.is_active %}
+                                    <form method="post" action="{% url 'admin_panel_user_delete' u.id %}"
+                                          id="delete-form-{{ u.id }}" style="margin:0">
+                                        {% csrf_token %}
+                                        <button type="button" class="ic-btn ic-btn--danger" title="Деактивировать"
+                                                onclick="confirmDelete({{ u.id }}, '{{ u.email }}')">
+                                            <i class="bi bi-person-dash"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="ic-btn disabled" title="Уже деактивирован">
+                                        <i class="bi bi-person-dash"></i>
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr style="display:none">
+                        <td colspan="7">
+                            <form id="edit-form-{{ u.id }}"
+                                  method="post" action="{% url 'admin_panel_user_edit' u.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="first_name">
+                                <input type="hidden" name="last_name">
+                                <input type="hidden" name="second_name">
+                                <input type="hidden" name="email">
+                                <input type="hidden" name="role">
+                                <input type="hidden" name="department">
+                            </form>
+                        </td>
+                    </tr>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="bi bi-people"></i>
+                            <p>Пользователи не найдены</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if users.has_other_pages %}
+            <div class="pager">
+                <span class="pager-i">
+                    Показано {{ users.start_index }}–{{ users.end_index }} из {{ total }}
+                </span>
+                <div class="pagination-buttons">
+                    {% if users.has_previous %}
+                        <a href="?page={{ users.previous_page_number }}&search={{ search }}&role={{ filter_role }}&status={{ filter_status }}"
+                           class="pg-btn"><i class="bi bi-chevron-left"></i></a>
+                    {% else %}
+                        <button class="pg-btn" disabled><i class="bi bi-chevron-left"></i></button>
+                    {% endif %}
+
+                    {% for num in users.paginator.page_range %}
+                        {% if users.number == num %}
+                            <button class="pg-btn active">{{ num }}</button>
+                        {% elif num >= users.number|add:"-2" and num <= users.number|add:"2" %}
+                            <a href="?page={{ num }}&search={{ search }}&role={{ filter_role }}&status={{ filter_status }}"
+                               class="pg-btn">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if users.has_next %}
+                        <a href="?page={{ users.next_page_number }}&search={{ search }}&role={{ filter_role }}&status={{ filter_status }}"
+                           class="pg-btn"><i class="bi bi-chevron-right"></i></a>
+                    {% else %}
+                        <button class="pg-btn" disabled><i class="bi bi-chevron-right"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="modal-ugolok-backdrop {% if open_add_modal %}open{% endif %}" id="modal-add">
+        <div class="modal-ugolok">
+            <div class="modal-ugolok-head">
+                <span class="modal-ugolok-title"><i class="bi bi-person-plus"></i>Новый пользователь</span>
+                <button class="btn-sec" onclick="closeModal('modal-add')"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <form method="post" action="{% url 'admin_panel_users_add' %}">
+                {% csrf_token %}
+                <div class="modal-ugolok-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="fl">Фамилия <span class="required">*</span></label>
+                            <input type="text" name="last_name"
+                                   class="fc {% if add_form.last_name.errors %}is-invalid{% endif %}"
+                                   value="{{ add_form.last_name.value|default:'' }}">
+                            {% for e in add_form.last_name.errors %}
+                                <div class="field-error">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="field-group">
+                            <label class="fl">Имя <span class="required">*</span></label>
+                            <input type="text" name="first_name"
+                                   class="fc {% if add_form.first_name.errors %}is-invalid{% endif %}"
+                                   value="{{ add_form.first_name.value|default:'' }}">
+                            {% for e in add_form.first_name.errors %}
+                                <div class="field-error">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="fl">Отчество</label>
+                        <input type="text" name="second_name" class="fc"
+                               value="{{ add_form.second_name.value|default:'' }}">
+                    </div>
+                    <div class="field-group">
+                        <label class="fl">Email <span class="required">*</span></label>
+                        <input type="email" name="email"
+                               class="fc {% if add_form.email.errors %}is-invalid{% endif %}"
+                               value="{{ add_form.email.value|default:'' }}">
+                        {% for e in add_form.email.errors %}
+                            <div class="field-error">{{ e }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="fl">Роль <span class="required">*</span></label>
+                            <select name="role" class="fc">
+                                {% for val, label in roles %}
+                                    <option value="{{ val }}"
+                                            {% if add_form.role.value == val %}selected{% endif %}>{{ label|capfirst }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="fl">Подразделение</label>
+                            <input type="text" name="department" class="fc" value="{{ add_form.department.value|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="info-message">
+                        <i class="bi bi-info-circle"></i>
+                        Временный пароль будет сгенерирован автоматически и отправлен на email.
+                    </div>
+                </div>
+                <div class="modal-ugolok-foot">
+                    <button type="button" class="btn-sec" onclick="closeModal('modal-add')">Отмена</button>
+                    <button type="submit" class="btn-main">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% for u in users %}
+        <div class="modal-ugolok-backdrop {% if open_edit_modal and edit_user_id == u.id %}open{% endif %}"
+             id="modal-edit-{{ u.id }}">
+            <div class="modal-ugolok">
+                <div class="modal-ugolok-head">
+                    <span class="modal-ugolok-title"><i class="bi bi-pencil-square"></i>Редактировать пользователя</span>
+                    <button class="btn-sec" onclick="closeModal('modal-edit-{{ u.id }}')"><i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <form method="post" action="{% url 'admin_panel_user_edit' u.id %}">
+                    {% csrf_token %}
+                    <div class="modal-ugolok-body">
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label class="fl">Фамилия <span class="required">*</span></label>
+                                <input type="text" name="last_name" class="fc"
+                                       value="{% if open_edit_modal and edit_user_id == u.id %}{{ edit_form.last_name.value|default:u.profile.last_name }}{% else %}{{ u.profile.last_name }}{% endif %}">
+                                {% if open_edit_modal and edit_user_id == u.id %}
+                                    {% for e in edit_form.last_name.errors %}
+                                        <div class="field-error">{{ e }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="field-group">
+                                <label class="fl">Имя <span class="required">*</span></label>
+                                <input type="text" name="first_name" class="fc"
+                                       value="{% if open_edit_modal and edit_user_id == u.id %}{{ edit_form.first_name.value|default:u.profile.first_name }}{% else %}{{ u.profile.first_name }}{% endif %}">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="fl">Отчество</label>
+                            <input type="text" name="second_name" class="fc"
+                                   value="{% if open_edit_modal and edit_user_id == u.id %}{{ edit_form.second_name.value|default:u.profile.second_name }}{% else %}{{ u.profile.second_name|default:'' }}{% endif %}">
+                        </div>
+                        <div class="field-group">
+                            <label class="fl">Email <span class="required">*</span></label>
+                            <input type="email" name="email" class="fc"
+                                   value="{% if open_edit_modal and edit_user_id == u.id %}{{ edit_form.email.value|default:u.email }}{% else %}{{ u.email }}{% endif %}">
+                            {% if open_edit_modal and edit_user_id == u.id %}
+                                {% for e in edit_form.email.errors %}
+                                    <div class="field-error">{{ e }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label class="fl">Роль <span class="required">*</span></label>
+                                <select name="role" class="fc">
+                                    {% for val, label in roles %}
+                                        <option value="{{ val }}"
+                                                {% if open_edit_modal and edit_user_id == u.id %}
+                                                {% if edit_form.role.value == val %}selected{% endif %}
+                                                {% else %}
+                                                {% if u.role == val %}selected{% endif %}
+                                                {% endif %}>{{ label|capfirst }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="fl">Подразделение</label>
+                                <input type="text" name="department" class="fc"
+                                       value="{% if open_edit_modal and edit_user_id == u.id %}{{ edit_form.department.value|default:u.profile.department }}{% else %}{{ u.profile.department|default:'' }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-ugolok-foot">
+                        <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ u.id }}')">Отмена
+                        </button>
+                        <button type="submit" class="btn-main">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/admin_users.js' %}"></script>
+{% endblock %}

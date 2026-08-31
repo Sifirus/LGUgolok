@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Уголок - {{ room.name }}{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/rooms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_users.css' %}">
+{% endblock %}
+
+{% block content %}
+
+    {% if user.role == 'operator' %}
+        <nav style="font-size:13px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:6px">
+            <a href="{% url 'rooms_list' %}" style="color:var(--blue)">Аудитории</a>
+            <i class="bi bi-chevron-right" style="font-size:11px"></i>
+            <span>{{ room.name }}</span>
+        </nav>
+    {% endif %}
+
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+        <div>
+            <h1 style="font-size:22px;font-weight:800;margin-bottom:4px;letter-spacing:-.3px">{{ room.name }}</h1>
+            <p style="font-size:14px;color:var(--muted);margin:0">{{ room.building }}, {{ room.floor }} этаж</p>
+        </div>
+        {% if user.role == 'operator' %}
+            <div class="d-flex gap-2">
+                <button class="btn-sec" onclick="openModal('modal-edit')">
+                    <i class="bi bi-pencil"></i>Редактировать
+                </button>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-4">
+
+            <div class="cbox mb-3" style="padding:16px 20px">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <div class="room-status-icon room-status-icon--{{ room.status }}">
+                        {% if room.status == 'active' %}<i class="bi bi-check-circle-fill"></i>
+                        {% elif room.status == 'maintenance' %}<i class="bi bi-tools"></i>
+                        {% else %}<i class="bi bi-x-circle-fill"></i>{% endif %}
+                    </div>
+                    <div>
+                        <div style="font-weight:700;font-size:15px">
+                            {% if room.status == 'active' %}Активна
+                            {% elif room.status == 'maintenance' %}На обслуживании
+                            {% else %}Закрыта{% endif %}
+                        </div>
+                        <div style="font-size:12px;color:var(--muted)">Текущий статус</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cbox mb-3" style="padding:0 20px">
+                <table class="detail-table">
+                    <tr>
+                        <td>Тип</td>
+                        <td><span class="role-badge role-badge--{{ room.type }}">{{ room.get_type_display }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Корпус</td>
+                        <td>{{ room.building }}</td>
+                    </tr>
+                    <tr>
+                        <td>Этаж</td>
+                        <td>{{ room.floor }}</td>
+                    </tr>
+                    <tr>
+                        <td>Вместимость</td>
+                        <td><strong>{{ room.capacity }}</strong> чел.</td>
+                    </tr>
+                    <tr>
+                        <td>Оборудования</td>
+                        <td><strong>{{ room.equipment_count }}</strong> ед.</td>
+                    </tr>
+                    <tr>
+                        <td>Всего заявок</td>
+                        <td><strong>{{ room.bookings_count }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Добавлена</td>
+                        <td style="font-size:12px">{{ room.created_at|date:"d.m.Y" }}</td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+        <div class="col-lg-8">
+
+            <div class="cbox mb-3" style="overflow:hidden">
+                <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:15px;font-weight:700">
+          <i class="bi bi-laptop" style="color:var(--blue);margin-right:6px"></i>
+          Оборудование в аудитории
+        </span>
+                    <span style="font-size:13px;color:var(--muted)">{{ equipment|length }} ед.</span>
+                </div>
+                <div style="padding:4px 20px">
+                    {% for eq in equipment %}
+                        <div class="eq-inline-row">
+                            <div class="eq-type-icon">
+                                {% if eq.type == 'projector' %}<i class="bi bi-projector-fill"></i>
+                                {% elif eq.type == 'microphone' %}<i class="bi bi-mic-fill"></i>
+                                {% elif eq.type == 'laptop' %}<i class="bi bi-laptop"></i>
+                                {% elif eq.type == 'screen' %}<i class="bi bi-display"></i>
+                                {% else %}<i class="bi bi-camera-video-fill"></i>{% endif %}
+                            </div>
+                            <div style="flex:1;min-width:0">
+                                <div class="eq-inline-name">{{ eq.name }}</div>
+                                <div class="eq-inline-model">{{ eq.model }}</div>
+                            </div>
+                            <span class="eq-inline-inv">{{ eq.inventory_number }}</span>
+                            <div>
+                                {% if eq.status == 'active' %}
+                                    <span class="status-dot status-dot--active" style="font-size:12px">Активно</span>
+                                {% elif eq.status == 'maintenance' %}
+                                    <span class="status-dot status-dot--blocked" style="font-size:12px">Обслуж.</span>
+                                {% else %}
+                                    <span class="status-dot status-dot--inactive" style="font-size:12px">Списано</span>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'equipment_detail' eq.pk %}" class="ic-btn" title="Подробнее">
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    {% empty %}
+                        <div style="text-align:center;padding:24px;color:var(--muted)">
+                            <i class="bi bi-inbox"
+                               style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>
+                            <span style="font-size:13px">Стационарного оборудования нет</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="cbox" style="overflow:hidden">
+                <div style="padding:14px 20px;border-bottom:1px solid var(--border)">
+        <span style="font-size:15px;font-weight:700">
+          <i class="bi bi-calendar3" style="color:var(--blue);margin-right:6px"></i>
+          Последние бронирования
+        </span>
+                </div>
+                <div class="table-responsive">
+                    <table class="tbl">
+                        <thead>
+                        <tr>
+                            <th>Мероприятие</th>
+                            <th>Инициатор</th>
+                            <th>Дата</th>
+                            <th>Статус</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for b in recent_bookings %}
+                            <tr onclick="window.location.href='{% url 'booking_detail' b.id %}'"
+                                style="cursor: pointer;">
+                                <td style="font-weight:600">{{ b.get_event_type_display }}</td>
+                                <td style="font-size:13px;color:var(--muted)">
+                                    {{ b.initiator.profile.last_name }} {{ b.initiator.profile.first_name|first }}.
+                                </td>
+                                <td style="font-size:13px;color:var(--muted)">{{ b.event_date|date:"d.m.Y" }}</td>
+                                <td>
+                                    {% if b.status == 'pending' %}<span class="pill pill--pending">На согл.</span>
+                                    {% elif b.status == 'approved' %}<span class="pill pill--approved">Одобрена</span>
+                                    {% elif b.status == 'rejected' %}<span class="pill pill--rejected">Отклонена</span>
+                                    {% elif b.status == 'completed' %}<span class="pill pill--done">Завершена</span>
+                                    {% else %}
+                                        <span class="pill pill--draft">{{ b.get_status_display }}</span>{% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Заявок нет
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {% if user.role == 'operator' %}
+        <div class="modal-ugolok-backdrop" id="modal-edit">
+            <div class="modal-ugolok">
+                <div class="modal-ugolok-head">
+                    <span class="modal-ugolok-title"><i
+                            class="bi bi-pencil-square"></i>Редактировать — {{ room.name }}</span>
+                    <button class="btn-sec" onclick="closeModal('modal-edit')"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <form method="post" action="{% url 'room_edit' room.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="_action" value="edit">
+                    <input type="hidden" name="room_id" value="{{ room.id }}">
+                    <div class="modal-ugolok-body">
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label class="fl">Название *</label>
+                                <input name="name" class="fc" value="{{ room.name }}">
+                            </div>
+                            <div class="field-group">
+                                <label class="fl">Корпус *</label>
+                                <input name="building" class="fc" value="{{ room.building }}">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label class="fl">Этаж</label>
+                                <input name="floor" type="number" class="fc" value="{{ room.floor }}">
+                            </div>
+                            <div class="field-group">
+                                <label class="fl">Вместимость *</label>
+                                <input name="capacity" type="number" class="fc" value="{{ room.capacity }}" min="1">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label class="fl">Тип</label>
+                                <select name="type" class="fc">
+                                    {% for val, label in room_types %}
+                                        <option value="{{ val }}"
+                                                {% if room.type == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="fl">Статус</label>
+                                <select name="status" class="fc">
+                                    {% for val, label in room_statuses %}
+                                        <option value="{{ val }}"
+                                                {% if room.status == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-ugolok-foot">
+                        <button type="button" class="btn-sec" onclick="closeModal('modal-edit')">Отмена</button>
+                        <button type="submit" class="btn-main"><i class="bi bi-check-lg"></i>Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}
+{% block extra_js %}
+    <script src="{% static 'js/rooms.js' %}"></script>{% endblock %}

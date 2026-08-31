@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Уголок - Уведомления{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+{% endblock %}
+
+{% block content %}
+
+    <div class="notif-page-head">
+        <div>
+            <h1 style="font-size:20px;font-weight:800;margin-bottom:3px;letter-spacing:-.3px">Уведомления</h1>
+            {% with total=notifications|length %}
+                {% with unread=notifications|length %}
+                    <p style="font-size:14px;color:var(--muted);margin:0">
+                        {{ unread_notifications_count }} непрочитанных
+                    </p>
+                {% endwith %}
+            {% endwith %}
+        </div>
+        {% if unread_notifications_count %}
+            <button id="btn-read-all" class="btn-sec">
+                <i class="bi bi-check2-all"></i>Отметить все прочитанными
+            </button>
+        {% endif %}
+    </div>
+
+    <div class="cbox notif-list">
+        {% for notif in notifications %}
+            <a href="{% url 'notification_read' notif.pk %}"
+               class="notif-item {% if not notif.is_read %}notif-item--unread{% endif %}">
+
+                <div class="notif-unread-dot" {% if notif.is_read %}style="display:none"{% endif %}></div>
+
+                <div class="notif-icon {% if notif.kind == 'booking_status' %}notif-icon--status{% else %}notif-icon--comment{% endif %}">
+                    {% if notif.kind == 'booking_status' %}
+                        <i class="bi bi-calendar-check"></i>
+                    {% else %}
+                        <i class="bi bi-chat-text"></i>
+                    {% endif %}
+                </div>
+
+                <div class="notif-body">
+                    <div class="notif-title">{{ notif.title }}</div>
+                    {% if notif.body %}
+                        <div class="notif-preview">{{ notif.body }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="notif-time">{{ notif.created_at }}</div>
+
+            </a>
+        {% empty %}
+            <div class="notif-empty">
+                <i class="bi bi-bell-slash"></i>
+                <p>Уведомлений пока нет</p>
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/notifications.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,7 @@
+db.sqlite3
+.venv
+media
+email
+.env
+__pycache__/
+*.pyc

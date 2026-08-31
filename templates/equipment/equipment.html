@@ -1,0 +1,463 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Уголок - Оборудование{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/equipment.css' %}">
+{% endblock %}
+
+{% block content %}
+    {% if open_add_modal %}<span id="open-add-modal-flag" hidden></span>{% endif %}
+    {% if open_edit_modal %}<span id="open-edit-modal-flag" hidden data-equipment-id="{{ edit_equipment_id }}"></span>
+    {% endif %}
+
+    <div class="eq-page-header">
+        <div>
+            <div class="eq-page-title">Оборудование</div>
+            <p class="eq-page-subtitle">Всего: {{ total }} · Дата: {{ current_date }} · Время: {{ current_time }}</p>
+        </div>
+
+        <div class="eq-page-actions">
+            <button type="button" class="btn-main" onclick="openModal('modal-add')">
+                <i class="bi bi-plus-lg"></i>
+                Добавить оборудование
+            </button>
+        </div>
+    </div>
+
+    <form method="get" class="eq-filter-bar">
+        <div class="eq-filter-group eq-filter-group--search">
+            <label class="eq-filter-label">Поиск</label>
+            <div style="position:relative">
+                <i class="bi bi-search eq-search-icon"></i>
+                <input type="text" name="search" value="{{ search }}" class="fc eq-search-input"
+                       placeholder="Инвентарный номер, название, модель...">
+            </div>
+        </div>
+
+        <div class="eq-filter-group">
+            <label class="eq-filter-label">Тип</label>
+            <select name="type" class="fc">
+                <option value="">Все типы</option>
+                {% for val, label in equipment_types %}
+                    <option value="{{ val }}" {% if filter_type == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="eq-filter-group">
+            <label class="eq-filter-label">Статус</label>
+            <select name="status" class="fc">
+                <option value="">Все статусы</option>
+                {% for val, label in equipment_statuses %}
+                    <option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="eq-filter-group eq-filter-group--wide">
+            <label class="eq-filter-label">Комната</label>
+            <div class="room-lookup" data-room-lookup data-room-url="{% url 'room_lookup_api' %}">
+                <div class="room-lookup__control">
+                    <input type="text"
+                           name="room_query"
+                           class="fc room-lookup__input"
+                           placeholder="ID или название комнаты"
+                           value="{{ filter_room_label|default:'' }}"
+                           autocomplete="off">
+                    <button type="button" class="room-lookup__clear" data-room-clear title="Очистить">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <input type="hidden" name="room_id" value="{{ filter_room_id|default:'' }}" data-room-id>
+                <div class="room-lookup__menu" data-room-menu></div>
+            </div>
+        </div>
+
+        <div class="eq-filter-group">
+            <label class="eq-filter-label">Размещение</label>
+            <select name="location" class="fc">
+                <option value="">Все</option>
+                <option value="room" {% if filter_location == 'room' %}selected{% endif %}>Только в комнатах</option>
+                <option value="warehouse" {% if filter_location == 'warehouse' %}selected{% endif %}>Только склад
+                </option>
+            </select>
+        </div>
+
+        <div class="eq-filter-actions">
+            <button type="submit" class="btn-blue"><i class="bi bi-funnel"></i>Фильтр</button>
+            <a href="{% url 'equipment_list' %}" class="btn-sec"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="eq-card">
+        <div class="table-responsive">
+            <table class="eq-table">
+                <thead>
+                <tr>
+                    <th>Инв. номер</th>
+                    <th>Оборудование</th>
+                    <th>Тип</th>
+                    <th>Статус</th>
+                    <th>Место</th>
+                    <th>Стационарное</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in equipment %}
+                    {% with item=row.equipment %}
+                        <tr onclick="window.location.href='{% url 'equipment_detail' item.id %}'"
+                            style="cursor: pointer">
+                            <td class="eq-mono">{{ item.inventory_number }}</td>
+                            <td>
+                                <div class="eq-name">{{ item.name }}</div>
+                                <div class="eq-sub">{{ item.model }}</div>
+                            </td>
+                            <td><span class="eq-chip">{{ item.get_type_display }}</span></td>
+                            <td>
+                                {% if item.status == 'active' %}
+                                    <span class="eq-status eq-status--ok">{{ item.get_status_display }}</span>
+                                {% elif item.status == 'maintenance' %}
+                                    <span class="eq-status eq-status--warn">{{ item.get_status_display }}</span>
+                                {% elif item.status == 'written_off' %}
+                                    <span class="eq-status eq-status--off">{{ item.get_status_display }}</span>
+                                {% else %}
+                                    <span class="eq-status eq-status--muted">{{ item.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.room %}
+                                    <span class="eq-place">{{ item.room.name }}</span>
+                                {% else %}
+                                    <span class="eq-place eq-place--warehouse">Склад</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.is_stationary %}
+                                    <span class="eq-badge eq-badge--yes">Да</span>
+                                {% else %}
+                                    <span class="eq-badge eq-badge--no">Нет</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="eq-actions">
+                                    <button type="button"
+                                            class="ic-btn"
+                                            title="Редактировать"
+                                            onclick="event.stopPropagation();openEquipmentEdit(this)"
+                                            data-equipment-id="{{ item.id }}"
+                                            data-action="{% url 'equipment_edit' item.id %}"
+                                            data-inventory-number="{{ item.inventory_number|escape }}"
+                                            data-name="{{ item.name|escape }}"
+                                            data-model="{{ item.model|escape }}"
+                                            data-type="{{ item.type }}"
+                                            data-status="{{ item.status }}"
+                                            data-is-stationary="{% if item.is_stationary %}1{% else %}0{% endif %}"
+                                            data-room-id="{{ item.room.id|default:'' }}"
+                                            data-room-label="{% if item.room %}{{ item.room.id }} · {{ item.room.name }} · {{ item.room.building }}, этаж {{ item.room.floor }}{% endif %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form method="post" action="{% url 'equipment_delete' item.id %}"
+                                          id="delete-form-{{ item.id }}" style="margin:0">
+                                        {% csrf_token %}
+                                        <button type="button" class="ic-btn ic-btn--danger" title="Удалить"
+                                                onclick="event.stopPropagation();confirmEquipmentDelete({{ item.id }}, '{{ item.name|escapejs }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endwith %}
+                {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="bi bi-gear"></i>
+                                <p>Оборудование не найдено</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if equipment.has_other_pages %}
+            <div class="pager">
+                <span class="pager-i">Показано {{ equipment.start_index }}–{{ equipment.end_index }} из {{ total }}</span>
+                <div class="pagination-buttons">
+                    {% if equipment.has_previous %}
+                        <a href="?page={{ equipment.previous_page_number }}&search={{ search }}&type={{ filter_type }}&status={{ filter_status }}&location={{ filter_location }}&room_id={{ filter_room_id }}&room_query={{ filter_room_label|urlencode }}"
+                           class="pg-btn"><i class="bi bi-chevron-left"></i></a>
+                    {% else %}
+                        <button class="pg-btn" disabled><i class="bi bi-chevron-left"></i></button>
+                    {% endif %}
+
+                    {% for num in equipment.paginator.page_range %}
+                        {% if equipment.number == num %}
+                            <button class="pg-btn active">{{ num }}</button>
+                        {% elif num >= equipment.number|add:"-2" and num <= equipment.number|add:"2" %}
+                            <a href="?page={{ num }}&search={{ search }}&type={{ filter_type }}&status={{ filter_status }}&location={{ filter_location }}&room_id={{ filter_room_id }}&room_query={{ filter_room_label|urlencode }}"
+                               class="pg-btn">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if equipment.has_next %}
+                        <a href="?page={{ equipment.next_page_number }}&search={{ search }}&type={{ filter_type }}&status={{ filter_status }}&location={{ filter_location }}&room_id={{ filter_room_id }}&room_query={{ filter_room_label|urlencode }}"
+                           class="pg-btn"><i class="bi bi-chevron-right"></i></a>
+                    {% else %}
+                        <button class="pg-btn" disabled><i class="bi bi-chevron-right"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="modal-ugolok-backdrop {% if open_add_modal %}open{% endif %}" id="modal-add">
+        <div class="modal-ugolok">
+            <div class="modal-ugolok-head">
+                <span class="modal-ugolok-title"><i class="bi bi-plus-circle"></i>Новое оборудование</span>
+                <button type="button" class="btn-sec" onclick="closeModal('modal-add')"><i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <form method="post" action="{% url 'equipment_add' %}">
+                {% csrf_token %}
+                <div class="modal-ugolok-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="fl">Инвентарный номер <span class="required">*</span></label>
+                            <input type="text" name="inventory_number"
+                                   class="fc {% if add_form.inventory_number.errors %}is-invalid{% endif %}"
+                                   value="{{ add_form.inventory_number.value|default:'' }}">
+                            {% for e in add_form.inventory_number.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
+                        </div>
+                        <div class="field-group">
+                            <label class="fl">Название <span class="required">*</span></label>
+                            <input type="text" name="name" class="fc {% if add_form.name.errors %}is-invalid{% endif %}"
+                                   value="{{ add_form.name.value|default:'' }}">
+                            {% for e in add_form.name.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="fl">Модель <span class="required">*</span></label>
+                            <input type="text" name="model"
+                                   class="fc {% if add_form.model.errors %}is-invalid{% endif %}"
+                                   value="{{ add_form.model.value|default:'' }}">
+                            {% for e in add_form.model.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
+                        </div>
+                        <div class="field-group">
+                            <label class="fl">Тип <span class="required">*</span></label>
+                            <select name="type" class="fc {% if add_form.type.errors %}is-invalid{% endif %}">
+                                {% for val, label in equipment_types %}
+                                    <option value="{{ val }}" {% if add_form.type.value == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% for e in add_form.type.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="fl">Статус <span class="required">*</span></label>
+                            <select name="status" class="fc {% if add_form.status.errors %}is-invalid{% endif %}">
+                                {% for val, label in equipment_statuses %}
+                                    <option value="{{ val }}"
+                                            {% if add_form.status.value == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% for e in add_form.status.errors %}
+                                <div class="field-error">{{ e }}</div>{% endfor %}
+                        </div>
+                        <div class="field-group">
+                            <label class="fl">Стационарное</label>
+                            <label class="eq-check">
+                                <input type="checkbox" name="is_stationary"
+                                       {% if add_form.is_stationary.value %}checked{% endif %}>
+                                <span>Да</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="fl">Комната</label>
+                        <div class="room-lookup" data-room-lookup data-room-url="{% url 'room_lookup_api' %}">
+                            <div class="room-lookup__control">
+                                <input type="text" name="room_query" class="fc room-lookup__input"
+                                       placeholder="ID или название комнаты"
+                                       value="{{ add_form.room_query.value|default:'' }}" autocomplete="off">
+                                <button type="button" class="room-lookup__clear" data-room-clear title="Очистить"><i
+                                        class="bi bi-x-lg"></i></button>
+                            </div>
+                            <input type="hidden" name="room_id" data-room-id
+                                   value="{{ add_form.room_id.value|default:'' }}">
+                            <div class="room-lookup__menu" data-room-menu></div>
+                        </div>
+                        {% for e in add_form.room_query.errors %}
+                            <div class="field-error">{{ e }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <div class="modal-ugolok-foot">
+                    <button type="button" class="btn-sec" onclick="closeModal('modal-add')">Отмена</button>
+                    <button type="submit" class="btn-main">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% for row in equipment %}
+        {% with item=row.equipment %}
+            <div class="modal-ugolok-backdrop {% if open_edit_modal and edit_equipment_id == item.id %}open{% endif %}"
+                 id="modal-edit-{{ item.id }}">
+                <div class="modal-ugolok">
+                    <div class="modal-ugolok-head">
+                        <span class="modal-ugolok-title"><i
+                                class="bi bi-pencil-square"></i>Редактирование оборудования</span>
+                        <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ item.id }}')"><i
+                                class="bi bi-x-lg"></i></button>
+                    </div>
+
+                    <form method="post" action="{% url 'equipment_edit' item.id %}">
+                        {% csrf_token %}
+                        <div class="modal-ugolok-body">
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label class="fl">Инвентарный номер <span class="required">*</span></label>
+                                    <input type="text" name="inventory_number"
+                                           class="fc {% if open_edit_modal and edit_equipment_id == item.id and edit_form.inventory_number.errors %}is-invalid{% endif %}"
+                                           value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.inventory_number.value|default:item.inventory_number }}{% else %}{{ item.inventory_number }}{% endif %}">
+                                    {% if open_edit_modal and edit_equipment_id == item.id %}
+                                        {% for e in edit_form.inventory_number.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="field-group">
+                                    <label class="fl">Название <span class="required">*</span></label>
+                                    <input type="text" name="name"
+                                           class="fc {% if open_edit_modal and edit_equipment_id == item.id and edit_form.name.errors %}is-invalid{% endif %}"
+                                           value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.name.value|default:item.name }}{% else %}{{ item.name }}{% endif %}">
+                                    {% if open_edit_modal and edit_equipment_id == item.id %}
+                                        {% for e in edit_form.name.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label class="fl">Модель <span class="required">*</span></label>
+                                    <input type="text" name="model"
+                                           class="fc {% if open_edit_modal and edit_equipment_id == item.id and edit_form.model.errors %}is-invalid{% endif %}"
+                                           value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.model.value|default:item.model }}{% else %}{{ item.model }}{% endif %}">
+                                    {% if open_edit_modal and edit_equipment_id == item.id %}
+                                        {% for e in edit_form.model.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="field-group">
+                                    <label class="fl">Тип <span class="required">*</span></label>
+                                    <select name="type"
+                                            class="fc {% if open_edit_modal and edit_equipment_id == item.id and edit_form.type.errors %}is-invalid{% endif %}">
+                                        {% for val, label in equipment_types %}
+                                            <option value="{{ val }}"
+                                                    {% if open_edit_modal and edit_equipment_id == item.id %}
+                                                    {% if edit_form.type.value == val %}selected{% endif %}
+                                                    {% else %}
+                                                    {% if item.type == val %}selected{% endif %}
+                                                    {% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if open_edit_modal and edit_equipment_id == item.id %}
+                                        {% for e in edit_form.type.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label class="fl">Статус <span class="required">*</span></label>
+                                    <select name="status"
+                                            class="fc {% if open_edit_modal and edit_equipment_id == item.id and edit_form.status.errors %}is-invalid{% endif %}">
+                                        {% for val, label in equipment_statuses %}
+                                            <option value="{{ val }}"
+                                                    {% if open_edit_modal and edit_equipment_id == item.id %}
+                                                    {% if edit_form.status.value == val %}selected{% endif %}
+                                                    {% else %}
+                                                    {% if item.status == val %}selected{% endif %}
+                                                    {% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if open_edit_modal and edit_equipment_id == item.id %}
+                                        {% for e in edit_form.status.errors %}
+                                            <div class="field-error">{{ e }}</div>{% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="field-group">
+                                    <label class="fl">Стационарное</label>
+                                    <label class="eq-check">
+                                        <input type="checkbox" name="is_stationary"
+                                               {% if open_edit_modal and edit_equipment_id == item.id %}{% if edit_form.is_stationary.value %}checked{% endif %}{% else %}{% if item.is_stationary %}checked
+                                               {% endif %}{% endif %}>
+                                        <span>Да</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="fl">Комната</label>
+                                <div class="room-lookup" data-room-lookup data-room-url="{% url 'room_lookup_api' %}">
+                                    <div class="room-lookup__control">
+                                        <input type="text" name="room_query" class="fc room-lookup__input"
+                                               placeholder="ID или название комнаты"
+                                               value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.room_query.value|default:'' }}{% else %}{% if item.room %}{{ item.room.id }} · {{ item.room.name }} · {{ item.room.building }}, этаж {{ item.room.floor }}{% endif %}{% endif %}"
+                                               autocomplete="off">
+                                        <button type="button" class="room-lookup__clear" data-room-clear
+                                                title="Очистить"><i class="bi bi-x-lg"></i></button>
+                                    </div>
+                                    <input type="hidden" name="room_id" data-room-id value="{% if open_edit_modal and edit_equipment_id == item.id %}{{ edit_form.room_id.value|default:'' }}{% else %}{{ item.room.id|default:'' }}{% endif %}">
+                                    <div class="room-lookup__menu" data-room-menu></div>
+                                </div>
+                                {% if open_edit_modal and edit_equipment_id == item.id %}
+                                    {% for e in edit_form.room_query.errors %}
+                                        <div class="field-error">{{ e }}</div>{% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="modal-ugolok-foot">
+                            <button type="button" class="btn-sec" onclick="closeModal('modal-edit-{{ item.id }}')">
+                                Отмена
+                            </button>
+                            <button type="submit" class="btn-main">Сохранить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endwith %}
+    {% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/equipment.js' %}"></script>
+{% endblock %}
