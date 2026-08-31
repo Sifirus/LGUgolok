@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from core.decorators import require_role_decorator
 from core.permisions import IsApprover
 
-from booking.models import Booking, BookingGroup, Comments
+from booking.models import Booking, Comments
 from approval.models import Approval
 from approval.serializers import BookingApprovalDetailSerializer
 from users.models import User

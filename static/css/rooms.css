@@ -507,7 +507,6 @@
     font-family: monospace;
 }
 
-/* ── Тип аудитории бейджи ── */
 .role-badge--lecture {
     background: var(--blue-lt);
     color: var(--blue);

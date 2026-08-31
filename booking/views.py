@@ -306,7 +306,7 @@ def booking_detail(request, booking_id):
         elif action == 'cancel':
             return redirect('booking_cancel', booking_id=booking.id)
 
-    comments = booking.comments.all()
+    comments = booking.comments.all().order_by('-created_at')
 
     context = {
         'booking': booking,
